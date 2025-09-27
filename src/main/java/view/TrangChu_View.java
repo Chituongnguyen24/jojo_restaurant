@@ -2,42 +2,62 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class TrangChu_View extends JPanel {
     private JPanel contentPanel;
+    private CardLayout cardLayout;
 
     public TrangChu_View() {
         setLayout(new BorderLayout());
 
-        //Thanh menu trên cùng 
+        // ===== Thanh menu trên cùng =====
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(new Color(245, 245, 245));
 
         // Logo
-        JLabel logoLabel = new JLabel("🍽️ JoJo Restaurant ");
+        JLabel logoLabel = new JLabel("JoJo Restaurant ");
         logoLabel.setFont(new Font("Arial", Font.BOLD, 14));
         menuBar.add(logoLabel);
 
-        // Các menu item
-        String[] menus = {
-                "Hệ thống", "Bàn", "Thực đơn", "Hóa đơn",
-                "Khách hàng", "Khuyến mãi", "Nhân viên",
-                "Thống kê", "Trợ giúp"
+        // ===== Content Panel (CardLayout) =====
+        cardLayout = new CardLayout();
+        contentPanel = new JPanel(cardLayout);
+
+        // Thêm các view vào CardLayout
+        contentPanel.add(new Ban_View(), "Bàn");
+        contentPanel.add(new ThucDon_View(), "Thực đơn");
+        contentPanel.add(new HoaDon_View(), "Hóa đơn");
+        contentPanel.add(new KhachHang_View(), "Khách hàng");
+        contentPanel.add(new KhuyenMai_View(), "Khuyến mãi");
+        contentPanel.add(new NhanVien_View(), "Nhân viên");
+        contentPanel.add(new ThongKe_View(), "Thống kê");
+        contentPanel.add(new TroGiup_View(), "Trợ giúp");
+
+        // Menu items
+        String[] menus = {"Bàn", "Thực đơn", "Hóa đơn","Khách hàng", "Khuyến mãi", 
+        		"Nhân viên", "Thống kê", "Trợ giúp"
         };
 
         for (String m : menus) {
             JMenu menu = new JMenu(m);
+
+            // Xử lý khi click vào menu
+            menu.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    cardLayout.show(contentPanel, m);
+                }
+            });
+
             menuBar.add(menu);
         }
 
         // Thêm menu bar vào panel
         this.add(menuBar, BorderLayout.NORTH);
 
-        //Khu vực nội dung
-        contentPanel = new JPanel(new BorderLayout());
-        JLabel welcomeLabel = new JLabel("Chào mừng đến Nhà hàng JoJo!", JLabel.CENTER);
-        welcomeLabel.setFont(new Font("Arial", Font.BOLD, 20));
-        contentPanel.add(welcomeLabel, BorderLayout.CENTER);
+        // Mặc định hiển thị màn hình Bàn
+        cardLayout.show(contentPanel, "Bàn");
 
         this.add(contentPanel, BorderLayout.CENTER);
     }
