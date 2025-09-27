@@ -11,16 +11,49 @@ public class TrangChu_View extends JPanel {
     public TrangChu_View() {
         setLayout(new BorderLayout());
 
-        // ===== Thanh menu trên cùng =====
+        // ===== Banner trên cùng =====
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(245, 245, 245));
+        headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+
+        // ==== Logo bên trái (ảnh + text) ====
+        ImageIcon logoIcon = new ImageIcon("images/banner1.png"); // ảnh trong folder images
+        // Resize ảnh cho cân đối
+        Image img = logoIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
+        logoIcon = new ImageIcon(img);
+
+        JLabel logoLabel = new JLabel(" Nhà hàng JOJO - Hệ thống quản lý nội bộ", logoIcon, JLabel.LEFT);
+        logoLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        logoLabel.setForeground(new Color(50, 50, 50));
+
+        headerPanel.add(logoLabel, BorderLayout.WEST);
+
+        // ==== User info bên phải ====
+        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        userPanel.setOpaque(false);
+
+        JLabel userLabel = new JLabel("Xin chào, Nguyễn Văn A (Quản lý)");
+        userLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+        userPanel.add(userLabel);
+
+        JButton logoutBtn = new JButton("Đăng xuất");
+        logoutBtn.setBackground(new Color(200, 50, 50));
+        logoutBtn.setForeground(Color.WHITE);
+        logoutBtn.setFocusPainted(false);
+        userPanel.add(logoutBtn);
+
+        headerPanel.add(userPanel, BorderLayout.EAST);
+
+        // ===== Thanh menu ngang dưới banner =====
         JMenuBar menuBar = new JMenuBar();
-        menuBar.setBackground(new Color(245, 245, 245));
+        menuBar.setBackground(new Color(230, 230, 230));
 
-        // Logo
-        JLabel logoLabel = new JLabel("JoJo Restaurant ");
-        logoLabel.setFont(new Font("Arial", Font.BOLD, 14));
-        menuBar.add(logoLabel);
+        String[] menus = {
+         "Bàn", "Thực đơn", "Hóa đơn", "Khách hàng", 
+            "Khuyến mãi", "Nhân viên", "Thống kê", "Trợ giúp"
+        };
 
-        // ===== Content Panel (CardLayout) =====
+        // Content Panel (CardLayout)
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
 
@@ -34,11 +67,7 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new ThongKe_View(), "Thống kê");
         contentPanel.add(new TroGiup_View(), "Trợ giúp");
 
-        // Menu items
-        String[] menus = {"Bàn", "Thực đơn", "Hóa đơn","Khách hàng", "Khuyến mãi", 
-        		"Nhân viên", "Thống kê", "Trợ giúp"
-        };
-
+        // Tạo các menu
         for (String m : menus) {
             JMenu menu = new JMenu(m);
 
@@ -53,12 +82,21 @@ public class TrangChu_View extends JPanel {
             menuBar.add(menu);
         }
 
-        // Thêm menu bar vào panel
-        this.add(menuBar, BorderLayout.NORTH);
+        // ===== Thêm vào layout chính =====
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.add(headerPanel, BorderLayout.NORTH);
+        topPanel.add(menuBar, BorderLayout.SOUTH);
 
-        // Mặc định hiển thị màn hình Bàn
+        this.add(topPanel, BorderLayout.NORTH);
+        this.add(contentPanel, BorderLayout.CENTER);
+
+        // Mặc định hiển thị "Trang chủ"
         cardLayout.show(contentPanel, "Bàn");
 
-        this.add(contentPanel, BorderLayout.CENTER);
+        // Sự kiện logout
+        logoutBtn.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "Bạn đã đăng xuất!");
+            // TODO: gọi màn hình Login ở đây
+        });
     }
 }
