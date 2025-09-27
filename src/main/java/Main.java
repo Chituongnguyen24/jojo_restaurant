@@ -1,10 +1,20 @@
-import java.sql.Connection;
-
-import connectDB.ConnectDB;
+import javax.swing.*;
+import java.awt.*;
+import view.TrangChu_View;
 
 public class Main {
     public static void main(String[] args) {
-        Connection con = ConnectDB.getConnection();
-        
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Nhà hàng JOJO - Quản lý");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+            // Gọi Trang chủ làm màn hình mặc định
+            frame.setContentPane(new TrangChu_View());
+
+            //Set full màn hình
+            frame.setExtendedState(JFrame.MAXIMIZED_BOTH); 
+            frame.setUndecorated(false); 
+            frame.setVisible(true);
+        });
     }
 }
