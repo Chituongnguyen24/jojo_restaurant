@@ -9,7 +9,7 @@ public class ConnectDB {
             + "databaseName=PTUD-JOJO-Restaurant;"
             + "encrypt=false;trustServerCertificate=true;";
     private static final String USER = "sa";  
-    private static final String PASSWORD = "sapassword"; // mật khẩu
+    private static final String PASSWORD = "sapassword"; 
 
     public static Connection getConnection() {
         try {
