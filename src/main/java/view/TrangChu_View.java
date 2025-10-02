@@ -18,7 +18,7 @@ public class TrangChu_View extends JPanel {
 
         // ==== Logo bên trái (ảnh + text) ====
         ImageIcon logoIcon = new ImageIcon("images/banner1.png"); // ảnh trong folder images
-        // Resize ảnh cho cân đối
+        // Resize ảnh
         Image img = logoIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
         logoIcon = new ImageIcon(img);
 
@@ -28,7 +28,7 @@ public class TrangChu_View extends JPanel {
 
         headerPanel.add(logoLabel, BorderLayout.WEST);
 
-        // ==== User info bên phải ====
+        // ==== User info bên phải
         JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         userPanel.setOpaque(false);
 
@@ -49,8 +49,8 @@ public class TrangChu_View extends JPanel {
         menuBar.setBackground(new Color(230, 230, 230));
 
         String[] menus = {
-         "Bàn", "Thực đơn", "Hóa đơn", "Khách hàng", 
-            "Khuyến mãi", "Nhân viên", "Thống kê", "Trợ giúp"
+         "Hệ Thống","Bàn", "Thực đơn", "Hóa đơn", "Khách hàng", 
+           "Nhân viên", "Trợ giúp"
         };
 
         // Content Panel (CardLayout)
@@ -58,13 +58,12 @@ public class TrangChu_View extends JPanel {
         contentPanel = new JPanel(cardLayout);
 
         // Thêm các view vào CardLayout
+        contentPanel.add(new HeThong_View(), "Hệ Thống");
         contentPanel.add(new Ban_View(), "Bàn");
         contentPanel.add(new ThucDon_View(), "Thực đơn");
         contentPanel.add(new HoaDon_View(), "Hóa đơn");
         contentPanel.add(new KhachHang_View(), "Khách hàng");
-        contentPanel.add(new KhuyenMai_View(), "Khuyến mãi");
         contentPanel.add(new NhanVien_View(), "Nhân viên");
-        contentPanel.add(new ThongKe_View(), "Thống kê");
         contentPanel.add(new TroGiup_View(), "Trợ giúp");
 
         // Tạo các menu
@@ -91,7 +90,7 @@ public class TrangChu_View extends JPanel {
         this.add(contentPanel, BorderLayout.CENTER);
 
         // Mặc định hiển thị "Trang chủ"
-        cardLayout.show(contentPanel, "Bàn");
+        cardLayout.show(contentPanel, "Hệ Thống");
 
         // Sự kiện logout
         logoutBtn.addActionListener(e -> {

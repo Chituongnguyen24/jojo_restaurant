@@ -14,6 +14,19 @@
 			<version>13.2.0.jre8</version>
 			<scope>compile</scope>
 		</dependency>
-
+		<!--
+		https://mvnrepository.com/artifact/com.github.jiconfont/jiconfont-swing -->
+		<dependency>
+			<groupId>com.github.jiconfont</groupId>
+			<artifactId>jiconfont-swing</artifactId>
+			<version>1.0.1</version>
+			<scope>runtime</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.webjars/font-awesome -->
+		<dependency>
+			<groupId>org.webjars</groupId>
+			<artifactId>font-awesome</artifactId>
+			<version>6.7.2</version>
+		</dependency>
 	</dependencies>
 </project>
