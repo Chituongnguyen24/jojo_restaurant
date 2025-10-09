@@ -1,13 +1,30 @@
 package view;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 
-public class NhanVien_TraCuu_View extends JPanel {
-    public NhanVien_TraCuu_View() {
-        setLayout(new BorderLayout());
-        JLabel lbl = new JLabel("Chức năng Tra cứu Nhân viên", JLabel.CENTER);
-        lbl.setFont(new Font("Arial", Font.BOLD, 18));
-        add(lbl, BorderLayout.CENTER);
+class PositionRenderer extends JLabel implements TableCellRenderer {
+    public PositionRenderer() {
+        setOpaque(true);
+        setHorizontalAlignment(CENTER);
+        setBorder(new EmptyBorder(5, 10, 5, 10));
+    }
+
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        setText(value.toString());
+        if ("Quản lý".equals(value)) {
+            setBackground(new Color(255, 229, 236));
+            setForeground(new Color(224, 49, 99)); 
+        } else if ("Tiếp tân".equals(value)) {
+            setBackground(new Color(229, 255, 239)); 
+            setForeground(new Color(34, 153, 84)); 
+        } else {
+            setBackground(table.getBackground());
+            setForeground(table.getForeground());
+        }
+        return this;
     }
 }

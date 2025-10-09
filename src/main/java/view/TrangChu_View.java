@@ -42,12 +42,12 @@ public class TrangChu_View extends JPanel {
 
         headerPanel.add(userPanel, BorderLayout.EAST);
 
-        // ===== Thanh menu ngang =====
+        //Thanh menu ngang
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(new Color(230, 230, 230));
         menuBar.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
 
-        // ===== Content Panel (CardLayout) =====
+        //Content Panel
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
 
@@ -59,7 +59,7 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new NhanVien_View(), "Nhân viên");
         contentPanel.add(new TroGiup_View(), "Trợ giúp");
 
-        // ===== Menu "Hệ thống" =====
+        //Menu Hệ thống
         JMenu menuHeThong = new JMenu("Hệ thống");
         JMenuItem mDangXuat = new JMenuItem("Đăng xuất");
         JMenuItem mDoiMatKhau = new JMenuItem("Đổi mật khẩu");
@@ -69,14 +69,14 @@ public class TrangChu_View extends JPanel {
         menuHeThong.addSeparator();
         menuHeThong.add(mThoat);
 
-        // ===== Menu "Bàn" =====
+        //Menu Bàn
         JMenu menuBan = new JMenu("Bàn");
         JMenuItem mQLBan = new JMenuItem("Quản lý bàn");
         JMenuItem mQLDatBan = new JMenuItem("Quản lý đặt bàn");
         menuBan.add(mQLBan);
         menuBan.add(mQLDatBan);
 
-        // ===== Menu "Thực đơn" =====
+        //Menu Thực đơn
         JMenu menuThucDon = new JMenu("Thực đơn");
         JMenuItem mQLMon = new JMenuItem("Quản lý món ăn");
         JMenuItem mXemTD = new JMenuItem("Xem thực đơn");
@@ -85,7 +85,7 @@ public class TrangChu_View extends JPanel {
         menuThucDon.add(mXemTD);
         menuThucDon.add(mTraCuuMonAn);
 
-        // ===== Menu "Hóa đơn" =====
+        //Menu Hóa đơn
         JMenu menuHoaDon = new JMenu("Hóa đơn");
         JMenuItem mQLHD = new JMenuItem("Quản lý hóa đơn");
         JMenuItem mQLThue = new JMenuItem("Quản lý thuế");
@@ -94,7 +94,7 @@ public class TrangChu_View extends JPanel {
         menuHoaDon.add(mQLThue);
         menuHoaDon.add(mQLKM);
 
-        // ===== Menu "Khách hàng" =====
+        //Menu Khách hàng
         JMenu menuKH = new JMenu("Khách hàng");
         JMenuItem mQLKH = new JMenuItem("Quản lý khách hàng");
         JMenuItem mQLDiem = new JMenuItem("Quản lý điểm tích lũy");
@@ -102,7 +102,7 @@ public class TrangChu_View extends JPanel {
         menuKH.add(mQLKH);
         menuKH.add(mQLDiem);
         menuKH.add(mTraCuuKhachHang);
-        // ===== Menu "Nhân viên" =====
+        //Menu Nhân viên
         JMenu menuNV = new JMenu("Nhân viên");
         JMenuItem mQuanLy = new JMenuItem("Quản lý nhân viên");
         JMenuItem mTraCuu = new JMenuItem("Tra cứu");
@@ -114,12 +114,12 @@ public class TrangChu_View extends JPanel {
         menuNV.add(mThongKe);
         menuNV.add(mKhuyenMai);
 
-        // ===== Menu "Trợ giúp" =====
+        //Menu Trợ giúp
         JMenu menuTG = new JMenu("Trợ giúp");
         JMenuItem mHuongDan = new JMenuItem("Hướng dẫn sử dụng");
         menuTG.add(mHuongDan);
 
-        // ===== Thêm vào menuBar =====
+        //Thêm vào menuBar
         menuBar.add(menuHeThong);
         menuBar.add(menuBan);
         menuBar.add(menuThucDon);
@@ -128,7 +128,7 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuNV);
         menuBar.add(menuTG);
 
-        // ===== Gắn hành động chuyển view =====
+        //Gắn hành động chuyển view
         mQuanLy.addActionListener(e -> cardLayout.show(contentPanel, "Nhân viên"));
         mQLBan.addActionListener(e -> cardLayout.show(contentPanel, "Bàn"));
         mQLHD.addActionListener(e -> cardLayout.show(contentPanel, "Hóa đơn"));
@@ -137,7 +137,7 @@ public class TrangChu_View extends JPanel {
         mHuongDan.addActionListener(e -> cardLayout.show(contentPanel, "Trợ giúp"));
         mDangXuat.addActionListener(e -> JOptionPane.showMessageDialog(this, "Đăng xuất thành công!"));
 
-        // ===== Thêm phần trên vào layout =====
+        //Thêm phần trên vào layout
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(headerPanel, BorderLayout.NORTH);
         topPanel.add(menuBar, BorderLayout.SOUTH);
@@ -145,7 +145,7 @@ public class TrangChu_View extends JPanel {
         this.add(topPanel, BorderLayout.NORTH);
         this.add(contentPanel, BorderLayout.CENTER);
 
-        // ===== Mặc định hiển thị "Hệ thống" =====
+        //Mặc định hiển thị "Hệ thống"
         cardLayout.show(contentPanel, "Hệ Thống");
     }
 }

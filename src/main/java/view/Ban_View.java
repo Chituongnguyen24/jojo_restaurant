@@ -17,7 +17,6 @@ public class Ban_View extends JPanel {
         
         initializeTableData();
         
-        // Main container
         JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
         mainPanel.setBackground(new Color(245, 245, 240));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));

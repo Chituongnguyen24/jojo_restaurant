@@ -16,14 +16,14 @@ public class HeThong_View extends JPanel {
         setLayout(new BorderLayout());
         setOpaque(false);
         JLabel label = new JLabel("Chào mừng đến với Hệ thống quản lý Nhà hàng JOJO!", JLabel.CENTER);
-        label.setFont(new Font("Arial", Font.BOLD, 26)); // chữ to hơn
+        label.setFont(new Font("Arial", Font.BOLD, 26)); 
         label.setForeground(Color.WHITE);
         label.setOpaque(false);
 
         // Đồng hồ
         clockLabel = new JLabel();
-        clockLabel.setFont(new Font("Consolas", Font.BOLD, 36)); // 💥 Tăng kích thước đồng hồ
-        clockLabel.setForeground(new Color(255, 230, 180)); // màu sáng ấm
+        clockLabel.setFont(new Font("Consolas", Font.BOLD, 36)); 
+        clockLabel.setForeground(new Color(255, 230, 180)); 
         clockLabel.setHorizontalAlignment(SwingConstants.RIGHT);
         clockLabel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 40));
 
