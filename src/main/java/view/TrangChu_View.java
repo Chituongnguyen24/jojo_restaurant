@@ -52,11 +52,20 @@ public class TrangChu_View extends JPanel {
         contentPanel = new JPanel(cardLayout);
 
         contentPanel.add(new HeThong_View(), "Hệ Thống");
-        contentPanel.add(new Ban_View(), "Bàn");
+        contentPanel.add(new Ban_View(), "Quản lý bàn");
+        contentPanel.add(new Ban_DatBan_View(), "Quản lý đặt bàn");
+        
         contentPanel.add(new ThucDon_View(), "Thực đơn");
-        contentPanel.add(new HoaDon_View(), "Hóa đơn");
-        contentPanel.add(new KhachHang_View(), "Khách hàng");
+        
+        contentPanel.add(new HoaDon_View(), "Quản lý hóa đơn");
+        contentPanel.add(new Thue_View(), "Quản lý thuế");
+        contentPanel.add(new KhuyenMai_View(), "Quản lý khuyến mãi");
+        
+        contentPanel.add(new KhachHang_View(), "Quản lý khách hàng");
+        contentPanel.add(new KhachHang_DiemTichLuy_View(), "Quản lý điểm tích lũy");
+        
         contentPanel.add(new NhanVien_View(), "Nhân viên");
+        
         contentPanel.add(new TroGiup_View(), "Trợ giúp");
 
         //Menu Hệ thống
@@ -129,11 +138,27 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuTG);
 
         //Gắn hành động chuyển view
+        
+     // Menu Bàn
+        mQLBan.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý bàn"));
+        mQLDatBan.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý đặt bàn"));
+
+        // Menu Thực đơn
+        mQLMon.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý thực đơn"));
+        mXemTD.addActionListener(e -> cardLayout.show(contentPanel, "Thực đơn"));
+        mTraCuuMonAn.addActionListener(e -> cardLayout.show(contentPanel, "Thực đơn"));
+
+        // Menu Hóa đơn
+        mQLHD.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý hóa đơn"));
+        mQLThue.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý thuế"));
+        mQLKM.addActionListener(e -> cardLayout.show(contentPanel, "Quản lts khuyến mãi"));
+
+        // Menu Khách hàng
+        mQLKH.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý khách hàng"));
+        mQLDiem.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý điểm tích lũy"));
+        mTraCuuKhachHang.addActionListener(e -> cardLayout.show(contentPanel, "Khách hàng"));
+        
         mQuanLy.addActionListener(e -> cardLayout.show(contentPanel, "Nhân viên"));
-        mQLBan.addActionListener(e -> cardLayout.show(contentPanel, "Bàn"));
-        mQLHD.addActionListener(e -> cardLayout.show(contentPanel, "Hóa đơn"));
-        mQLKH.addActionListener(e -> cardLayout.show(contentPanel, "Khách hàng"));
-        mQLMon.addActionListener(e -> cardLayout.show(contentPanel, "Thực đơn"));
         mHuongDan.addActionListener(e -> cardLayout.show(contentPanel, "Trợ giúp"));
         mDangXuat.addActionListener(e -> JOptionPane.showMessageDialog(this, "Đăng xuất thành công!"));
 
