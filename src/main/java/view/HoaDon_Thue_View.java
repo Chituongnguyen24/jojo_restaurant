@@ -1,40 +1,38 @@
 package view;
 
-import entity.HoaDon;
+import entity.Thue;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableModel;
 
-import dao.HoaDon_DAO;
 import dao.HoaDon_Thue_DAO;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-public class HoaDon_View extends JPanel {
+public class HoaDon_Thue_View extends JPanel {
     private JTable table;
     private JTextField searchField;
     private DefaultTableModel model;
-    private HoaDon_DAO hoaDonDAO;
+    private HoaDon_Thue_DAO thueDAO;
 
-    public HoaDon_View() {
+    public HoaDon_Thue_View() {
         setLayout(new BorderLayout());
         setBackground(new Color(252, 249, 244));
+//        loadData();
         // ===== HEADER =====
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         header.setBorder(new EmptyBorder(10, 20, 10, 20));
 
-        JLabel title = new JLabel("Quản lý hoá đơn");
+        JLabel title = new JLabel("Quản lý thuế");
         title.setFont(new Font("Arial", Font.BOLD, 22));
         title.setForeground(new Color(40, 30, 20));
 
-        JLabel subtitle = new JLabel("Tạo và quản lý hóa đơn thanh toán");
+        JLabel subtitle = new JLabel("Tạo và quản lý thông tin thuế");
         subtitle.setFont(new Font("Arial", Font.PLAIN, 14));
         subtitle.setForeground(new Color(100, 90, 80));
 
@@ -43,29 +41,16 @@ public class HoaDon_View extends JPanel {
         titlePanel.add(title);
         titlePanel.add(subtitle);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        buttonPanel.setOpaque(false);
-
-        JButton btnAdd = new JButton("+ Tạo hóa đơn mới");
+        JButton btnAdd = new JButton("+ Thêm thuế mới");
         btnAdd.setBackground(new Color(220, 100, 30));
         btnAdd.setForeground(Color.WHITE);
         btnAdd.setFocusPainted(false);
         btnAdd.setFont(new Font("Arial", Font.BOLD, 13));
         btnAdd.setBorder(new EmptyBorder(8, 15, 8, 15));
-        btnAdd.addActionListener(e -> JOptionPane.showMessageDialog(this, "Tạo hóa đơn mới - Gọi DAO.add()"));
-
-        JButton btnThanhToan = new JButton("Thanh toán");
-        btnThanhToan.setBackground(new Color(100, 200, 100));
-        btnThanhToan.setForeground(Color.WHITE);
-        btnThanhToan.setFocusPainted(false);
-        btnThanhToan.setFont(new Font("Arial", Font.BOLD, 13));
-        btnThanhToan.setBorder(new EmptyBorder(8, 15, 8, 15));
-
-        buttonPanel.add(btnAdd);
-        buttonPanel.add(btnThanhToan);
+        btnAdd.addActionListener(e -> JOptionPane.showMessageDialog(this, "Thêm thuế mới - Gọi DAO.add()"));
 
         header.add(titlePanel, BorderLayout.WEST);
-        header.add(buttonPanel, BorderLayout.EAST);
+        header.add(btnAdd, BorderLayout.EAST);
 
         add(header, BorderLayout.NORTH);
 
@@ -74,37 +59,39 @@ public class HoaDon_View extends JPanel {
         statsPanel.setOpaque(false);
         statsPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
         
-        statsPanel.add(createStatBox("5", "Chưa thanh toán", new Color(255, 100, 100)));
-        statsPanel.add(createStatBox("10", "Đã thanh toán", new Color(100, 200, 100)));
-        statsPanel.add(createStatBox("15", "Tổng hóa đơn", new Color(255, 153, 51)));
+        statsPanel.add(createStatBox("3", "Đang áp dụng", new Color(100, 200, 100)));
+        statsPanel.add(createStatBox("1", "Tạm ngưng", new Color(255, 100, 100)));
+        statsPanel.add(createStatBox("4", "Tổng loại thuế", new Color(255, 153, 51)));
 
         // ===== SEARCH =====
         JPanel searchPanel = new JPanel(new BorderLayout(10, 0));
         searchPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
         searchPanel.setOpaque(false);
 
-        searchField = new JTextField("🔍 Tìm kiếm hóa đơn...");
+        searchField = new JTextField("🔍 Tìm kiếm thuế...");
         searchField.setFont(new Font("Arial", Font.ITALIC, 13));
         searchField.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(210, 120, 40), 2, true),
                 new EmptyBorder(5, 10, 5, 10)
         ));
+//        searchField.addActionListener(e -> filterTable());  // Simple search on Enter
 
         JButton btnFilter = new JButton("Tất cả ▾");
         btnFilter.setFocusPainted(false);
+//        btnFilter.addActionListener(e -> loadData());  // Reload all
 
         searchPanel.add(searchField, BorderLayout.CENTER);
         searchPanel.add(btnFilter, BorderLayout.EAST);
 
         // ===== TABLE =====
-        String[] cols = {"Mã HD", "Khách hàng", "Ngày lập", "Tổng tiền", "Phương thức", "Trạng thái", "Thao tác"};
+        String[] cols = {"Mã thuế", "Tên thuế", "Phần trăm (%)", "Mô tả", "Trạng thái", "Thao tác"};
         model = new DefaultTableModel(cols, 0);
         table = new JTable(model);
         table.setRowHeight(35);
         table.setFont(new Font("Arial", Font.PLAIN, 13));
         table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 13));
 
-        // Thêm ButtonRenderer/Editor cho cột "Thao tác" (copy từ Ban_DatBan_View)
+        // Thêm ButtonRenderer/Editor cho cột "Thao tác"
 //        table.getColumn("Thao tác").setCellRenderer(new ButtonRenderer());
 //        table.getColumn("Thao tác").setCellEditor(new ButtonEditor(this));
 
@@ -112,11 +99,11 @@ public class HoaDon_View extends JPanel {
         scroll.setBorder(new EmptyBorder(10, 20, 20, 20));
 
         JPanel tablePanel = new JPanel(new BorderLayout());
-        JLabel lblTableTitle = new JLabel("Danh sách hóa đơn");
+        JLabel lblTableTitle = new JLabel("Danh sách thuế");
         lblTableTitle.setFont(new Font("Arial", Font.BOLD, 16));
         lblTableTitle.setBorder(new EmptyBorder(5, 20, 5, 0));
 
-        JLabel lblTableSub = new JLabel("Quản lý thông tin hóa đơn");
+        JLabel lblTableSub = new JLabel("Quản lý thông tin thuế");
         lblTableSub.setFont(new Font("Arial", Font.PLAIN, 13));
         lblTableSub.setForeground(Color.DARK_GRAY);
         lblTableSub.setBorder(new EmptyBorder(0, 20, 10, 0));
@@ -139,8 +126,8 @@ public class HoaDon_View extends JPanel {
         add(content, BorderLayout.CENTER);
     }
 
+
     private JPanel createStatBox(String value, String label, Color color) {
-        // Unchanged
         JPanel box = new JPanel(new BorderLayout());
         box.setBackground(Color.WHITE);
         box.setBorder(new CompoundBorder(

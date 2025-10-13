@@ -2,7 +2,6 @@ package view;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 
 public class TrangChu_View extends JPanel {
     private JPanel contentPanel;
@@ -58,8 +57,8 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new ThucDon_View(), "Thực đơn");
         
         contentPanel.add(new HoaDon_View(), "Quản lý hóa đơn");
-        contentPanel.add(new Thue_View(), "Quản lý thuế");
-        contentPanel.add(new KhuyenMai_View(), "Quản lý khuyến mãi");
+        contentPanel.add(new HoaDon_Thue_View(), "Quản lý thuế");
+        contentPanel.add(new HoaDon_KhuyenMai_View(), "Quản lý khuyến mãi");
         
         contentPanel.add(new KhachHang_View(), "Quản lý khách hàng");
         contentPanel.add(new KhachHang_DiemTichLuy_View(), "Quản lý điểm tích lũy");
@@ -137,7 +136,6 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuNV);
         menuBar.add(menuTG);
 
-        //Gắn hành động chuyển view
         
      // Menu Bàn
         mQLBan.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý bàn"));
@@ -151,7 +149,7 @@ public class TrangChu_View extends JPanel {
         // Menu Hóa đơn
         mQLHD.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý hóa đơn"));
         mQLThue.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý thuế"));
-        mQLKM.addActionListener(e -> cardLayout.show(contentPanel, "Quản lts khuyến mãi"));
+        mQLKM.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý khuyến mãi"));
 
         // Menu Khách hàng
         mQLKH.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý khách hàng"));

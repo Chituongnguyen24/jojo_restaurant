@@ -1,118 +1,41 @@
 package entity;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 public class HoaDon {
-    private String maHoaDon;
-    private String maKhachHang;
-    private Date ngayLap;
+    private String maHD;
+    private String khachHang;
+    private LocalDate ngayLap;
+    private double tongTien;
     private String phuongThuc;
-    private String maKhuyenMai;
-    private String maThue;
-    private Date gioVao;
-    private Date gioRa;
-    private String maNhanVien;
-    private String maPhieu;
+    private String trangThai;
 
-    public String getMaHoaDon() {
-        return maHoaDon;
-    }
-
-    public void setMaHoaDon(String maHoaDon) {
-        this.maHoaDon = maHoaDon;
-    }
-
-    public String getMaKhachHang() {
-        return maKhachHang;
-    }
-
-    public void setMaKhachHang(String maKhachHang) {
-        this.maKhachHang = maKhachHang;
-    }
-
-    public Date getNgayLap() {
-        return ngayLap;
-    }
-
-    public void setNgayLap(Date ngayLap) {
+    // Constructor
+    public HoaDon(String maHD, String khachHang, LocalDate ngayLap, double tongTien, String phuongThuc, String trangThai) {
+        this.maHD = maHD;
+        this.khachHang = khachHang;
         this.ngayLap = ngayLap;
-    }
-
-    public String getPhuongThuc() {
-        return phuongThuc;
-    }
-
-    public void setPhuongThuc(String phuongThuc) {
+        this.tongTien = tongTien;
         this.phuongThuc = phuongThuc;
+        this.trangThai = trangThai;
     }
 
-    public String getMaKhuyenMai() {
-        return maKhuyenMai;
-    }
+    // Getters/Setters
+    public String getMaHD() { return maHD; }
+    public void setMaHD(String maHD) { this.maHD = maHD; }
 
-    public void setMaKhuyenMai(String maKhuyenMai) {
-        this.maKhuyenMai = maKhuyenMai;
-    }
+    public String getKhachHang() { return khachHang; }
+    public void setKhachHang(String khachHang) { this.khachHang = khachHang; }
 
-    public String getMaThue() {
-        return maThue;
-    }
+    public LocalDate getNgayLap() { return ngayLap; }
+    public void setNgayLap(LocalDate ngayLap) { this.ngayLap = ngayLap; }
 
-    public void setMaThue(String maThue) {
-        this.maThue = maThue;
-    }
+    public double getTongTien() { return tongTien; }
+    public void setTongTien(double tongTien) { this.tongTien = tongTien; }
 
-    public Date getGioVao() {
-        return gioVao;
-    }
+    public String getPhuongThuc() { return phuongThuc; }
+    public void setPhuongThuc(String phuongThuc) { this.phuongThuc = phuongThuc; }
 
-    public void setGioVao(Date gioVao) {
-        this.gioVao = gioVao;
-    }
-
-    public Date getGioRa() {
-        return gioRa;
-    }
-
-    public void setGioRa(Date gioRa) {
-        this.gioRa = gioRa;
-    }
-
-    public String getMaNhanVien() {
-        return maNhanVien;
-    }
-
-    public void setMaNhanVien(String maNhanVien) {
-        this.maNhanVien = maNhanVien;
-    }
-
-    public String getMaPhieu() {
-        return maPhieu;
-    }
-
-    public void setMaPhieu(String maPhieu) {
-        this.maPhieu = maPhieu;
-    }
-
-    @Override
-    public String toString() {
-        return "HoaDon [maHoaDon=" + maHoaDon + ", maKhachHang=" + maKhachHang + ", ngayLap=" + ngayLap
-                + ", phuongThuc=" + phuongThuc + ", maKhuyenMai=" + maKhuyenMai + ", maThue=" + maThue
-                + ", gioVao=" + gioVao + ", gioRa=" + gioRa + ", maNhanVien=" + maNhanVien + ", maPhieu=" + maPhieu + "]";
-    }
-
-    public HoaDon(String maHoaDon, String maKhachHang, Date ngayLap, String phuongThuc, String maKhuyenMai, String maThue, Date gioVao, Date gioRa, String maNhanVien, String maPhieu) {
-        this.maHoaDon = maHoaDon;
-        this.maKhachHang = maKhachHang;
-        this.ngayLap = ngayLap;
-        this.phuongThuc = phuongThuc;
-        this.maKhuyenMai = maKhuyenMai;
-        this.maThue = maThue;
-        this.gioVao = gioVao;
-        this.gioRa = gioRa;
-        this.maNhanVien = maNhanVien;
-        this.maPhieu = maPhieu;
-    }
-
-    public HoaDon() {}
+    public String getTrangThai() { return trangThai; }
+    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
 }

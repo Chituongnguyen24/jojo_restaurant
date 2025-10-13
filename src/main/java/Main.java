@@ -1,5 +1,4 @@
 import javax.swing.*;
-import java.awt.*;
 import view.TrangChu_View;
 
 public class Main {
