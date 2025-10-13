@@ -8,11 +8,11 @@ import javax.swing.table.DefaultTableModel;
 
 import java.awt.*;
 
-public class HoaDon_View extends JPanel {
+public class Ban_DatBan_View extends JPanel {
     private JTable table;
     private JTextField searchField;
 
-    public HoaDon_View() {
+    public Ban_DatBan_View() {
         setLayout(new BorderLayout());
         setBackground(new Color(252, 249, 244));
 
@@ -21,11 +21,11 @@ public class HoaDon_View extends JPanel {
         header.setOpaque(false);
         header.setBorder(new EmptyBorder(10, 20, 10, 20));
 
-        JLabel title = new JLabel("Quản lý hoá đơn");
+        JLabel title = new JLabel("Quản lý đặt bàn");
         title.setFont(new Font("Arial", Font.BOLD, 22));
         title.setForeground(new Color(40, 30, 20));
 
-        JLabel subtitle = new JLabel("Tạo và quản lý hóa đơn thanh toán");
+        JLabel subtitle = new JLabel("Tạo và quản lý phiếu đặt bàn");
         subtitle.setFont(new Font("Arial", Font.PLAIN, 14));
         subtitle.setForeground(new Color(100, 90, 80));
 
@@ -34,7 +34,7 @@ public class HoaDon_View extends JPanel {
         titlePanel.add(title);
         titlePanel.add(subtitle);
 
-        JButton btnAdd = new JButton("+ Tạo hóa đơn mới");
+        JButton btnAdd = new JButton("+ Tạo phiếu đặt bàn mới");
         btnAdd.setBackground(new Color(220, 100, 30));
         btnAdd.setForeground(Color.WHITE);
         btnAdd.setFocusPainted(false);
@@ -50,18 +50,17 @@ public class HoaDon_View extends JPanel {
         JPanel statsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         statsPanel.setOpaque(false);
         statsPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
-        
-        statsPanel.add(createStatBox("5", "Chưa thanh toán", new Color(255, 100, 100)));
-        statsPanel.add(createStatBox("10", "Đã thanh toán", new Color(100, 200, 100)));
-        statsPanel.add(createStatBox("15", "Tổng hóa đơn", new Color(255, 153, 51)));
-        statsPanel.add(createStatBox("3456789", "Doanh thu", new Color(100, 200, 100)));
+
+        statsPanel.add(createStatBox("10", "Tổng", new Color(255, 153, 51)));
+        statsPanel.add(createStatBox("6", "Đã xác nhận", new Color(100, 200, 100)));
+        statsPanel.add(createStatBox("4", "Chờ xác nhận", new Color(255, 200, 100)));
 
         // ===== SEARCH =====
         JPanel searchPanel = new JPanel(new BorderLayout(10, 0));
         searchPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
         searchPanel.setOpaque(false);
 
-        searchField = new JTextField("🔍 Tìm kiếm hóa đơn...");
+        searchField = new JTextField("🔍 Tìm kiếm phiếu đặt...");
         searchField.setFont(new Font("Arial", Font.ITALIC, 13));
         searchField.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(new Color(210, 120, 40), 2, true),
@@ -75,11 +74,11 @@ public class HoaDon_View extends JPanel {
         searchPanel.add(btnFilter, BorderLayout.EAST);
 
         // ===== TABLE =====
-        String[] cols = {"Mã HD", "Khách hàng", "Ngày lập", "Tổng tiền", "Phương thức", "Trạng thái", "Thao tác"};
+        String[] cols = {"Mã Phiếu", "Khách Hàng", "Bàn", "Thời Gian Đặt", "Tiền Cọc", "Trạng Thái", "Thao Tác"};
         Object[][] data = {
-                {"HD001", "Nguyễn Văn A", "2025-10-01", "1,500,000đ", "Tiền mặt", "Đã thanh toán", "✎ 🗑"},
-                {"HD002", "Trần Thị B", "2025-10-02", "2,300,000đ", "Thẻ tín dụng", "Chưa thanh toán", "✎ 🗑"},
-                {"HD003", "Lê Hoàng C", "2025-10-03", "950,000đ", "Chuyển khoản", "Đã thanh toán", "✎ 🗑"}
+                {"PDB001", "Nguyễn Văn A", "B001", "2025-10-01 18:00", "500,000đ", "Đã xác nhận", "✎ 🗑"},
+                {"PDB002", "Trần Thị B", "B002", "2025-10-02 19:30", "0đ", "Chờ xác nhận", "✎ 🗑"},
+                {"PDB003", "Lê Hoàng C", "B003", "2025-10-03 20:00", "300,000đ", "Đã xác nhận", "✎ 🗑"}
         };
 
         DefaultTableModel model = new DefaultTableModel(data, cols);
@@ -92,11 +91,11 @@ public class HoaDon_View extends JPanel {
         scroll.setBorder(new EmptyBorder(10, 20, 20, 20));
 
         JPanel tablePanel = new JPanel(new BorderLayout());
-        JLabel lblTableTitle = new JLabel("Danh sách hóa đơn");
+        JLabel lblTableTitle = new JLabel("Danh sách phiếu đặt bàn");
         lblTableTitle.setFont(new Font("Arial", Font.BOLD, 16));
         lblTableTitle.setBorder(new EmptyBorder(5, 20, 5, 0));
 
-        JLabel lblTableSub = new JLabel("Quản lý thông tin hóa đơn");
+        JLabel lblTableSub = new JLabel("Quản lý thông tin đặt bàn");
         lblTableSub.setFont(new Font("Arial", Font.PLAIN, 13));
         lblTableSub.setForeground(Color.DARK_GRAY);
         lblTableSub.setBorder(new EmptyBorder(0, 20, 10, 0));
