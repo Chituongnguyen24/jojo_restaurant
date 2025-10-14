@@ -1,6 +1,9 @@
 package view;
 
 import javax.swing.*;
+
+import view.NhanVien.NhanVien_TraCuu_View;
+import view.NhanVien.NhanVien_View;
 import java.awt.*;
 import java.awt.event.*;
 
@@ -65,7 +68,7 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new KhachHang_DiemTichLuy_View(), "Quản lý điểm tích lũy");
         
         contentPanel.add(new NhanVien_View(), "Nhân viên");
-        
+        contentPanel.add(new NhanVien_TraCuu_View(), "Tra cứu");
         contentPanel.add(new TroGiup_View(), "Trợ giúp");
 
         //Menu Hệ thống
@@ -151,7 +154,7 @@ public class TrangChu_View extends JPanel {
         // Menu Hóa đơn
         mQLHD.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý hóa đơn"));
         mQLThue.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý thuế"));
-        mQLKM.addActionListener(e -> cardLayout.show(contentPanel, "Quản lts khuyến mãi"));
+        mQLKM.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý khuyến mãi"));
 
         // Menu Khách hàng
         mQLKH.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý khách hàng"));
@@ -159,6 +162,7 @@ public class TrangChu_View extends JPanel {
         mTraCuuKhachHang.addActionListener(e -> cardLayout.show(contentPanel, "Khách hàng"));
         
         mQuanLy.addActionListener(e -> cardLayout.show(contentPanel, "Nhân viên"));
+        mTraCuu.addActionListener(e -> cardLayout.show(contentPanel, "Tra cứu"));
         mHuongDan.addActionListener(e -> cardLayout.show(contentPanel, "Trợ giúp"));
         mDangXuat.addActionListener(e -> JOptionPane.showMessageDialog(this, "Đăng xuất thành công!"));
 

@@ -19,7 +19,6 @@ public class ConnectDB {
         try {
             if (con == null || con.isClosed()) {
                 con = DriverManager.getConnection(URL, USER, PASSWORD);
-                System.out.println("Kết nối SQL Server thành công!");
             }
         } catch (SQLException e) {
             System.err.println("Lỗi kết nối SQL Server!");

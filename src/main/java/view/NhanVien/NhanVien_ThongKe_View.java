@@ -1,4 +1,4 @@
-package view;
+package view.NhanVien;
 
 
 import javax.swing.*;

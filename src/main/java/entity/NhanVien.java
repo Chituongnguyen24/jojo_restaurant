@@ -6,7 +6,7 @@ public class NhanVien {
     private boolean gioiTinh;
     private String sdt;
     private String email;
-    private TaiKhoan taiKhoan; // Liên kết với tài khoản, trong đó có vai trò
+    private TaiKhoan taiKhoan;
 
     public NhanVien() {}
 
