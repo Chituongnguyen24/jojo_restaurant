@@ -157,7 +157,7 @@ public class NhanVien_View extends JPanel {
             model.addRow(new Object[]{
                     nv.getMaNV(),
                     nv.getTenNhanVien(),
-                    nv.isGioiTinh() ? "Nữ" : "Nam",
+                    nv.isGioiTinh() ? "Nam" : "Nữ",
                     nv.getSdt(),
                     nv.getEmail(),
                     tk != null ? tk.getTenDangNhap() : "Chưa có",
@@ -245,7 +245,7 @@ public class NhanVien_View extends JPanel {
         return box;
     }
 
-    // ===== Button Renderer =====
+    // Button Renderer
     class ButtonRenderer extends JButton implements TableCellRenderer {
         private final Color bgColor;
         private final Color fgColor;
@@ -280,7 +280,7 @@ public class NhanVien_View extends JPanel {
         }
     }
 
-    // ===== Button Editor =====
+    // Button Editor
     class ButtonEditor extends DefaultCellEditor {
         private JButton button;
         private boolean isPushed;
