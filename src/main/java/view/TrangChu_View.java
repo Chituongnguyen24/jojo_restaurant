@@ -2,6 +2,7 @@ package view;
 
 import javax.swing.*;
 
+import view.NhanVien.NhanVien_ThongKe_View;
 import view.NhanVien.NhanVien_TraCuu_View;
 import view.NhanVien.NhanVien_View;
 import java.awt.*;
@@ -69,7 +70,7 @@ public class TrangChu_View extends JPanel {
         
         contentPanel.add(new NhanVien_View(), "Nhân viên");
         contentPanel.add(new NhanVien_TraCuu_View(), "Tra cứu");
-        contentPanel.add(new TroGiup_View(), "Trợ giúp");
+        contentPanel.add(new NhanVien_ThongKe_View(), "Thống kê");
 
         //Menu Hệ thống
         JMenu menuHeThong = new JMenu("Hệ thống");
@@ -126,10 +127,6 @@ public class TrangChu_View extends JPanel {
         menuNV.add(mThongKe);
         menuNV.add(mKhuyenMai);
 
-        //Menu Trợ giúp
-        JMenu menuTG = new JMenu("Trợ giúp");
-        JMenuItem mHuongDan = new JMenuItem("Hướng dẫn sử dụng");
-        menuTG.add(mHuongDan);
 
         //Thêm vào menuBar
         menuBar.add(menuHeThong);
@@ -138,7 +135,6 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuHoaDon);
         menuBar.add(menuKH);
         menuBar.add(menuNV);
-        menuBar.add(menuTG);
 
         //Gắn hành động chuyển view
         
@@ -163,7 +159,7 @@ public class TrangChu_View extends JPanel {
         
         mQuanLy.addActionListener(e -> cardLayout.show(contentPanel, "Nhân viên"));
         mTraCuu.addActionListener(e -> cardLayout.show(contentPanel, "Tra cứu"));
-        mHuongDan.addActionListener(e -> cardLayout.show(contentPanel, "Trợ giúp"));
+        mThongKe.addActionListener(e -> cardLayout.show(contentPanel, "Thống kê"));
         mDangXuat.addActionListener(e -> JOptionPane.showMessageDialog(this, "Đăng xuất thành công!"));
 
         //Thêm phần trên vào layout

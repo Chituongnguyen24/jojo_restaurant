@@ -24,7 +24,7 @@ public class NhanVien_TraCuu_View extends JPanel {
 
     public NhanVien_TraCuu_View() {
         setLayout(new BorderLayout());
-        setBackground(new Color(251, 248, 241)); // Nền be #FBF8F1
+        setBackground(new Color(251, 248, 241)); 
 
         // ===== HEADER =====
         JPanel header = new JPanel(new BorderLayout());
@@ -192,7 +192,6 @@ public class NhanVien_TraCuu_View extends JPanel {
         return (s == null) ? "" : s.toLowerCase();
     }
 
-    // ===== UI Helpers =====
     private JButton createRoundedButton(String text, Color bg, Color fg) {
         JButton btn = new JButton(text) {
             @Override
