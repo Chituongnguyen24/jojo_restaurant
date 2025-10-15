@@ -4,6 +4,8 @@ import javax.swing.*;
 
 import view.NhanVien.NhanVien_TraCuu_View;
 import view.NhanVien.NhanVien_View;
+import view.ThucDon.ThucDon_View;
+
 import java.awt.*;
 import java.awt.event.*;
 
@@ -91,7 +93,7 @@ public class TrangChu_View extends JPanel {
         //Menu Thực đơn
         JMenu menuThucDon = new JMenu("Thực đơn");
         JMenuItem mQLMon = new JMenuItem("Quản lý món ăn");
-        JMenuItem mXemTD = new JMenuItem("Xem thực đơn");
+        JMenuItem mXemTD = new JMenuItem("Quản lý thực đơn");
         JMenuItem mTraCuuMonAn = new JMenuItem("Tra Cứu");
         menuThucDon.add(mQLMon);
         menuThucDon.add(mXemTD);
