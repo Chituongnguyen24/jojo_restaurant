@@ -8,7 +8,6 @@ import view.NhanVien.NhanVien_View;
 import view.ThucDon.ThucDon_View;
 
 import java.awt.*;
-import java.awt.event.*;
 
 public class TrangChu_View extends JPanel {
     private JPanel contentPanel;
@@ -64,8 +63,8 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new ThucDon_View(), "Thực đơn");
         
         contentPanel.add(new HoaDon_View(), "Quản lý hóa đơn");
-        contentPanel.add(new Thue_View(), "Quản lý thuế");
-        contentPanel.add(new KhuyenMai_View(), "Quản lý khuyến mãi");
+        contentPanel.add(new HoaDon_Thue_View(), "Quản lý thuế");
+        contentPanel.add(new HoaDon_KhuyenMai_View(), "Quản lý khuyến mãi");
         
         contentPanel.add(new KhachHang_View(), "Quản lý khách hàng");
         contentPanel.add(new KhachHang_DiemTichLuy_View(), "Quản lý điểm tích lũy");
@@ -138,7 +137,6 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuKH);
         menuBar.add(menuNV);
 
-        //Gắn hành động chuyển view
         
      // Menu Bàn
         mQLBan.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý bàn"));

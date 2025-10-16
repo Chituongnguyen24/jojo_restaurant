@@ -1,37 +1,34 @@
 package entity;
 
 public class Thue {
-	private String maSoThue;
-	private String tenThue;
-	private double tiLeThue;
-	public Thue() {
-	}
-	public Thue(String maSoThue, String tenThue, double tiLeThue) {
-		this.maSoThue = maSoThue;
-		this.tenThue = tenThue;
-		this.tiLeThue = tiLeThue;
-	}
-	public String getMaSoThue() {
-		return maSoThue;
-	}
-	public void setMaSoThue(String maSoThue) {
-		this.maSoThue = maSoThue;
-	}
-	public String getTenThue() {
-		return tenThue;
-	}
-	public void setTenThue(String tenThue) {
-		this.tenThue = tenThue;
-	}
-	public double getTiLeThue() {
-		return tiLeThue;
-	}
-	public void setTiLeThue(double tiLeThue) {
-		this.tiLeThue = tiLeThue;
-	}
-	@Override
-	public String toString() {
-		return "Thue [maSoThue=" + maSoThue + ", tenThue=" + tenThue + ", tiLeThue=" + tiLeThue + "]";
-	}
-	
+    private String maThue;
+    private String tenThue;
+    private double phanTram;
+    private String moTa;
+    private String trangThai;
+
+    // Constructor
+    public Thue(String maThue, String tenThue, double phanTram, String moTa, String trangThai) {
+        this.maThue = maThue;
+        this.tenThue = tenThue;
+        this.phanTram = phanTram;
+        this.moTa = moTa;
+        this.trangThai = trangThai;
+    }
+
+    // Getters/Setters
+    public String getMaThue() { return maThue; }
+    public void setMaThue(String maThue) { this.maThue = maThue; }
+
+    public String getTenThue() { return tenThue; }
+    public void setTenThue(String tenThue) { this.tenThue = tenThue; }
+
+    public double getPhanTram() { return phanTram; }
+    public void setPhanTram(double phanTram) { this.phanTram = phanTram; }
+
+    public String getMoTa() { return moTa; }
+    public void setMoTa(String moTa) { this.moTa = moTa; }
+
+    public String getTrangThai() { return trangThai; }
+    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
 }

@@ -1,93 +1,41 @@
 package entity;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Random;
+import java.time.LocalDate;
 
 public class KhuyenMai {
-    private String maKhuyenMai;       
-    private float giaTri;          
-    private String tenKhuyenMai;    
-    private String dieuKienApDung;    
-    private boolean trangThai;      
+    private String maKM;
+    private String tenChuongTrinh;
+    private double giamGiaPhanTram;
+    private LocalDate ngayBatDau;
+    private LocalDate ngayKetThuc;
+    private String trangThai;
 
-
-    public KhuyenMai() {
-    }
-
-    public KhuyenMai(String maKhuyenMai, float giaTri, String tenKhuyenMai, String dieuKienApDung, boolean trangThai) {
-        setMaKhuyenMai(maKhuyenMai);
-        setGiaTri(giaTri);
-        setTenKhuyenMai(tenKhuyenMai);
-        setDieuKienApDung(dieuKienApDung);
-        setTrangThai(trangThai);
-    }
-
-    public String getMaKhuyenMai() {
-        return maKhuyenMai;
-    }
-
-    public void setMaKhuyenMai(String maKhuyenMai) {
-        if (maKhuyenMai == null || maKhuyenMai.isEmpty()) {
-            String prefix = new SimpleDateFormat("yyyyMM").format(new Date());
-            int randomNum = new Random().nextInt(9000) + 1000; 
-            this.maKhuyenMai = prefix + "-" + randomNum;
-        } else {
-            if (!maKhuyenMai.matches("\\d{6}-\\d{4}")) {
-                throw new IllegalArgumentException("Mã khuyến mãi phải có định dạng YYYYMM-XXXX");
-            }
-            this.maKhuyenMai = maKhuyenMai;
-        }
-    }
-
-    public float getGiaTri() {
-        return giaTri;
-    }
-
-    public void setGiaTri(float giaTri) {
-        if (giaTri <= 0 || giaTri >= 100) {
-            throw new IllegalArgumentException("Giá trị khuyến mãi phải trong khoảng 1% đến 99%");
-        }
-        this.giaTri = giaTri;
-    }
-
-    public String getTenKhuyenMai() {
-        return tenKhuyenMai;
-    }
-
-    public void setTenKhuyenMai(String tenKhuyenMai) {
-        if (tenKhuyenMai == null || tenKhuyenMai.trim().isEmpty()) {
-            throw new IllegalArgumentException("Tên khuyến mãi không được để trống");
-        }
-        this.tenKhuyenMai = tenKhuyenMai.trim();
-    }
-
-    public String getDieuKienApDung() {
-        return dieuKienApDung;
-    }
-
-    public void setDieuKienApDung(String dieuKienApDung) {
-        if (dieuKienApDung == null || dieuKienApDung.trim().isEmpty()) {
-            throw new IllegalArgumentException("Điều kiện áp dụng không được để trống");
-        }
-        this.dieuKienApDung = dieuKienApDung.trim();
-    }
-
-    public boolean getTrangThai() {
-        return trangThai;
-    }
-
-    public void setTrangThai(boolean trangThai) {
+    // Constructor
+    public KhuyenMai(String maKM, String tenChuongTrinh, double giamGiaPhanTram, LocalDate ngayBatDau, LocalDate ngayKetThuc, String trangThai) {
+        this.maKM = maKM;
+        this.tenChuongTrinh = tenChuongTrinh;
+        this.giamGiaPhanTram = giamGiaPhanTram;
+        this.ngayBatDau = ngayBatDau;
+        this.ngayKetThuc = ngayKetThuc;
         this.trangThai = trangThai;
     }
-    @Override
-    public String toString() {
-        return "KhuyenMai {" +
-                "maKhuyenMai='" + maKhuyenMai + '\'' +
-                ", giaTri=" + giaTri + "%" +
-                ", tenKhuyenMai='" + tenKhuyenMai + '\'' +
-                ", dieuKienApDung='" + dieuKienApDung + '\'' +
-                ", trangThai=" + (trangThai ? "Còn hiệu lực" : "Hết hiệu lực") +
-                '}';
-    }
+
+    // Getters/Setters
+    public String getMaKM() { return maKM; }
+    public void setMaKM(String maKM) { this.maKM = maKM; }
+
+    public String getTenChuongTrinh() { return tenChuongTrinh; }
+    public void setTenChuongTrinh(String tenChuongTrinh) { this.tenChuongTrinh = tenChuongTrinh; }
+
+    public double getGiamGiaPhanTram() { return giamGiaPhanTram; }
+    public void setGiamGiaPhanTram(double giamGiaPhanTram) { this.giamGiaPhanTram = giamGiaPhanTram; }
+
+    public LocalDate getNgayBatDau() { return ngayBatDau; }
+    public void setNgayBatDau(LocalDate ngayBatDau) { this.ngayBatDau = ngayBatDau; }
+
+    public LocalDate getNgayKetThuc() { return ngayKetThuc; }
+    public void setNgayKetThuc(LocalDate ngayKetThuc) { this.ngayKetThuc = ngayKetThuc; }
+
+    public String getTrangThai() { return trangThai; }
+    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
 }

@@ -1,15 +1,15 @@
-package view;
+package view.Ban;
 
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-public class Ban_DatBan_ChiTietPhieuDatBan_View extends JPanel {
+public class ChiTietPhieuDatBan_View extends JPanel {
     private JTable table;
     private JTextField txtMaPhieu, txtTenKH, txtSoBan, txtNgayDat, txtGioDat, txtSoNguoi, txtGhiChu;
 
-    public Ban_DatBan_ChiTietPhieuDatBan_View() {
+    public ChiTietPhieuDatBan_View() {
         setLayout(new BorderLayout());
         setBackground(new Color(252, 249, 244));
 

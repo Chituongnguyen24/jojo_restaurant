@@ -1,4 +1,4 @@
-package view;
+package view.Ban;
 
 import javax.swing.*;
 import java.awt.*;
