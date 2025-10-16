@@ -6,9 +6,9 @@ GO
 CREATE DATABASE [PTUD-JOJO-Restaurant]
  CONTAINMENT = NONE
  ON  PRIMARY 
-( NAME = N'PTUD-JOJO-Restaurant', FILENAME = N'D:\University\HK1-25-26\PTUD\CSDL_JOJO\PTUD-JOJO-Restaurant.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+( NAME = N'PTUD-JOJO-Restaurant', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\PTUD-JOJO-Restaurant.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
  LOG ON 
-( NAME = N'PTUD-JOJO-Restaurant_log', FILENAME = N'D:\University\HK1-25-26\PTUD\CSDL_JOJO\PTUD-JOJO-Restaurant_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+( NAME = N'PTUD-JOJO-Restaurant_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\PTUD-JOJO-Restaurant_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
  WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
 GO
 ALTER DATABASE [PTUD-JOJO-Restaurant] SET COMPATIBILITY_LEVEL = 160
@@ -328,13 +328,13 @@ GO
 INSERT INTO [dbo].[KHACHHANG] ([maKhachHang], [tenKhachHang], [sdt], [email], [diemTichLuy], [laThanhVien]) VALUES
 (N'KH25000001', N'Trần Văn Nam', N'0987654321', N'nam.tran@email.com', 150, 1),
 (N'KH25000002', N'Nguyễn Thị Hoa', N'0986543210', N'hoa.nguyen@email.com', 85, 1),
-(N'KH25000003', N'Lê Văn Long', N'0975432109', N'long.le@email.com', 0, 0),
+(N'KH25000003', N'Lê Văn Long', N'0975432109', N'long.le@email.com', 0, 1),
 (N'KH25000004', N'Phạm Thị Mai', N'0914321098', N'mai.pham@email.com', 250, 1),
 (N'KH25000005', N'Đặng Hoàng Quân', N'0933210987', N'quan.dang@email.com', 410, 1),
 (N'KH25000006', N'Vũ Bích Thảo', N'0942109876', N'thao.vu@email.com', 520, 1),
 (N'KH25000007', N'Hồ Minh Tâm', N'0981098765', N'tam.ho@email.com', 800, 1),
 (N'KH25000008', N'Ngô Gia Bảo', N'0979876543', N'bao.ngo@email.com', 30, 1),
-(N'KH25000009', N'Đinh Yến Nhi', N'0968765432', N'nhi.dinh@email.com', 0, 0),
+(N'KH25000009', N'Đinh Yến Nhi', N'0968765432', N'nhi.dinh@email.com', 0, 1),
 (N'KH25000010', N'Lý Gia Hân', N'0918765432', N'han.ly@email.com', 480, 1),
 (N'KH00000000', N'Khách vãng lai', N'0000000000', NULL, 0, 0)
 GO
