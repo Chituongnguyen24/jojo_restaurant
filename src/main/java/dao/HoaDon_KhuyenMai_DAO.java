@@ -40,4 +40,9 @@ public class HoaDon_KhuyenMai_DAO{
     public void delete(String maKM) {
         list.removeIf(km -> km.getMaKM().equals(maKM));
     }
+
+	public List<KhuyenMai> getAllKhuyenMai() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

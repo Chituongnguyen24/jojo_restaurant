@@ -9,13 +9,9 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Giao diện tra cứu hóa đơn — đồng bộ với HoaDon_View
- */
 public class HoaDon_TraCuu_View extends JPanel {
     private JTable table;
     private DefaultTableModel model;
@@ -26,9 +22,8 @@ public class HoaDon_TraCuu_View extends JPanel {
 
     public HoaDon_TraCuu_View() {
         setLayout(new BorderLayout());
-        setBackground(new Color(251, 248, 241)); // Nền be #FBF8F1
+        setBackground(new Color(251, 248, 241));
 
-        // ===== HEADER =====
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         header.setBorder(new EmptyBorder(20, 30, 15, 30));
@@ -48,7 +43,6 @@ public class HoaDon_TraCuu_View extends JPanel {
         header.add(titlePanel, BorderLayout.WEST);
         add(header, BorderLayout.NORTH);
 
-        // ===== SEARCH & FILTER =====
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
         searchPanel.setOpaque(false);
         searchPanel.setBorder(new EmptyBorder(0, 30, 10, 30));
@@ -78,12 +72,11 @@ public class HoaDon_TraCuu_View extends JPanel {
         searchPanel.add(cboFilter);
         searchPanel.add(btnSearch);
 
-        // ===== TABLE =====
         String[] cols = {"Mã HD", "Khách hàng", "Ngày lập", "Tổng tiền", "Phương thức", "Trạng thái"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // chỉ xem
+                return false;
             }
         };
 
@@ -102,7 +95,6 @@ public class HoaDon_TraCuu_View extends JPanel {
         header2.setPreferredSize(new Dimension(header2.getWidth(), 45));
         header2.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(220, 220, 220)));
 
-        // ScrollPane bo góc
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(null);
         scroll.setOpaque(false);
@@ -123,7 +115,6 @@ public class HoaDon_TraCuu_View extends JPanel {
         tablePanel.add(lblTableTitle, BorderLayout.NORTH);
         tablePanel.add(tableWrapper, BorderLayout.CENTER);
 
-        // ===== MAIN CONTENT =====
         JPanel content = new JPanel(new BorderLayout());
         content.setOpaque(false);
         content.add(searchPanel, BorderLayout.NORTH);
@@ -131,11 +122,9 @@ public class HoaDon_TraCuu_View extends JPanel {
 
         add(content, BorderLayout.CENTER);
 
-        // Load lần đầu
         loadHoaDonData();
     }
 
-    // ====== Load + filter dữ liệu ======
     private void loadHoaDonData() {
         model.setRowCount(0);
         List<HoaDon> dsHD = hoaDonDAO.getAllHoaDon();
@@ -144,12 +133,12 @@ public class HoaDon_TraCuu_View extends JPanel {
         String filter = (String) cboFilter.getSelectedItem();
 
         List<HoaDon> filtered = dsHD.stream().filter(hd -> {
-            KhachHang kh = khachHangDAO.findByMaKH(hd.getMaKhachHang());
+            KhachHang kh = hd.getKhachHang();
             String tenKH = kh != null ? safeLower(kh.getTenKhachHang()) : "";
             String maHD = safeLower(hd.getMaHoaDon());
             String phuongThuc = safeLower(hd.getPhuongThuc());
-            String trangThai = "Đã thanh toán"; // Giả định, có thể từ field DB
-            
+            String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
+
             boolean matchKeyword = keyword.isEmpty()
                     || tenKH.contains(keyword)
                     || maHD.contains(keyword)
@@ -157,22 +146,22 @@ public class HoaDon_TraCuu_View extends JPanel {
                     || trangThai.toLowerCase().contains(keyword);
 
             boolean matchFilter = filter.equals("Tất cả")
-                    || (filter.equals("Đã thanh toán") && "Đã thanh toán".equals(trangThai))
-                    || (filter.equals("Chưa thanh toán") && "Chưa thanh toán".equals(trangThai));
+                    || (filter.equals("Đã thanh toán") && hd.isDaThanhToan())
+                    || (filter.equals("Chưa thanh toán") && !hd.isDaThanhToan());
 
             return matchKeyword && matchFilter;
         }).collect(Collectors.toList());
 
         for (HoaDon hd : filtered) {
-            KhachHang kh = khachHangDAO.findByMaKH(hd.getMaKhachHang());
+            KhachHang kh = hd.getKhachHang();
             String tenKH = kh != null ? kh.getTenKhachHang() : "Khách lẻ";
             double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon());
-            String trangThai = "Đã thanh toán"; // Giả định
-            
+            String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
+
             model.addRow(new Object[]{
                     hd.getMaHoaDon(),
                     tenKH,
-                    hd.getNgayLap().toString(), // Format ngày nếu cần
+                    hd.getNgayLap().toString(),
                     String.format("%.0f VNĐ", tongTien),
                     hd.getPhuongThuc(),
                     trangThai
@@ -184,18 +173,15 @@ public class HoaDon_TraCuu_View extends JPanel {
         return (s == null) ? "" : s.toLowerCase();
     }
 
-    // ===== UI Helpers =====
     private JButton createRoundedButton(String text, Color bg, Color fg) {
         JButton btn = new JButton(text) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
                 if (getModel().isPressed()) g2.setColor(bg.darker());
                 else if (getModel().isRollover()) g2.setColor(bg.brighter());
                 else g2.setColor(bg);
-
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.dispose();
                 super.paintComponent(g);

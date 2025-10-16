@@ -19,8 +19,17 @@ public class KhuyenMai {
         this.ngayKetThuc = ngayKetThuc;
         this.trangThai = trangThai;
     }
+    
 
-    // Getters/Setters
+    public KhuyenMai() {
+	}
+    
+	public KhuyenMai(String maKM) {
+		super();
+		this.maKM = maKM;
+	}
+
+	// Getters/Setters
     public String getMaKM() { return maKM; }
     public void setMaKM(String maKM) { this.maKM = maKM; }
 

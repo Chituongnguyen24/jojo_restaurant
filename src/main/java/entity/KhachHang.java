@@ -72,4 +72,10 @@ public class KhachHang {
     }
 
     public KhachHang() {}
+
+	public KhachHang(String maKhachHang) {
+		super();
+		this.maKhachHang = maKhachHang;
+	}
+    
 }

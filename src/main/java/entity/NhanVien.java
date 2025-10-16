@@ -9,8 +9,13 @@ public class NhanVien {
     private TaiKhoan taiKhoan;
 
     public NhanVien() {}
+    
+    public NhanVien(String maNV) {
+		super();
+		this.maNV = maNV;
+	}
 
-    public NhanVien(String maNV, String tenNhanVien, boolean gioiTinh, String sdt, String email, TaiKhoan taiKhoan) {
+	public NhanVien(String maNV, String tenNhanVien, boolean gioiTinh, String sdt, String email, TaiKhoan taiKhoan) {
         this.maNV = maNV;
         this.tenNhanVien = tenNhanVien;
         this.gioiTinh = gioiTinh;

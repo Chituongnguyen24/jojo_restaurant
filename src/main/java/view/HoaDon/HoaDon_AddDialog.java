@@ -1,121 +1,155 @@
 package view.HoaDon;
 
-import dao.HoaDon_DAO;
-import dao.KhachHang_DAO;
-import entity.HoaDon;
+import dao.*;
+import entity.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public class HoaDon_AddDialog extends JDialog {
-    private JTextField txtMaKH, txtPhuongThuc, txtMaKM, txtMaThue, txtMaNV, txtMaPhieu;
+    private JComboBox<KhachHang> cbxKhachHang;
+    private JComboBox<NhanVien> cbxNhanVien;
+    private JComboBox<Thue> cbxThue;
+    private JComboBox<KhuyenMai> cbxKhuyenMai;
+    private JComboBox<PhieuDatBan> cbxPhieuDatBan;
+    private JComboBox<String> cbxPhuongThuc;
+    private JCheckBox chkThanhToan;
     private JButton btnSave, btnCancel;
+
     private HoaDon_DAO hoaDonDAO;
     private KhachHang_DAO khachHangDAO;
+    private NhanVien_DAO nhanVienDAO;
+    private Thue_DAO thueDAO;
+    private HoaDon_KhuyenMai_DAO khuyenMaiDAO;
+    private PhieuDatBan_DAO phieuDatBanDAO;
 
-    public HoaDon_AddDialog(Frame owner, HoaDon_DAO hoaDonDAO, KhachHang_DAO khachHangDAO) {
+    public HoaDon_AddDialog(Frame owner) {
         super(owner, "Thêm hóa đơn mới", true);
-        this.hoaDonDAO = hoaDonDAO;
-        this.khachHangDAO = khachHangDAO;
 
-        setSize(460, 520);
+        hoaDonDAO = new HoaDon_DAO();
+        khachHangDAO = new KhachHang_DAO();
+        nhanVienDAO = new NhanVien_DAO();
+        thueDAO = new Thue_DAO();
+        khuyenMaiDAO = new HoaDon_KhuyenMai_DAO();
+        phieuDatBanDAO = new PhieuDatBan_DAO();
+
+        setSize(460, 460);
         setLocationRelativeTo(owner);
         setResizable(false);
         setLayout(new BorderLayout());
-        getContentPane().setBackground(new Color(250, 246, 238)); 
+        getContentPane().setBackground(new Color(250, 246, 238));
 
-        // ===== Header =====
         JLabel lblTitle = new JLabel("Thêm hóa đơn mới", JLabel.CENTER);
         lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
         lblTitle.setBorder(new EmptyBorder(15, 10, 15, 10));
         add(lblTitle, BorderLayout.NORTH);
 
-        // ===== Form =====
-        JPanel formPanel = new JPanel(new GridLayout(8, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(7, 2, 10, 10));
         formPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
         formPanel.setOpaque(false);
 
-        formPanel.add(new JLabel("Mã KH:"));
-        txtMaKH = new JTextField();
-        formPanel.add(txtMaKH);
+        formPanel.add(new JLabel("Khách hàng (*):"));
+        cbxKhachHang = new JComboBox<>();
+        formPanel.add(cbxKhachHang);
 
-        formPanel.add(new JLabel("Phương thức:"));
-        txtPhuongThuc = new JTextField();
-        formPanel.add(txtPhuongThuc);
+        formPanel.add(new JLabel("Nhân viên (*):"));
+        cbxNhanVien = new JComboBox<>();
+        formPanel.add(cbxNhanVien);
 
-        formPanel.add(new JLabel("Mã khuyến mãi:"));
-        txtMaKM = new JTextField();
-        formPanel.add(txtMaKM);
+        formPanel.add(new JLabel("Phương thức (*):"));
+        cbxPhuongThuc = new JComboBox<>(new String[]{"Tiền mặt", "Thẻ tín dụng", "Chuyển khoản"});
+        formPanel.add(cbxPhuongThuc);
 
-        formPanel.add(new JLabel("Mã thuế:"));
-        txtMaThue = new JTextField();
-        formPanel.add(txtMaThue);
+        formPanel.add(new JLabel("Loại thuế (*):"));
+        cbxThue = new JComboBox<>();
+        formPanel.add(cbxThue);
 
-        formPanel.add(new JLabel("Mã nhân viên:"));
-        txtMaNV = new JTextField();
-        formPanel.add(txtMaNV);
+        formPanel.add(new JLabel("Khuyến mãi:"));
+        cbxKhuyenMai = new JComboBox<>();
+        formPanel.add(cbxKhuyenMai);
 
-        formPanel.add(new JLabel("Mã phiếu:"));
-        txtMaPhieu = new JTextField();
-        formPanel.add(txtMaPhieu);
+        formPanel.add(new JLabel("Phiếu đặt bàn:"));
+        cbxPhieuDatBan = new JComboBox<>();
+        formPanel.add(cbxPhieuDatBan);
 
-        // Empty row để khớp GridLayout(8,2)
-        formPanel.add(new JLabel(""));
-        formPanel.add(new JPanel());
+        formPanel.add(new JLabel("Trạng thái thanh toán:"));
+        chkThanhToan = new JCheckBox("Đã thanh toán");
+        formPanel.add(chkThanhToan);
 
         add(formPanel, BorderLayout.CENTER);
 
-        // ===== Buttons =====
         JPanel btnPanel = new JPanel();
         btnPanel.setBorder(new EmptyBorder(10, 10, 15, 10));
         btnPanel.setOpaque(false);
 
-        btnSave = new JButton("💾 Lưu");
+        btnSave = new JButton("Lưu");
         btnSave.setBackground(new Color(30, 150, 80));
         btnSave.setForeground(Color.WHITE);
-        btnSave.setFocusPainted(false);
         btnSave.setFont(new Font("Arial", Font.BOLD, 13));
         btnSave.addActionListener(this::saveHoaDon);
 
-        btnCancel = new JButton("✖ Hủy");
+        btnCancel = new JButton("Hủy");
         btnCancel.setBackground(new Color(200, 80, 70));
         btnCancel.setForeground(Color.WHITE);
-        btnCancel.setFocusPainted(false);
         btnCancel.setFont(new Font("Arial", Font.BOLD, 13));
         btnCancel.addActionListener(e -> dispose());
 
         btnPanel.add(btnSave);
         btnPanel.add(btnCancel);
-
         add(btnPanel, BorderLayout.SOUTH);
+
+        loadComboBoxData();
+    }
+
+    private void loadComboBoxData() {
+        List<KhachHang> dsKhachHang = khachHangDAO.getAllKhachHang();
+        dsKhachHang.forEach(cbxKhachHang::addItem);
+
+        List<NhanVien> dsNhanVien = nhanVienDAO.getAllNhanVien();
+        dsNhanVien.forEach(cbxNhanVien::addItem);
+
+        List<Thue> dsThue = thueDAO.getAllThue();
+        dsThue.forEach(cbxThue::addItem);
+
+        cbxKhuyenMai.addItem(null);
+        List<KhuyenMai> dsKhuyenMai = khuyenMaiDAO.getAllKhuyenMai();
+        dsKhuyenMai.forEach(cbxKhuyenMai::addItem);
+
+        cbxPhieuDatBan.addItem(null);
+        List<PhieuDatBan> dsPhieuDatBan = phieuDatBanDAO.getAllPhieuDatBan();
+        dsPhieuDatBan.forEach(cbxPhieuDatBan::addItem);
     }
 
     private void saveHoaDon(ActionEvent e) {
+        KhachHang kh = (KhachHang) cbxKhachHang.getSelectedItem();
+        NhanVien nv = (NhanVien) cbxNhanVien.getSelectedItem();
+        Thue thue = (Thue) cbxThue.getSelectedItem();
+        KhuyenMai km = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
+        PhieuDatBan pdb = (PhieuDatBan) cbxPhieuDatBan.getSelectedItem();
+        String phuongThuc = (String) cbxPhuongThuc.getSelectedItem();
+        boolean thanhToan = chkThanhToan.isSelected();
+
+        if (kh == null || nv == null || thue == null || phuongThuc.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ thông tin bắt buộc (*)");
+            return;
+        }
+
         try {
-            String maHD = "HD" + UUID.randomUUID().toString().substring(0, 5).toUpperCase();
-            String maKH = txtMaKH.getText().trim();
-            String phuongThuc = txtPhuongThuc.getText().trim();
-            String maKM = txtMaKM.getText().trim();
-            String maThue = txtMaThue.getText().trim();
-            String maNV = txtMaNV.getText().trim();
-            String maPhieu = txtMaPhieu.getText().trim();
+            String maHD = "HD" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            LocalDate ngayLap = LocalDate.now();
+            LocalDateTime gioVao = LocalDateTime.now();
+            LocalDateTime gioRa = LocalDateTime.now().plusHours(2);
 
-            if (maKH.isEmpty() || phuongThuc.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ thông tin hóa đơn!");
-                return;
-            }
+            HoaDon hd=new HoaDon(maHD, kh, nv, pdb, km, thue, ngayLap, gioVao, gioRa, phuongThuc, thanhToan);
+            hd.setDaThanhToan(thanhToan);
 
-            // Giả định ngày lập, giờ vào/ra hiện tại
-            java.util.Date ngayLap = new java.util.Date();
-            java.util.Date gioVao = new java.util.Date();
-            java.util.Date gioRa = new java.util.Date();
-
-            HoaDon hd = new HoaDon(maHD, maKH, ngayLap, phuongThuc, maKM, maThue, gioVao, gioRa, maNV, maPhieu);
-
-            boolean added = hoaDonDAO.insertHoaDon(hd);
+            boolean added = hoaDonDAO.addHoaDon(hd);
             if (added) {
                 JOptionPane.showMessageDialog(this, "Thêm hóa đơn thành công!");
                 dispose();
@@ -124,7 +158,7 @@ public class HoaDon_AddDialog extends JDialog {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage());
+            JOptionPane.showMessageDialog(this, "Lỗi khi lưu hóa đơn: " + ex.getMessage());
         }
     }
 }

@@ -8,7 +8,15 @@ public class Thue {
     private String trangThai;
 
     // Constructor
-    public Thue(String maThue, String tenThue, double phanTram, String moTa, String trangThai) {
+    public Thue() {
+	}
+    
+    public Thue(String maThue) {
+		super();
+		this.maThue = maThue;
+	}
+
+	public Thue(String maThue, String tenThue, double phanTram, String moTa, String trangThai) {
         this.maThue = maThue;
         this.tenThue = tenThue;
         this.phanTram = phanTram;

@@ -21,7 +21,7 @@ public class HoaDon_View extends JPanel {
 
     public HoaDon_View() {
         setLayout(new BorderLayout());
-        setBackground(new Color(251, 248, 241)); // Nền màu be #FBF8F1
+        setBackground(new Color(251, 248, 241));
 
         // ===== HEADER =====
         JPanel header = new JPanel(new BorderLayout());
@@ -44,9 +44,8 @@ public class HoaDon_View extends JPanel {
         JButton btnAdd = createRoundedButton("+ Tạo hóa đơn mới", new Color(76, 175, 80), Color.WHITE);
         btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnAdd.setPreferredSize(new Dimension(200, 45));
-
         btnAdd.addActionListener(e -> {
-            HoaDon_AddDialog dialog = new HoaDon_AddDialog(null, hoaDonDAO, khachHangDAO);
+            HoaDon_AddDialog dialog = new HoaDon_AddDialog((Frame) SwingUtilities.getWindowAncestor(this));
             dialog.setVisible(true);
             loadHoaDonData();
             loadThongKe();
@@ -85,35 +84,24 @@ public class HoaDon_View extends JPanel {
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setSelectionBackground(new Color(230, 240, 255));
         table.setGridColor(new Color(230, 230, 230));
-        table.setShowGrid(true);
-        table.setIntercellSpacing(new Dimension(1, 1));
-        
+
         JTableHeader header2 = table.getTableHeader();
         header2.setFont(new Font("Segoe UI", Font.BOLD, 13));
         header2.setBackground(new Color(248, 249, 250));
         header2.setForeground(new Color(60, 60, 60));
         header2.setPreferredSize(new Dimension(header2.getWidth(), 45));
-        header2.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(220, 220, 220)));
 
-        // Renderer cho 2 nút với màu đậm hơn
         table.getColumn("Sửa").setCellRenderer(new ButtonRenderer("Sửa", new Color(255, 152, 0), Color.WHITE));
         table.getColumn("Sửa").setCellEditor(new ButtonEditor(new JCheckBox(), "Sửa"));
         table.getColumn("Xóa").setCellRenderer(new ButtonRenderer("Xóa", new Color(244, 67, 54), Color.WHITE));
         table.getColumn("Xóa").setCellEditor(new ButtonEditor(new JCheckBox(), "Xóa"));
 
-        // Set độ rộng cột
         table.getColumnModel().getColumn(6).setPreferredWidth(80);
-        table.getColumnModel().getColumn(6).setMaxWidth(80);
         table.getColumnModel().getColumn(7).setPreferredWidth(80);
-        table.getColumnModel().getColumn(7).setMaxWidth(80);
 
-        // ===== ScrollPane bo góc =====
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(null);
-        scroll.setOpaque(false);
-        scroll.getViewport().setOpaque(false);
 
-        // Panel trắng bo góc cho bảng
         JPanel tableWrapper = new RoundedPanel(15, Color.WHITE);
         tableWrapper.setLayout(new BorderLayout());
         tableWrapper.setBorder(new EmptyBorder(15, 15, 15, 15));
@@ -130,7 +118,6 @@ public class HoaDon_View extends JPanel {
         tablePanel.add(lblTableTitle, BorderLayout.NORTH);
         tablePanel.add(tableWrapper, BorderLayout.CENTER);
 
-        // ===== CONTENT =====
         JPanel content = new JPanel(new BorderLayout());
         content.setOpaque(false);
         content.add(statsPanel, BorderLayout.NORTH);
@@ -142,20 +129,20 @@ public class HoaDon_View extends JPanel {
         loadThongKe();
     }
 
-    // ===== Load dữ liệu hóa đơn =====
     private void loadHoaDonData() {
         model.setRowCount(0);
         List<HoaDon> dsHD = hoaDonDAO.getAllHoaDon();
 
         for (HoaDon hd : dsHD) {
-            KhachHang kh = khachHangDAO.findByMaKH(hd.getMaKhachHang());
-            String tenKH = kh != null ? kh.getTenKhachHang() : "Khách lẻ";
-            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon()); // Giả định method tính tổng từ chi tiết
-            String trangThai = "Đã thanh toán"; // Giả định logic trạng thái (có thể từ field thêm sau)
+            KhachHang kh = hd.getKhachHang() != null ? khachHangDAO.findByMaKH(hd.getKhachHang().getMaKhachHang()) : null;
+            String tenKH = (kh != null) ? kh.getTenKhachHang() : "Khách lẻ";
+            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon());
+            String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
+
             model.addRow(new Object[]{
                     hd.getMaHoaDon(),
                     tenKH,
-                    hd.getNgayLap().toString(), // Format ngày
+                    hd.getNgayLap(),
                     String.format("%.0f VNĐ", tongTien),
                     hd.getPhuongThuc(),
                     trangThai,
@@ -165,7 +152,6 @@ public class HoaDon_View extends JPanel {
         }
     }
 
-    // ===== Thống kê =====
     private void loadThongKe() {
         List<HoaDon> dsHD = hoaDonDAO.getAllHoaDon();
 
@@ -174,10 +160,12 @@ public class HoaDon_View extends JPanel {
 
         for (HoaDon hd : dsHD) {
             double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon());
-            doanhThu += tongTien;
-            String trangThai = "Chưa thanh toán"; // Giả định
-            if ("Đã thanh toán".equals(trangThai)) daTT++;
-            else chuaTT++;
+            if (hd.isDaThanhToan()) {
+                daTT++;
+                doanhThu += tongTien;
+            } else {
+                chuaTT++;
+            }
         }
 
         lblChuaTT.setText(String.valueOf(chuaTT));
@@ -186,22 +174,13 @@ public class HoaDon_View extends JPanel {
         lblDoanhThu.setText(String.format("%.0f VNĐ", doanhThu));
     }
 
-    // ====== UI Helper Methods ======
     private JButton createRoundedButton(String text, Color bg, Color fg) {
         JButton btn = new JButton(text) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                if (getModel().isPressed()) {
-                    g2.setColor(bg.darker());
-                } else if (getModel().isRollover()) {
-                    g2.setColor(bg.brighter());
-                } else {
-                    g2.setColor(bg);
-                }
-                
+                g2.setColor(getModel().isPressed() ? bg.darker() : getModel().isRollover() ? bg.brighter() : bg);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.dispose();
                 super.paintComponent(g);
@@ -230,19 +209,16 @@ public class HoaDon_View extends JPanel {
         JLabel textLabel = new JLabel(label, JLabel.LEFT);
         textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         textLabel.setForeground(Color.WHITE);
-        
-        valueLabel.setForeground(Color.WHITE);
 
         JPanel inner = new JPanel(new GridLayout(2, 1, 0, 5));
         inner.setOpaque(false);
         inner.add(valueLabel);
         inner.add(textLabel);
-        
+
         box.add(inner, BorderLayout.CENTER);
         return box;
     }
 
-    // Button Renderer
     class ButtonRenderer extends JButton implements TableCellRenderer {
         private final Color bgColor;
         private final Color fgColor;
@@ -277,7 +253,6 @@ public class HoaDon_View extends JPanel {
         }
     }
 
-    // Button Editor
     class ButtonEditor extends DefaultCellEditor {
         private JButton button;
         private boolean isPushed;
@@ -286,24 +261,7 @@ public class HoaDon_View extends JPanel {
         public ButtonEditor(JCheckBox checkBox, String type) {
             super(checkBox);
             this.type = type;
-            button = new JButton() {
-                @Override
-                protected void paintComponent(Graphics g) {
-                    Graphics2D g2 = (Graphics2D) g.create();
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    
-                    Color bg = type.equals("Sửa") ? new Color(255, 152, 0) : new Color(244, 67, 54);
-                    if (getModel().isPressed()) {
-                        g2.setColor(bg.darker());
-                    } else {
-                        g2.setColor(bg);
-                    }
-                    
-                    g2.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 8, 8);
-                    g2.dispose();
-                    super.paintComponent(g);
-                }
-            };
+            button = new JButton();
             button.setOpaque(false);
             button.setContentAreaFilled(false);
             button.setBorderPainted(false);
@@ -333,7 +291,7 @@ public class HoaDon_View extends JPanel {
                         HoaDon hd = hoaDonDAO.findByMaHD(maHD);
                         if (hd != null) {
                             Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(HoaDon_View.this);
-                            HoaDon_EditDialog dialog = new HoaDon_EditDialog(parentFrame, hd, hoaDonDAO, khachHangDAO);
+                            HoaDon_EditDialog dialog = new HoaDon_EditDialog(parentFrame, hd, hoaDonDAO);
                             dialog.setVisible(true);
                             loadHoaDonData();
                             loadThongKe();
@@ -341,11 +299,11 @@ public class HoaDon_View extends JPanel {
                     });
                 } else if (type.equals("Xóa")) {
                     int confirm = JOptionPane.showConfirmDialog(
-                        table,
-                        "Bạn có chắc chắn muốn xóa hóa đơn này?",
-                        "Xác nhận xóa",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE
+                            table,
+                            "Bạn có chắc chắn muốn xóa hóa đơn này?",
+                            "Xác nhận xóa",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.WARNING_MESSAGE
                     );
                     if (confirm == JOptionPane.YES_OPTION) {
                         if (hoaDonDAO.deleteHoaDon(maHD)) {
@@ -362,13 +320,11 @@ public class HoaDon_View extends JPanel {
         }
     }
 
-    // ===== RoundedPanel Helper =====
     class RoundedPanel extends JPanel {
         private final int cornerRadius;
         private final Color bgColor;
 
         public RoundedPanel(int radius, Color color) {
-            super();
             cornerRadius = radius;
             bgColor = color;
             setOpaque(false);

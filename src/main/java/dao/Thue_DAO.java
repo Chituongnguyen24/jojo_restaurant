@@ -9,7 +9,6 @@ import java.util.List;
 
 public class Thue_DAO {
 
-    // Lấy toàn bộ thuế
     public List<Thue> getAllThue() {
         List<Thue> dsThue = new ArrayList<>();
         String sql = "SELECT * FROM Thue";
@@ -19,11 +18,14 @@ public class Thue_DAO {
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Thue thue = new Thue(
-                        rs.getString("maSoThue"),
-                        rs.getString("tenThue"),
-                        rs.getDouble("tyLeThue")  
-                );
+                String maThue = rs.getString("maSoThue");
+                String tenThue = rs.getString("tenThue");
+                double tyLeThue = rs.getDouble("tyLeThue");
+                String moTa = rs.getString("moTa");
+                // Chuyển đổi từ BIT (boolean) trong DB sang String
+                String trangThai = rs.getBoolean("trangThai") ? "Đang áp dụng" : "Ngừng áp dụng";
+
+                Thue thue = new Thue(maThue, tenThue, tyLeThue, moTa, trangThai);
                 dsThue.add(thue);
             }
         } catch (SQLException e) {
@@ -32,43 +34,51 @@ public class Thue_DAO {
         return dsThue;
     }
 
-    // Thêm thuế
+    /**
+     * Thêm một đối tượng thuế mới vào cơ sở dữ liệu
+     * @param thue Đối tượng Thue cần thêm
+     * @return true nếu thêm thành công, false nếu thất bại
+     */
     public boolean insertThue(Thue thue) {
-        String sql = "INSERT INTO Thue(maSoThue, tenThue, tyLeThue) VALUES(?, ?, ?)";
+        String sql = "INSERT INTO Thue(maSoThue, tenThue, tyLeThue, moTa, trangThai) VALUES(?, ?, ?, ?, ?)";
 
         try (Connection conn = new ConnectDB().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, thue.getMaSoThue());
+            pstmt.setString(1, thue.getMaThue());
             pstmt.setString(2, thue.getTenThue());
-            pstmt.setDouble(3, thue.getTiLeThue()); 
-            pstmt.executeUpdate();
-            return true;
+            pstmt.setDouble(3, thue.getPhanTram()); // Khớp với entity
+            pstmt.setString(4, thue.getMoTa());
+            // Chuyển đổi từ String sang BIT (boolean) để lưu vào DB
+            pstmt.setBoolean(5, thue.getTrangThai().equalsIgnoreCase("Đang áp dụng"));
+
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    // Cập nhật thuế
     public boolean updateThue(Thue thue) {
-        String sql = "UPDATE Thue SET tenThue=?, tyLeThue=? WHERE maSoThue=?";
+        String sql = "UPDATE Thue SET tenThue=?, tyLeThue=?, moTa=?, trangThai=? WHERE maSoThue=?";
 
         try (Connection conn = new ConnectDB().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, thue.getTenThue());
-            pstmt.setDouble(2, thue.getTiLeThue());  // Sử dụng setter của entity
-            pstmt.setString(3, thue.getMaSoThue());
-            pstmt.executeUpdate();
-            return true;
+            pstmt.setDouble(2, thue.getPhanTram()); // Khớp với entity
+            pstmt.setString(3, thue.getMoTa());
+            pstmt.setBoolean(4, thue.getTrangThai().equalsIgnoreCase("Đang áp dụng"));
+            pstmt.setString(5, thue.getMaThue());
+
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    // Xóa thuế
+
     public boolean deleteThue(String maThue) {
         String sql = "DELETE FROM Thue WHERE maSoThue=?";
 
@@ -76,15 +86,13 @@ public class Thue_DAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, maThue);
-            pstmt.executeUpdate();
-            return true;
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return false;
     }
 
-    // Tìm thuế theo mã
     public Thue findByMaThue(String maThue) {
         String sql = "SELECT * FROM Thue WHERE maSoThue=?";
 
@@ -94,11 +102,12 @@ public class Thue_DAO {
             pstmt.setString(1, maThue);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return new Thue(
-                            rs.getString("maSoThue"),
-                            rs.getString("tenThue"),
-                            rs.getDouble("tyLeThue")  // Sử dụng tên cột đúng từ DB
-                    );
+                    String tenThue = rs.getString("tenThue");
+                    double tyLeThue = rs.getDouble("tyLeThue");
+                    String moTa = rs.getString("moTa");
+                    String trangThai = rs.getBoolean("trangThai") ? "Đang áp dụng" : "Ngừng áp dụng";
+
+                    return new Thue(maThue, tenThue, tyLeThue, moTa, trangThai);
                 }
             }
         } catch (SQLException e) {

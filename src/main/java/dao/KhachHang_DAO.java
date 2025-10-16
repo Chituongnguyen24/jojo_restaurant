@@ -118,4 +118,24 @@ public class KhachHang_DAO {
         }
         return ds;
     }
+
+	public KhachHang findByMaKH(String maKH) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public boolean deleteKhachHang(String maKH) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean updateKhachHang(KhachHang khachHang) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	public boolean insertKhachHang(KhachHang kh) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

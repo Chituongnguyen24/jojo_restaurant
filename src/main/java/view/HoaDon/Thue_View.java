@@ -138,7 +138,7 @@ public class Thue_View extends JPanel {
 
         List<Thue> filtered = dsThue.stream().filter(thue -> {
             String ten = safeLower(thue.getTenThue());
-            String ma = safeLower(thue.getMaSoThue());
+            String ma = safeLower(thue.getMaThue());
             
             boolean matchKeyword = keyword.isEmpty()
                     || ten.contains(keyword)
@@ -153,9 +153,9 @@ public class Thue_View extends JPanel {
 
         for (Thue thue : filtered) {
             model.addRow(new Object[]{
-                    thue.getMaSoThue(),
+                    thue.getMaThue(),
                     thue.getTenThue(),
-                    String.format("%.2f%%", thue.getTiLeThue())
+                    String.format("%.2f%%", thue.getPhanTram())
             });
         }
     }
