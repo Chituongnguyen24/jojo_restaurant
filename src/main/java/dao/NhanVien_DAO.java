@@ -198,4 +198,46 @@ public class NhanVien_DAO {
         }
         return null;
     }
+
+    public NhanVien getNhanVienById(String maNV) {
+        String sql = "SELECT nv.maNV, nv.tenNhanVien, nv.gioiTinh, nv.sdt, nv.email, " +
+                     "tk.tenDangNhap, tk.matKhau, tk.vaiTro " +
+                     "FROM NhanVien nv " +
+                     "LEFT JOIN TaiKhoan tk ON nv.maNV = tk.maNV " +
+                     "WHERE nv.maNV=?";
+
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, maNV);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    TaiKhoan tk = null;
+                    if (rs.getString("tenDangNhap") != null) {
+                        tk = new TaiKhoan(
+                                rs.getString("maNV"),
+                                rs.getString("tenDangNhap"),
+                                rs.getString("matKhau"),
+                                rs.getString("vaiTro")
+                        );
+                    }
+
+                    return new NhanVien(
+                            rs.getString("maNV"),
+                            rs.getString("tenNhanVien"),
+                            rs.getBoolean("gioiTinh"),
+                            rs.getString("sdt"),
+                            rs.getString("email"),
+                            tk
+                    );
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
 }

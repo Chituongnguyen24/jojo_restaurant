@@ -30,6 +30,15 @@ public class PhieuDatBan {
 		this.nhanVien = nhanVien;
 	}
 	
+	
+	public PhieuDatBan(String maPhieu, KhachHang khachHang, Ban ban) {
+		super();
+		this.maPhieu = maPhieu;
+		this.khachHang = khachHang;
+		this.ban = ban;
+	}
+	
+
 	public PhieuDatBan(String maPhieu) {
 			this.maPhieu = maPhieu;
 	}

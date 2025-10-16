@@ -14,7 +14,7 @@ public class HoaDon_DAO {
     // ==================== LẤY DANH SÁCH HÓA ĐƠN ====================
     public List<HoaDon> getAllHoaDon() {
         List<HoaDon> dsHoaDon = new ArrayList<>();
-        String sql = "SELECT * FROM HoaDon ORDER BY ngayLap DESC, gioVao DESC";
+        String sql = "SELECT * FROM HOADON ORDER BY ngayLap DESC, gioVao DESC";
 
         try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
@@ -52,7 +52,7 @@ public class HoaDon_DAO {
     // ==================== THÊM HÓA ĐƠN ====================
     public boolean addHoaDon(HoaDon hd) {
         String sql = """
-            INSERT INTO HoaDon(maHoaDon, maKhachHang, ngayLap, phuongThuc, maKhuyenMai, 
+            INSERT INTO HOADON(maHoaDon, maKhachHang, ngayLap, phuongThuc, maKhuyenMai, 
                                maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """;
@@ -94,7 +94,7 @@ public class HoaDon_DAO {
     // ==================== CẬP NHẬT HÓA ĐƠN ====================
     public boolean updateHoaDon(HoaDon hd) {
         String sql = """
-            UPDATE HoaDon
+            UPDATE HOADON
             SET maKhachHang = ?, ngayLap = ?, phuongThuc = ?, maKhuyenMai = ?, 
                 maThue = ?, gioVao = ?, gioRa = ?, maNhanVien = ?, maPhieu = ?, daThanhToan = ?
             WHERE maHoaDon = ?
@@ -136,8 +136,8 @@ public class HoaDon_DAO {
 
     // ==================== XÓA HÓA ĐƠN ====================
     public boolean deleteHoaDon(String maHD) {
-        String sqlDeleteChiTiet = "DELETE FROM ChiTietHoaDon WHERE maHoaDon = ?";
-        String sqlDeleteHoaDon = "DELETE FROM HoaDon WHERE maHoaDon = ?";
+        String sqlDeleteChiTiet = "DELETE FROM CHITIETHOADON WHERE maHoaDon = ?";
+        String sqlDeleteHoaDon = "DELETE FROM HOADON WHERE maHoaDon = ?";
 
         try (Connection conn = ConnectDB.getConnection()) {
             conn.setAutoCommit(false);
@@ -168,7 +168,7 @@ public class HoaDon_DAO {
 
     // ==================== CẬP NHẬT TRẠNG THÁI THANH TOÁN ====================
     public boolean updateTrangThaiThanhToan(String maHoaDon, boolean daThanhToan) {
-        String sql = "UPDATE HoaDon SET daThanhToan = ? WHERE maHoaDon = ?";
+        String sql = "UPDATE HOADON SET daThanhToan = ? WHERE maHoaDon = ?";
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -185,13 +185,22 @@ public class HoaDon_DAO {
     // ==================== THỐNG KÊ ====================
 
     public double getTongDoanhThu() {
-        String sql = "SELECT SUM(TongTien) AS Tong FROM HoaDon WHERE daThanhToan = 1";
+    	String sql = """
+    		    SELECT
+    		        SUM(cthd.soLuong * cthd.donGia) AS TongDoanhThu
+    		    FROM
+    		        HOADON hd
+    		    INNER JOIN
+    		        CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon
+    		    WHERE
+    		        hd.daThanhToan = 1
+    		    """;
         try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             if (rs.next())
-                return rs.getDouble("Tong");
+                return rs.getDouble("TongDoanhThu");
 
         } catch (SQLException e) {
             e.printStackTrace();
@@ -200,7 +209,7 @@ public class HoaDon_DAO {
     }
 
     public int getTongDonHang() {
-        String sql = "SELECT COUNT(*) AS SoLuong FROM HoaDon WHERE daThanhToan = 1";
+        String sql = "SELECT COUNT(*) AS SoLuong FROM HOADON WHERE daThanhToan = 1";
         try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -215,7 +224,7 @@ public class HoaDon_DAO {
     }
 
     public int getSoLuongKhachHang() {
-        String sql = "SELECT COUNT(DISTINCT maKhachHang) AS SoLuong FROM HoaDon WHERE daThanhToan = 1";
+        String sql = "SELECT COUNT(DISTINCT maKhachHang) AS SoLuong FROM HOADON WHERE daThanhToan = 1";
         try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -231,18 +240,25 @@ public class HoaDon_DAO {
 
     public double getDoanhThuTheoNgay(int ngayTruoc) {
         String sql = """
-            SELECT SUM(TongTien) AS Tong
-            FROM HoaDon
-            WHERE CAST(ngayLap AS DATE) = CAST(DATEADD(DAY, -?, GETDATE()) AS DATE)
-                  AND daThanhToan = 1
-        """;
+                SELECT
+                    SUM(cthd.soLuong * cthd.donGia) AS DoanhThuTrongNgay
+                FROM
+                    HOADON hd
+                INNER JOIN
+                    CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon
+                WHERE
+                    hd.daThanhToan = 1 AND DATEDIFF(day, hd.ngayLap, GETDATE()) <= ?
+                """;
+                
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, ngayTruoc);
+            
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next())
-                    return rs.getDouble("Tong");
+                  
+                    return rs.getDouble("DoanhThuTrongNgay");
             }
 
         } catch (SQLException e) {
@@ -250,14 +266,13 @@ public class HoaDon_DAO {
         }
         return 0;
     }
-
     // ==================== TÍNH TỔNG TIỀN HÓA ĐƠN ====================
     public double tinhTongTienHoaDon(String maHoaDon) {
         double tongTien = 0;
 
         String sqlChiTiet = """
             SELECT SUM(ct.soLuong * ct.donGia) AS Tong
-            FROM ChiTietHoaDon ct
+            FROM CHITIETHOADON ct
             WHERE ct.maHoaDon = ?
         """;
 
@@ -271,19 +286,19 @@ public class HoaDon_DAO {
             }
 
             String sqlThueKM = """
-                SELECT t.tyLeThue, km.tyLeGiam
-                FROM HoaDon hd
-                LEFT JOIN Thue t ON hd.maThue = t.maThue
-                LEFT JOIN KhuyenMai km ON hd.maKhuyenMai = km.maKhuyenMai
-                WHERE hd.maHoaDon = ?
-            """;
+                    SELECT t.tyLeThue, km.giaTri
+                    FROM HOADON hd
+                    LEFT JOIN Thue t ON hd.maThue = t.maSoThue
+                    LEFT JOIN KhuyenMai km ON hd.maKhuyenMai = km.maKhuyenMai
+                    WHERE hd.maHoaDon = ?
+                """;
 
             try (PreparedStatement pstmt2 = conn.prepareStatement(sqlThueKM)) {
                 pstmt2.setString(1, maHoaDon);
                 try (ResultSet rs2 = pstmt2.executeQuery()) {
                     if (rs2.next()) {
                         double thue = rs2.getDouble("tyLeThue");
-                        double giam = rs2.getDouble("tyLeGiam");
+                        double giam = rs2.getDouble("giaTri");
 
                         if (thue > 0) tongTien += tongTien * thue / 100;
                         if (giam > 0) tongTien -= tongTien * giam / 100;
@@ -291,23 +306,15 @@ public class HoaDon_DAO {
                 }
             }
 
-            // Cập nhật tổng tiền vào bảng HoaDon (nếu có cột TongTien)
-            String sqlUpdate = "UPDATE HoaDon SET TongTien = ? WHERE maHoaDon = ?";
-            try (PreparedStatement psUpdate = conn.prepareStatement(sqlUpdate)) {
-                psUpdate.setDouble(1, tongTien);
-                psUpdate.setString(2, maHoaDon);
-                psUpdate.executeUpdate();
-            }
-
+            
         } catch (SQLException e) {
-            e.printStackTrace();
+        				e.printStackTrace();
         }
-
         return tongTien;
     }
 
     public HoaDon findByMaHD(String maHD) {
-        String sql = "SELECT * FROM HoaDon WHERE maHoaDon = ?";
+        String sql = "SELECT * FROM HOADON WHERE maHoaDon = ?";
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 

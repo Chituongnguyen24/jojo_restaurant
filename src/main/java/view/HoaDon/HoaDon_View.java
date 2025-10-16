@@ -134,7 +134,7 @@ public class HoaDon_View extends JPanel {
         List<HoaDon> dsHD = hoaDonDAO.getAllHoaDon();
 
         for (HoaDon hd : dsHD) {
-            KhachHang kh = hd.getKhachHang() != null ? khachHangDAO.findByMaKH(hd.getKhachHang().getMaKhachHang()) : null;
+            KhachHang kh = hd.getKhachHang() != null ? khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang()) : null;
             String tenKH = (kh != null) ? kh.getTenKhachHang() : "Khách lẻ";
             double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon());
             String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";

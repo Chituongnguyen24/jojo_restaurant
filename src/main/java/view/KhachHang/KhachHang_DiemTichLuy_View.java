@@ -329,7 +329,7 @@ import java.util.stream.Collectors;
 
                         if (type.equals("Sửa")) {
                             SwingUtilities.invokeLater(() -> {
-                                KhachHang kh = khachHangDAO.findByMaKH(maKH);
+                                KhachHang kh = khachHangDAO.getKhachHangById(maKH);
                                 if (kh != null) {
                                     Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(KhachHang_DiemTichLuy_View.this);
                                     KhachHang_EditDialog dialog = new KhachHang_EditDialog(parentFrame, kh, khachHangDAO);

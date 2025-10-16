@@ -317,7 +317,7 @@ public class KhachHang_View extends JPanel implements ActionListener {
                 "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
 
         KhachHang kh = new KhachHang(ma, ten, sdt, email, diem, laTV);
-        if (khDAO.themKhachHang(kh)) {
+        if (khDAO.insertKhachHang(kh)) {
             JOptionPane.showMessageDialog(this, "✅ Thêm thành công!");
             loadDataTable(khDAO.getAllKhachHang());
             updateStats();
@@ -359,7 +359,7 @@ public class KhachHang_View extends JPanel implements ActionListener {
                 "Xác nhận", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
 
         KhachHang kh = new KhachHang(ma, ten, sdt, email, diem, laTV);
-        if (khDAO.capNhatKhachHang(kh)) {
+        if (khDAO.updateKhachHang(kh)) {
             JOptionPane.showMessageDialog(this, "✅ Cập nhật thành công!");
             loadDataTable(khDAO.getAllKhachHang());
             updateStats();
@@ -382,7 +382,7 @@ public class KhachHang_View extends JPanel implements ActionListener {
                 "Xác nhận", JOptionPane.YES_NO_OPTION);
                 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (khDAO.xoaKhachHang(ma)) {
+            if (khDAO.deleteKhachHang(ma)) {
                 JOptionPane.showMessageDialog(this, "🗑 Xóa thành công!");
                 loadDataTable(khDAO.getAllKhachHang());
                 updateStats();

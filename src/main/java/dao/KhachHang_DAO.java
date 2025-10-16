@@ -1,7 +1,6 @@
 package dao;
 
 import entity.KhachHang;
-
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +9,7 @@ import connectDB.ConnectDB;
 
 public class KhachHang_DAO {
 
+    // 1. Lấy tất cả khách hàng
     public List<KhachHang> getAllKhachHang() {
         List<KhachHang> ds = new ArrayList<>();
         String sql = "SELECT * FROM KhachHang";
@@ -36,8 +36,9 @@ public class KhachHang_DAO {
         return ds;
     }
 
-    public boolean themKhachHang(KhachHang kh) {
-        String sql = "INSERT INTO KhachHang VALUES (?, ?, ?, ?, ?, ?)";
+    // 2. Thêm khách hàng
+    public boolean insertKhachHang(KhachHang kh) {
+        String sql = "INSERT INTO KhachHang(maKhachHang, tenKhachHang, sdt, email, diemTichLuy, laThanhVien) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
@@ -56,21 +57,8 @@ public class KhachHang_DAO {
         return false;
     }
 
-    public boolean xoaKhachHang(String maKH) {
-        String sql = "DELETE FROM KhachHang WHERE maKhachHang = ?";
-        try (Connection con = ConnectDB.getConnection();
-             PreparedStatement stmt = con.prepareStatement(sql)) {
-
-            stmt.setString(1, maKH);
-            return stmt.executeUpdate() > 0;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    public boolean capNhatKhachHang(KhachHang kh) {
+    // 3. Cập nhật khách hàng
+    public boolean updateKhachHang(KhachHang kh) {
         String sql = "UPDATE KhachHang SET tenKhachHang=?, sdt=?, email=?, diemTichLuy=?, laThanhVien=? WHERE maKhachHang=?";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
@@ -90,6 +78,22 @@ public class KhachHang_DAO {
         return false;
     }
 
+    // 4. Xóa khách hàng theo mã
+    public boolean deleteKhachHang(String maKH) {
+        String sql = "DELETE FROM KhachHang WHERE maKhachHang = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setString(1, maKH);
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // 5. Tìm kiếm khách hàng theo tên hoặc sdt
     public List<KhachHang> timKiemKhachHang(String keyword) {
         List<KhachHang> ds = new ArrayList<>();
         String sql = "SELECT * FROM KhachHang WHERE tenKhachHang LIKE ? OR sdt LIKE ?";
@@ -119,23 +123,30 @@ public class KhachHang_DAO {
         return ds;
     }
 
-	public KhachHang findByMaKH(String maKH) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    // 6. Lấy khách hàng theo mã
+    public KhachHang getKhachHangById(String maKH) {
+        String sql = "SELECT * FROM KhachHang WHERE maKhachHang = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
 
-	public boolean deleteKhachHang(String maKH) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+            stmt.setString(1, maKH);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return new KhachHang(
+                        rs.getString("maKhachHang"),
+                        rs.getString("tenKhachHang"),
+                        rs.getString("sdt"),
+                        rs.getString("email"),
+                        rs.getInt("diemTichLuy"),
+                        rs.getBoolean("laThanhVien")
+                );
+            }
 
-	public boolean updateKhachHang(KhachHang khachHang) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-	public boolean insertKhachHang(KhachHang kh) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+
 }

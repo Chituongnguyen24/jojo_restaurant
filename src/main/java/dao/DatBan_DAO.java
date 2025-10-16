@@ -19,18 +19,18 @@ public class DatBan_DAO {
         List<PhieuDatBan> ds = new ArrayList<>();
 
         String sql = """
-            SELECT 
-                p.MaPhieu,
-                p.ThoiGianDat,
-                p.TienCoc,
-                k.MaKhachHang, k.TenKhachHang, k.SDT, k.Email, k.DiemTichLuy, k.LaThanhVien,
-                nv.MaNV, nv.TenNhanVien, nv.GioiTinh, nv.SDT AS NV_SDT, nv.Email AS NV_Email,
-                b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai
-            FROM PhieuDatBan p
-            JOIN KhachHang k ON p.MaKhachHang = k.MaKhachHang
-            JOIN NhanVien nv ON p.MaNV = nv.MaNV
-            JOIN Ban b ON p.MaBan = b.MaBan
-        """;
+                SELECT 
+                    p.MaPhieu,
+                    p.ThoiGianDat,
+                    p.TienCoc,
+                    k.MaKhachHang, k.TenKhachHang, k.SDT, k.Email, k.DiemTichLuy, k.LaThanhVien,
+                    nv.MaNV, nv.TenNhanVien, nv.GioiTinh, nv.SDT AS NV_SDT, nv.Email AS NV_Email,
+                    b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai
+                FROM PhieuDatBan p
+                JOIN KhachHang k ON p.MaKhachHang = k.MaKhachHang
+                JOIN NhanVien nv ON p.MaNV = nv.MaNV
+                JOIN Ban b ON p.MaBan = b.MaBan
+                """;
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql);
@@ -39,12 +39,12 @@ public class DatBan_DAO {
             while (rs.next()) {
                 // Thông tin khách hàng
                 KhachHang kh = new KhachHang(
-                    rs.getString("MaKhachHang"),
-                    rs.getString("TenKhachHang"),
-                    rs.getString("SDT"),
-                    rs.getString("Email"),
-                    rs.getInt("DiemTichLuy"),
-                    rs.getBoolean("LaThanhVien")
+                        rs.getString("MaKhachHang"),
+                        rs.getString("TenKhachHang"),
+                        rs.getString("SDT"),
+                        rs.getString("Email"),
+                        rs.getInt("DiemTichLuy"),
+                        rs.getBoolean("LaThanhVien")
                 );
 
                 // Thông tin nhân viên
@@ -57,11 +57,11 @@ public class DatBan_DAO {
 
                 // Thông tin bàn
                 Ban ban = new Ban(
-                    rs.getString("MaBan"),
-                    rs.getInt("SoCho"),
-                    LoaiBan.valueOf(rs.getString("LoaiBan")),
-                    rs.getString("MaKhuVuc"),
-                    TrangThaiBan.valueOf(rs.getString("TrangThai"))
+                        rs.getString("MaBan"),
+                        rs.getInt("SoCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("LoaiBan")),
+                        rs.getString("MaKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("TrangThai"))
                 );
 
                 // Phiếu đặt bàn
@@ -69,12 +69,12 @@ public class DatBan_DAO {
                 double tienCoc = rs.getDouble("TienCoc");
 
                 PhieuDatBan phieu = new PhieuDatBan(
-                    rs.getString("MaPhieu"),
-                    thoiGianDat,
-                    kh,
-                    nv,
-                    ban,
-                    tienCoc
+                        rs.getString("MaPhieu"),
+                        thoiGianDat,
+                        kh,
+                        nv,
+                        ban,
+                        tienCoc
                 );
 
                 ds.add(phieu);
@@ -94,19 +94,19 @@ public class DatBan_DAO {
         List<PhieuDatBan> ds = new ArrayList<>();
 
         String sql = """
-            SELECT 
-                p.MaPhieu,
-                p.ThoiGianDat,
-                p.TienCoc,
-                k.MaKhachHang, k.TenKhachHang, k.SDT, k.Email, k.DiemTichLuy, k.LaThanhVien,
-                nv.MaNV, nv.TenNhanVien, nv.GioiTinh, nv.SDT AS NV_SDT, nv.Email AS NV_Email,
-                b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai
-            FROM PhieuDatBan p
-            JOIN KhachHang k ON p.MaKhachHang = k.MaKhachHang
-            JOIN NhanVien nv ON p.MaNV = nv.MaNV
-            JOIN Ban b ON p.MaBan = b.MaBan
-            WHERE k.TenKhachHang LIKE ?
-        """;
+                SELECT 
+                    p.MaPhieu,
+                    p.ThoiGianDat,
+                    p.TienCoc,
+                    k.MaKhachHang, k.TenKhachHang, k.SDT, k.Email, k.DiemTichLuy, k.LaThanhVien,
+                    nv.MaNV, nv.TenNhanVien, nv.GioiTinh, nv.SDT AS NV_SDT, nv.Email AS NV_Email,
+                    b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai
+                FROM PhieuDatBan p
+                JOIN KhachHang k ON p.MaKhachHang = k.MaKhachHang
+                JOIN NhanVien nv ON p.MaNV = nv.MaNV
+                JOIN Ban b ON p.MaBan = b.MaBan
+                WHERE k.TenKhachHang LIKE ?
+                """;
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
@@ -116,12 +116,12 @@ public class DatBan_DAO {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     KhachHang kh = new KhachHang(
-                        rs.getString("MaKhachHang"),
-                        rs.getString("TenKhachHang"),
-                        rs.getString("SDT"),
-                        rs.getString("Email"),
-                        rs.getInt("DiemTichLuy"),
-                        rs.getBoolean("LaThanhVien")
+                            rs.getString("MaKhachHang"),
+                            rs.getString("TenKhachHang"),
+                            rs.getString("SDT"),
+                            rs.getString("Email"),
+                            rs.getInt("DiemTichLuy"),
+                            rs.getBoolean("LaThanhVien")
                     );
 
                     NhanVien nv = new NhanVien();
@@ -132,23 +132,23 @@ public class DatBan_DAO {
                     nv.setEmail(rs.getString("NV_Email"));
 
                     Ban ban = new Ban(
-                        rs.getString("MaBan"),
-                        rs.getInt("SoCho"),
-                        LoaiBan.valueOf(rs.getString("LoaiBan")),
-                        rs.getString("MaKhuVuc"),
-                        TrangThaiBan.valueOf(rs.getString("TrangThai"))
+                            rs.getString("MaBan"),
+                            rs.getInt("SoCho"),
+                            LoaiBan.fromTenHienThi(ten),
+                            rs.getString("MaKhuVuc"),
+                            TrangThaiBan.fromString(rs.getString("TrangThai")) 
                     );
 
                     LocalDateTime thoiGianDat = rs.getTimestamp("ThoiGianDat").toLocalDateTime();
                     double tienCoc = rs.getDouble("TienCoc");
 
                     PhieuDatBan phieu = new PhieuDatBan(
-                        rs.getString("MaPhieu"),
-                        thoiGianDat,
-                        kh,
-                        nv,
-                        ban,
-                        tienCoc
+                            rs.getString("MaPhieu"),
+                            thoiGianDat,
+                            kh,
+                            nv,
+                            ban,
+                            tienCoc
                     );
 
                     ds.add(phieu);

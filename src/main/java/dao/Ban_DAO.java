@@ -177,4 +177,28 @@ public class Ban_DAO {
         }
         return ds;
     }
+
+    public Ban getBanById(String maBan) {
+        String sql = "SELECT * FROM Ban WHERE maBan = ?";
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setString(1, maBan);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.valueOf(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.valueOf(rs.getString("trangThai"))
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }
