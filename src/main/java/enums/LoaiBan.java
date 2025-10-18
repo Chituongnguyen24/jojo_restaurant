@@ -28,6 +28,7 @@ public enum LoaiBan {
                 return THUONG;
             case "VIP":
             case "BAN_VIP":
+            case "BÀN VIP":
                 return VIP;
             case "SAN_THUONG":
             case "SÂN THƯỢNG":

@@ -176,4 +176,9 @@ public class KhachHang_DAO {
         if (hang.equals("Bạc")) return laSinhNhat ? 0.15 : 0.10;
         return laSinhNhat ? 0.20 : 0.15;
     }
+
+	public List<KhachHang> findByPhone(String text) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }
