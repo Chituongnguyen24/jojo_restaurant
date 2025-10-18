@@ -9,10 +9,10 @@ import connectDB.ConnectDB;
 
 public class KhachHang_DAO {
 
-    // 1. Lấy tất cả khách hàng
+    // 1. Lấy tất cả khách hàng (chỉ thành viên: laThanhVien = 1)
     public List<KhachHang> getAllKhachHang() {
         List<KhachHang> ds = new ArrayList<>();
-        String sql = "SELECT * FROM KhachHang";
+        String sql = "SELECT * FROM KhachHang WHERE laThanhVien = 1";  // Fix: Sử dụng =1 thay vì True cho MySQL boolean
 
         try (Connection con = ConnectDB.getConnection();
              Statement stmt = con.createStatement();
@@ -31,14 +31,15 @@ public class KhachHang_DAO {
             }
 
         } catch (SQLException e) {
+            System.err.println("[DAO] Lỗi getAllKhachHang: " + e.getMessage());  // Log lỗi rõ hơn
             e.printStackTrace();
         }
         return ds;
     }
 
-    // 2. Thêm khách hàng
+    // 2. Thêm khách hàng (mặc định laThanhVien = 1)
     public boolean insertKhachHang(KhachHang kh) {
-        String sql = "INSERT INTO KhachHang(maKhachHang, tenKhachHang, sdt, email, diemTichLuy, laThanhVien) VALUES (?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO KhachHang(maKhachHang, tenKhachHang, sdt, email, diemTichLuy, laThanhVien) VALUES (?, ?, ?, ?, ?, 1)";  // Fix: =1
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
@@ -47,19 +48,19 @@ public class KhachHang_DAO {
             stmt.setString(3, kh.getSdt());
             stmt.setString(4, kh.getEmail());
             stmt.setInt(5, kh.getDiemTichLuy());
-            stmt.setBoolean(6, kh.isLaThanhVien());
 
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
+            System.err.println("[DAO] Lỗi insertKhachHang: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
     }
 
-    // 3. Cập nhật khách hàng
+    // 3. Cập nhật khách hàng (giữ laThanhVien=1 cứng, không update)
     public boolean updateKhachHang(KhachHang kh) {
-        String sql = "UPDATE KhachHang SET tenKhachHang=?, sdt=?, email=?, diemTichLuy=?, laThanhVien=? WHERE maKhachHang=?";
+        String sql = "UPDATE KhachHang SET tenKhachHang=?, sdt=?, email=?, diemTichLuy=?, laThanhVien=1 WHERE maKhachHang=?";  // Fix: 5 placeholders, laThanhVien=1 cứng
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
@@ -67,20 +68,20 @@ public class KhachHang_DAO {
             stmt.setString(2, kh.getSdt());
             stmt.setString(3, kh.getEmail());
             stmt.setInt(4, kh.getDiemTichLuy());
-            stmt.setBoolean(5, kh.isLaThanhVien());
-            stmt.setString(6, kh.getMaKhachHang());
+            stmt.setString(5, kh.getMaKhachHang());  // Fix: Chỉ set đến 5, bỏ setBoolean
 
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
+            System.err.println("[DAO] Lỗi updateKhachHang: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
     }
 
-    // 4. Xóa khách hàng theo mã
+    // 4. "Xóa" khách hàng: Chuyển laThanhVien = 0 (ẩn khỏi view)
     public boolean deleteKhachHang(String maKH) {
-        String sql = "DELETE FROM KhachHang WHERE maKhachHang = ?";
+        String sql = "UPDATE KhachHang SET laThanhVien = 0 WHERE maKhachHang = ?";  // Fix: =0 thay vì FALSE
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
@@ -88,15 +89,16 @@ public class KhachHang_DAO {
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
+            System.err.println("[DAO] Lỗi deleteKhachHang: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
     }
 
-    // 5. Tìm kiếm khách hàng theo tên hoặc sdt
-    public List<KhachHang> timKiemKhachHang(String keyword) {
+    // 5. Tìm kiếm khách hàng (chỉ thành viên: laThanhVien = 1)
+    public List<KhachHang> findKhachHang(String keyword) {
         List<KhachHang> ds = new ArrayList<>();
-        String sql = "SELECT * FROM KhachHang WHERE tenKhachHang LIKE ? OR sdt LIKE ?";
+        String sql = "SELECT * FROM KhachHang WHERE (tenKhachHang LIKE ? OR sdt LIKE ?) AND laThanhVien = 1";  // Fix: =1
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
@@ -118,14 +120,15 @@ public class KhachHang_DAO {
             }
 
         } catch (SQLException e) {
+            System.err.println("[DAO] Lỗi findKhachHang: " + e.getMessage());
             e.printStackTrace();
         }
         return ds;
     }
 
-    // 6. Lấy khách hàng theo mã
+    // 6. Lấy khách hàng theo mã (chỉ nếu laThanhVien = 1)
     public KhachHang getKhachHangById(String maKH) {
-        String sql = "SELECT * FROM KhachHang WHERE maKhachHang = ?";
+        String sql = "SELECT * FROM KhachHang WHERE maKhachHang = ? AND laThanhVien = 1";  // Fix: =1
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
@@ -143,10 +146,34 @@ public class KhachHang_DAO {
             }
 
         } catch (SQLException e) {
+            System.err.println("[DAO] Lỗi getKhachHangById: " + e.getMessage());
             e.printStackTrace();
         }
         return null;
     }
 
+    // 8. Cập nhật điểm tích lũy
+    public void capNhatDiemTichLuy(String maKH, double tongTienThanhToan) {
+        int diemMoi = (int) (tongTienThanhToan / 50000); // 50k = 1 điểm
+        KhachHang kh = getKhachHangById(maKH);
+        if (kh != null) {
+            int tongDiem = kh.getDiemTichLuy() + diemMoi;
+            kh.setDiemTichLuy(tongDiem);
+            updateKhachHang(kh);
+        }
+    }
 
+    // 9. Xếp hạng từ điểm
+    public String xepHangKhachHang(int diem) {
+        if (diem < 200) return "Đồng";
+        else if (diem < 450) return "Bạc";
+        else return "Vàng";
+    }
+
+    // 10. Ưu đãi từ hạng
+    public double getUuDaiTheoHang(String hang, boolean laSinhNhat) {
+        if (hang.equals("Đồng")) return laSinhNhat ? 0.10 : 0.05;
+        if (hang.equals("Bạc")) return laSinhNhat ? 0.15 : 0.10;
+        return laSinhNhat ? 0.20 : 0.15;
+    }
 }

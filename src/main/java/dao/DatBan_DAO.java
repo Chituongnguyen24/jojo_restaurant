@@ -18,19 +18,13 @@ public class DatBan_DAO {
     public List<PhieuDatBan> getAllPhieuDatBan() {
         List<PhieuDatBan> ds = new ArrayList<>();
 
-        String sql = """
-                SELECT 
-                    p.MaPhieu,
-                    p.ThoiGianDat,
-                    p.TienCoc,
-                    k.MaKhachHang, k.TenKhachHang, k.SDT, k.Email, k.DiemTichLuy, k.LaThanhVien,
-                    nv.MaNV, nv.TenNhanVien, nv.GioiTinh, nv.SDT AS NV_SDT, nv.Email AS NV_Email,
-                    b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai
-                FROM PhieuDatBan p
-                JOIN KhachHang k ON p.MaKhachHang = k.MaKhachHang
-                JOIN NhanVien nv ON p.MaNV = nv.MaNV
-                JOIN Ban b ON p.MaBan = b.MaBan
-                """;
+        String sql = " SELECT p.MaPhieu, p.ThoiGianDat, p.TienCoc, k.MaKhachHang, k.TenKhachHang, k.SDT, k.Email, k.DiemTichLuy, k.LaThanhVien,"+
+                   " nv.MaNV, nv.TenNhanVien, nv.GioiTinh, nv.SDT AS NV_SDT, nv.Email AS NV_Email,"+
+                   "b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai"+
+                "FROM PhieuDatBan p"+
+                "JOIN KhachHang k ON p.MaKhachHang = k.MaKhachHang"+
+                "JOIN NhanVien nv ON p.MaNV = nv.MaNV"+
+                "JOIN Ban b ON p.MaBan = b.MaBan";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql);
@@ -93,20 +87,19 @@ public class DatBan_DAO {
     public List<PhieuDatBan> timTheoTenKhachHang(String ten) {
         List<PhieuDatBan> ds = new ArrayList<>();
 
-        String sql = """
-                SELECT 
-                    p.MaPhieu,
-                    p.ThoiGianDat,
-                    p.TienCoc,
-                    k.MaKhachHang, k.TenKhachHang, k.SDT, k.Email, k.DiemTichLuy, k.LaThanhVien,
-                    nv.MaNV, nv.TenNhanVien, nv.GioiTinh, nv.SDT AS NV_SDT, nv.Email AS NV_Email,
-                    b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai
-                FROM PhieuDatBan p
-                JOIN KhachHang k ON p.MaKhachHang = k.MaKhachHang
-                JOIN NhanVien nv ON p.MaNV = nv.MaNV
-                JOIN Ban b ON p.MaBan = b.MaBan
-                WHERE k.TenKhachHang LIKE ?
-                """;
+        String sql =
+                "SELECT "+
+                "   p.MaPhieu,"+
+        		"	p.ThoiGianDat,"+
+                "   p.TienCoc,"+
+                "   k.MaKhachHang, k.TenKhachHang, k.SDT, k.Email, k.DiemTichLuy, k.LaThanhVien,"+
+                "   nv.MaNV, nv.TenNhanVien, nv.GioiTinh, nv.SDT AS NV_SDT, nv.Email AS NV_Email,"+
+                "   b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai"+
+               " FROM PhieuDatBan p"+
+               " JOIN KhachHang k ON p.MaKhachHang = k.MaKhachHang"+
+               " JOIN NhanVien nv ON p.MaNV = nv.MaNV"+
+               " JOIN Ban b ON p.MaBan = b.MaBan"+
+               " WHERE k.TenKhachHang LIKE ?";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
