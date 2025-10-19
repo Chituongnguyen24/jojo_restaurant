@@ -7,11 +7,11 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 
 public class KhachHang_EditDialog extends JDialog {
-    private JTextField txtTenKH, txtSDT, txtEmail;
-    private JCheckBox chkThanhVien;
-    private JTextField txtDiem;
+    private JTextField txtTenKH, txtSDT, txtEmail, txtDiem;
     private JButton btnSave, btnCancel;
     private KhachHang_DAO khachHangDAO;
     private KhachHang khachHang;
@@ -21,86 +21,297 @@ public class KhachHang_EditDialog extends JDialog {
         this.khachHangDAO = khachHangDAO;
         this.khachHang = khachHang;
 
-        setSize(460, 400);
+        setSize(800, 700);
         setLocationRelativeTo(owner);
         setResizable(false);
         setLayout(new BorderLayout());
-        getContentPane().setBackground(new Color(250, 246, 238));
+        getContentPane().setBackground(new Color(245, 245, 250));
 
-        JLabel lblTitle = new JLabel("Chỉnh sửa thông tin khách hàng", JLabel.CENTER);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblTitle.setBorder(new EmptyBorder(15, 10, 15, 10));
-        add(lblTitle, BorderLayout.NORTH);
+        // ===== Header với icon =====
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(255, 255, 255));
+        headerPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(230, 230, 235)),
+            new EmptyBorder(20, 25, 20, 25)
+        ));
 
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
-        formPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
-        formPanel.setOpaque(false);
+        JLabel lblTitle = new JLabel("Chỉnh sửa khách hàng");
+        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
+        lblTitle.setForeground(new Color(30, 30, 35));
+        
+        JLabel lblSubtitle = new JLabel("Điền thông tin khách hàng vào form bên dưới");
+        lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblSubtitle.setForeground(new Color(120, 120, 130));
 
-        formPanel.add(new JLabel("Tên khách hàng:"));
-        txtTenKH = new JTextField(khachHang.getTenKhachHang());
-        formPanel.add(txtTenKH);
+        JPanel titleContainer = new JPanel(new GridLayout(2, 1, 0, 5));
+        titleContainer.setOpaque(false);
+        titleContainer.add(lblTitle);
+        titleContainer.add(lblSubtitle);
 
-        formPanel.add(new JLabel("Số điện thoại:"));
-        txtSDT = new JTextField(khachHang.getSdt());
-        formPanel.add(txtSDT);
+        headerPanel.add(titleContainer, BorderLayout.WEST);
+        add(headerPanel, BorderLayout.NORTH);
 
-        formPanel.add(new JLabel("Email:"));
-        txtEmail = new JTextField(khachHang.getEmail());
-        formPanel.add(txtEmail);
+        // ===== Form Panel với card style =====
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(new Color(245, 245, 250));
+        mainPanel.setBorder(new EmptyBorder(25, 25, 25, 25));
 
-        formPanel.add(new JLabel("Điểm tích lũy:"));
-        txtDiem = new JTextField(String.valueOf(khachHang.getDiemTichLuy()));
-        formPanel.add(txtDiem);
+        JPanel formCard = new JPanel();
+        formCard.setLayout(new BoxLayout(formCard, BoxLayout.Y_AXIS));
+        formCard.setBackground(Color.WHITE);
+        formCard.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(12, new Color(230, 230, 235)),
+            new EmptyBorder(25, 25, 25, 25)
+        ));
 
-        formPanel.add(new JLabel("Là thành viên:"));
-        chkThanhVien = new JCheckBox();
-        chkThanhVien.setSelected(khachHang.isLaThanhVien());
-        formPanel.add(chkThanhVien);
+        // Tên khách hàng
+        formCard.add(createFieldPanel("Tên khách hàng *", 
+            txtTenKH = createStyledTextField("Nhập họ và tên", khachHang.getTenKhachHang())));
+        formCard.add(Box.createVerticalStrut(18));
 
-        add(formPanel, BorderLayout.CENTER);
+        // Số điện thoại
+        formCard.add(createFieldPanel("Số điện thoại *", 
+            txtSDT = createStyledTextField("Nhập số điện thoại", khachHang.getSdt())));
+        formCard.add(Box.createVerticalStrut(18));
 
-        JPanel btnPanel = new JPanel();
-        btnPanel.setBorder(new EmptyBorder(10, 10, 15, 10));
-        btnPanel.setOpaque(false);
+        // Email
+        formCard.add(createFieldPanel("Email *", 
+            txtEmail = createStyledTextField("Nhập địa chỉ email", khachHang.getEmail())));
+        formCard.add(Box.createVerticalStrut(18));
 
-        btnSave = new JButton("💾 Lưu thay đổi");
-        btnSave.setBackground(new Color(30, 150, 80));
-        btnSave.setForeground(Color.WHITE);
-        btnSave.setFocusPainted(false);
-        btnSave.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        btnSave.addActionListener(this::saveChanges);
+        // Điểm tích lũy
+        formCard.add(createFieldPanel("Điểm tích lũy", 
+            txtDiem = createStyledTextField("Nhập điểm tích lũy", String.valueOf(khachHang.getDiemTichLuy()))));
+        formCard.add(Box.createVerticalStrut(18));
 
-        btnCancel = new JButton("✖ Hủy");
-        btnCancel.setBackground(new Color(200, 80, 70));
-        btnCancel.setForeground(Color.WHITE);
-        btnCancel.setFocusPainted(false);
-        btnCancel.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        // Info note
+        JPanel infoPanel = new JPanel(new BorderLayout(10, 0));
+        infoPanel.setOpaque(false);
+        infoPanel.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(8, new Color(33, 150, 243)),
+            new EmptyBorder(12, 15, 12, 15)
+        ));
+       
+
+        mainPanel.add(formCard, BorderLayout.CENTER);
+        add(mainPanel, BorderLayout.CENTER);
+
+        // ===== Button Panel =====
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
+        btnPanel.setBorder(new EmptyBorder(0, 25, 25, 25));
+        btnPanel.setBackground(new Color(245, 245, 250));
+
+        btnCancel = createModernButton("Hủy", new Color(220, 220, 225), new Color(60, 60, 70));
         btnCancel.addActionListener(e -> dispose());
 
-        btnPanel.add(btnSave);
+        btnSave = createModernButton("Lưu khách hàng", new Color(76, 175, 80), Color.WHITE);
+        btnSave.addActionListener(this::saveChanges);
+
         btnPanel.add(btnCancel);
+        btnPanel.add(btnSave);
 
         add(btnPanel, BorderLayout.SOUTH);
     }
 
+    private JPanel createFieldPanel(String label, JTextField textField) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setForeground(new Color(50, 50, 60));
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        textField.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        panel.add(lbl);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(textField);
+
+        return panel;
+    }
+
+    private JTextField createStyledTextField(String placeholder, String initialValue) {
+        JTextField field = new JTextField() {
+            private String placeholderText = placeholder;
+            private boolean showingPlaceholder = initialValue == null || initialValue.trim().isEmpty();
+
+            {
+                setText(showingPlaceholder ? placeholderText : initialValue);
+                setForeground(showingPlaceholder ? new Color(160, 160, 170) : new Color(40, 40, 50));
+                
+                addFocusListener(new FocusAdapter() {
+                    @Override
+                    public void focusGained(FocusEvent e) {
+                        if (showingPlaceholder) {
+                            setText("");
+                            setForeground(new Color(40, 40, 50));
+                            showingPlaceholder = false;
+                        }
+                        setBorder(BorderFactory.createCompoundBorder(
+                            new RoundedBorder(8, new Color(76, 175, 80)),
+                            BorderFactory.createEmptyBorder(12, 16, 12, 16)
+                        ));
+                    }
+
+                    @Override
+                    public void focusLost(FocusEvent e) {
+                        if (getText().trim().isEmpty()) {
+                            setText(placeholderText);
+                            setForeground(new Color(160, 160, 170));
+                            showingPlaceholder = true;
+                        }
+                        setBorder(BorderFactory.createCompoundBorder(
+                            new RoundedBorder(8, new Color(220, 220, 230)),
+                            BorderFactory.createEmptyBorder(12, 16, 12, 16)
+                        ));
+                    }
+                });
+            }
+
+            @Override
+            public String getText() {
+                return showingPlaceholder ? "" : super.getText();
+            }
+        };
+
+        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        field.setBackground(new Color(250, 250, 252));
+        field.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(8, new Color(220, 220, 230)),
+            BorderFactory.createEmptyBorder(12, 16, 12, 16)
+        ));
+        field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        field.setPreferredSize(new Dimension(400, 45));
+
+        return field;
+    }
+
+    private JButton createModernButton(String text, Color bg, Color fg) {
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+                Color buttonColor = bg;
+                if (getModel().isPressed()) {
+                    buttonColor = bg.darker();
+                } else if (getModel().isRollover()) {
+                    buttonColor = new Color(
+                        Math.min(255, bg.getRed() + 15),
+                        Math.min(255, bg.getGreen() + 15),
+                        Math.min(255, bg.getBlue() + 15)
+                    );
+                }
+
+                g2.setColor(buttonColor);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+                g2.dispose();
+
+                super.paintComponent(g);
+            }
+        };
+
+        btn.setForeground(fg);
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        btn.setPreferredSize(new Dimension(text.equals("Hủy") ? 90 : 140, 40));
+        btn.setContentAreaFilled(false);
+        btn.setBorderPainted(false);
+        btn.setFocusPainted(false);
+        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        return btn;
+    }
+
     private void saveChanges(ActionEvent e) {
         try {
-            khachHang.setTenKhachHang(txtTenKH.getText());
-            khachHang.setSdt(txtSDT.getText());
-            khachHang.setEmail(txtEmail.getText());
-            khachHang.setDiemTichLuy(Integer.parseInt(txtDiem.getText()));
-            khachHang.setLaThanhVien(chkThanhVien.isSelected());
+            String tenKH = txtTenKH.getText().trim();
+            String sdt = txtSDT.getText().trim();
+            String email = txtEmail.getText().trim();
+            String diemStr = txtDiem.getText().trim();
+
+            // Validation
+            if (tenKH.isEmpty() || sdt.isEmpty() || email.isEmpty()) {
+                showErrorDialog("Vui lòng điền đầy đủ thông tin bắt buộc!");
+                return;
+            }
+
+            if (!sdt.matches("\\d{10}")) {
+                showErrorDialog("Số điện thoại phải có 10 chữ số!");
+                return;
+            }
+
+            if (!email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+                showErrorDialog("Email không hợp lệ!");
+                return;
+            }
+
+            int diem = Integer.parseInt(diemStr);
+            if (diem < 0) {
+                showErrorDialog("Điểm tích lũy không thể âm!");
+                return;
+            }
+
+            // Cập nhật thông tin
+            khachHang.setTenKhachHang(tenKH);
+            khachHang.setSdt(sdt);
+            khachHang.setEmail(email);
+            khachHang.setDiemTichLuy(diem);
 
             boolean updated = khachHangDAO.updateKhachHang(khachHang);
             if (updated) {
-                JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
+                showSuccessDialog("Cập nhật thông tin khách hàng thành công!");
                 dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "Cập nhật thất bại, vui lòng thử lại.");
+                showErrorDialog("Không thể cập nhật khách hàng. Vui lòng thử lại!");
             }
+        } catch (NumberFormatException ex) {
+            showErrorDialog("Điểm tích lũy phải là số nguyên!");
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi: " + ex.getMessage());
+            showErrorDialog("Lỗi: " + ex.getMessage());
+        }
+    }
+
+    private void showSuccessDialog(String message) {
+        JOptionPane.showMessageDialog(this, message, "Thành công", 
+            JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showErrorDialog(String message) {
+        JOptionPane.showMessageDialog(this, message, "Lỗi", 
+            JOptionPane.ERROR_MESSAGE);
+    }
+
+    // ===== Custom Rounded Border =====
+    class RoundedBorder implements javax.swing.border.Border {
+        private int radius;
+        private Color color;
+
+        RoundedBorder(int radius, Color color) {
+            this.radius = radius;
+            this.color = color;
+        }
+
+        @Override
+        public Insets getBorderInsets(Component c) {
+            return new Insets(1, 1, 1, 1);
+        }
+
+        @Override
+        public boolean isBorderOpaque() {
+            return false;
+        }
+
+        @Override
+        public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(color);
+            g2.drawRoundRect(x, y, width - 1, height - 1, radius, radius);
+            g2.dispose();
         }
     }
 }

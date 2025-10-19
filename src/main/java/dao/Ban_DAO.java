@@ -78,11 +78,7 @@ public class Ban_DAO {
     }
 
     public boolean capNhatBan(Ban ban) {
-        String sql = """
-            UPDATE Ban
-            SET soCho = ?, loaiBan = ?, maKhuVuc = ?, trangThai = ?
-            WHERE maBan = ?
-        """;
+        String sql = "  UPDATE Ban  SET soCho = ?, loaiBan = ?, maKhuVuc = ?, trangThai = ? WHERE maBan = ?    ";
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
