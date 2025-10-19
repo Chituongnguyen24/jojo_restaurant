@@ -19,7 +19,7 @@ public class KhachHang_DiemTichLuy_View extends JPanel {
 
     public KhachHang_DiemTichLuy_View() {
         setLayout(new BorderLayout());
-        setBackground(new Color(251, 248, 241)); // Nền màu be #FBF8F1
+        setBackground(new Color(251, 248, 241)); 
 
         // ===== HEADER =====
         JPanel header = new JPanel(new BorderLayout());
@@ -162,9 +162,7 @@ public class KhachHang_DiemTichLuy_View extends JPanel {
                     "Sửa",
                     "Xóa"
             });
-            System.out.println("[VIEW] Đã add row cho KH: " + kh.getMaKhachHang() + " (điểm: " + kh.getDiemTichLuy() + ")");  // Log debug
         }
-        System.out.println("[VIEW] Tổng rows trong model: " + model.getRowCount());  // Log debug
     }
 
     // ===== Thống kê =====

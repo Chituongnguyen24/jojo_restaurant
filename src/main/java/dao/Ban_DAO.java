@@ -13,18 +13,12 @@ import java.util.Map;
 
 public class Ban_DAO {
 
-    /**
-     * Chuyển đổi một ResultSet thành đối tượng Ban.
-     * ĐÃ CẬP NHẬT: Sử dụng fromTenHienThi và fromString để map enum.
-     */
     private Ban createBanFromResultSet(ResultSet rs) throws SQLException {
         return new Ban(
             rs.getString("maBan"),
             rs.getInt("soCho"),
-            // SỬA Ở ĐÂY: Dùng hàm map tùy chỉnh thay vì valueOf()
             LoaiBan.fromTenHienThi(rs.getString("loaiBan")), 
             rs.getString("maKhuVuc"),
-            // SỬA Ở ĐÂY: Dùng hàm map tùy chỉnh thay vì valueOf()
             TrangThaiBan.fromString(rs.getString("trangThai")) 
         );
     }
