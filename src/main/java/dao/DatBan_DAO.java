@@ -1,11 +1,13 @@
 package dao;
 
 import java.sql.*;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 import connectDB.ConnectDB;
 import entity.Ban;
@@ -46,6 +48,46 @@ public class DatBan_DAO {
         }
 
         return danhSach;
+    }
+    //Hàm theo dõi thời gian đặt bàn
+    public void capNhatTrangThaiTheoThoiGian(Ban ban, LocalDateTime ngayGioDen) {
+        new Thread(() -> {
+            try {
+                LocalDateTime bayGio = LocalDateTime.now();
+
+                // Thời điểm trước 1 giờ
+                long millisTruoc1Gio = Duration.between(bayGio, ngayGioDen.minusHours(1)).toMillis();
+                if (millisTruoc1Gio > 0)
+                    Thread.sleep(millisTruoc1Gio);
+
+                // Cập nhật trạng thái bàn thành "Đã đặt" trước giờ đến 1 tiếng
+                ban.setTrangThai(TrangThaiBan.DA_DAT);
+                capNhatTrangThaiBan(ban); // Gọi DAO hoặc cập nhật giao diện
+
+                // Sau giờ đến 30 phút
+                long millisSau30p = Duration.between(LocalDateTime.now(), ngayGioDen.plusMinutes(30)).toMillis();
+                if (millisSau30p > 0)
+                    Thread.sleep(millisSau30p);
+
+                // Nếu chưa chuyển sang "Có khách" thì chuyển thành "Trống"
+                if (ban.getTrangThai() != TrangThaiBan.CO_KHACH) {
+                    ban.setTrangThai(TrangThaiBan.TRONG);
+                    capNhatTrangThaiBan(ban);
+                }
+
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    // Hàm cập nhật trạng thái bàn
+    public void capNhatTrangThaiBan(Ban ban) {
+        // Gọi SQL UPDATE trạng thái bàn trong database
+        // ví dụ:
+        // String sql = "UPDATE Ban SET trangThai = ? WHERE maBan = ?";
+        // PreparedStatement ps = connection.prepareStatement(sql);
+        // ...
     }
 
     // 2. Search booking tickets by customer name
