@@ -266,7 +266,6 @@ public class HoaDon_DAO {
         }
         return 0;
     }
-    // ==================== TÍNH TỔNG TIỀN HÓA ĐƠN ====================
     public double tinhTongTienHoaDon(String maHoaDon) {
         double tongTien = 0;
 

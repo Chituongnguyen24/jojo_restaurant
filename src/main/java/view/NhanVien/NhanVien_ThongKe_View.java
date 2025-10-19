@@ -30,7 +30,6 @@ public class NhanVien_ThongKe_View extends JPanel {
         setLayout(new BorderLayout());
         setBackground(new Color(250, 248, 243));
 
-        // ====== Panel chứa các thẻ thống kê ======
         JPanel topPanel = new JPanel(new GridLayout(1, 4, 15, 0));
         topPanel.setBackground(new Color(250, 248, 243));
         topPanel.setBorder(new EmptyBorder(20, 20, 10, 20));
