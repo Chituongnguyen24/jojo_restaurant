@@ -5,6 +5,8 @@ import entity.KhachHang;
 
 import javax.swing.*;
 import javax.swing.border.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.*;
 import java.awt.*;
 import java.util.List;
@@ -37,20 +39,27 @@ public class KhachHang_View extends JPanel {
         titlePanel.setOpaque(false);
         titlePanel.add(title);
         titlePanel.add(subtitle);
-
+        
         JButton btnAdd = createRoundedButton("+ Thêm khách hàng mới", new Color(76, 175, 80), Color.WHITE);
         btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnAdd.setPreferredSize(new Dimension(200, 45));
-
         btnAdd.addActionListener(e -> {
             KhachHang_AddDialog dialog = new KhachHang_AddDialog(null, khachHangDAO);
             dialog.setVisible(true);
-            loadKhachHangData();
+            loadKhachHangData(); 
             loadThongKe();
         });
 
-        header.add(titlePanel, BorderLayout.WEST);
-        header.add(btnAdd, BorderLayout.EAST);
+        JPanel topRow = new JPanel(new BorderLayout());
+        topRow.setOpaque(false);
+        topRow.add(titlePanel, BorderLayout.WEST);
+        topRow.add(btnAdd, BorderLayout.EAST);
+
+        JPanel headerContent = new JPanel(new BorderLayout());
+        headerContent.setOpaque(false);
+        headerContent.add(topRow, BorderLayout.NORTH);
+
+        header.add(headerContent, BorderLayout.CENTER);
         add(header, BorderLayout.NORTH);
 
         // ===== STATS =====
@@ -73,7 +82,7 @@ public class KhachHang_View extends JPanel {
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 8 || column == 9;
+                return column == 7 || column == 8;  // Fix: Chỉnh đúng index (Sửa=7, Xóa=8)
             }
         };
 
@@ -141,11 +150,23 @@ public class KhachHang_View extends JPanel {
 
     // ===== Load dữ liệu khách hàng =====
     private void loadKhachHangData() {
+        loadKhachHangData(null);  
+    }
+
+    private void loadKhachHangData(String keyword) {
+        System.out.println("[VIEW] Bắt đầu load dữ liệu, keyword: '" + (keyword != null ? keyword : "null") + "'");  // Log debug (có thể bỏ sau)
         model.setRowCount(0);
-        List<KhachHang> dsKH = khachHangDAO.getAllKhachHang();
+        List<KhachHang> dsKH;
+        if (keyword == null || keyword.isEmpty()) {
+            dsKH = khachHangDAO.getAllKhachHang();
+        } else {
+            dsKH = khachHangDAO.findKhachHang(keyword);  
+        }
+
+        System.out.println("[VIEW] Nhận dsKH size: " + dsKH.size());  // Log debug
 
         for (KhachHang kh : dsKH) {
-            String hang = getHang(kh.getDiemTichLuy());
+            String hang = getHang(kh.getDiemTichLuy());  // Sử dụng method đồng bộ
             String trangThai = kh.isLaThanhVien() ? "Thành viên" : "Khách thường";
             model.addRow(new Object[]{
                     kh.getMaKhachHang(),
@@ -158,7 +179,9 @@ public class KhachHang_View extends JPanel {
                     "Sửa",
                     "Xóa"
             });
+            System.out.println("[VIEW] Đã add row cho KH: " + kh.getMaKhachHang());  // Log debug
         }
+        System.out.println("[VIEW] Tổng rows trong model: " + model.getRowCount());  // Log debug
     }
 
     // ===== Thống kê =====
@@ -169,7 +192,7 @@ public class KhachHang_View extends JPanel {
         int dong = 0, vang = 0, bac = 0;
 
         for (KhachHang kh : dsKH) {
-            String h = getHang(kh.getDiemTichLuy());
+            String h = getHang(kh.getDiemTichLuy());  // Đồng bộ với DAO
             if ("Đồng".equals(h)) dong++;
             else if ("Vàng".equals(h)) vang++;
             else if ("Bạc".equals(h)) bac++;
@@ -181,10 +204,9 @@ public class KhachHang_View extends JPanel {
         lblBac.setText(String.valueOf(bac));
     }
 
+    // Fix: Đồng bộ logic hạng với DAO
     private String getHang(int diem) {
-        if (diem < 1000) return "Bạc";
-        else if (diem < 5000) return "Đồng";
-        else return "Vàng";
+        return khachHangDAO.xepHangKhachHang(diem);
     }
 
     // ====== UI Helper Methods ======
@@ -336,13 +358,13 @@ public class KhachHang_View extends JPanel {
                             Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(KhachHang_View.this);
                             KhachHang_EditDialog dialog = new KhachHang_EditDialog(parentFrame, kh, khachHangDAO);
                             dialog.setVisible(true);
-                            loadKhachHangData();
+                            loadKhachHangData();  // Reload sau edit
                             loadThongKe();
                         }
                     });
                 } else if (type.equals("Xóa")) {
                     int confirm = JOptionPane.showConfirmDialog(
-                        table,
+                        null,
                         "Bạn có chắc chắn muốn xóa khách hàng này?",
                         "Xác nhận xóa",
                         JOptionPane.YES_NO_OPTION,
@@ -350,8 +372,8 @@ public class KhachHang_View extends JPanel {
                     );
                     if (confirm == JOptionPane.YES_OPTION) {
                         if (khachHangDAO.deleteKhachHang(maKH)) {
-                            ((DefaultTableModel) table.getModel()).removeRow(selectedRow);
-                            loadThongKe();
+                            model.removeRow(selectedRow);  // Remove ngay row
+                            loadThongKe();  // Reload stats
                         } else {
                             JOptionPane.showMessageDialog(table, "Xóa thất bại!");
                         }

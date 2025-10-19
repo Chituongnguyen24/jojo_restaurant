@@ -32,7 +32,7 @@ public class HoaDon_View extends JPanel {
         title.setFont(new Font("Segoe UI", Font.BOLD, 26));
         title.setForeground(new Color(30, 30, 30));
 
-        JLabel subtitle = new JLabel("Tạo và quản lý hóa đơn thanh toán");
+        JLabel subtitle = new JLabel("Thanh toán và quản lý hóa đơn thanh toán");
         subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitle.setForeground(new Color(100, 100, 100));
 
@@ -41,7 +41,7 @@ public class HoaDon_View extends JPanel {
         titlePanel.add(title);
         titlePanel.add(subtitle);
 
-        JButton btnAdd = createRoundedButton("+ Tạo hóa đơn mới", new Color(76, 175, 80), Color.WHITE);
+        JButton btnAdd = createRoundedButton("Thanh toán hóa đơn", new Color(76, 175, 80), Color.WHITE);
         btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnAdd.setPreferredSize(new Dimension(200, 45));
         btnAdd.addActionListener(e -> {

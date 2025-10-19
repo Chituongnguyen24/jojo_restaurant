@@ -51,11 +51,10 @@ public class HoaDon_DAO {
 
     // ==================== THÊM HÓA ĐƠN ====================
     public boolean addHoaDon(HoaDon hd) {
-        String sql = """
-            INSERT INTO HOADON(maHoaDon, maKhachHang, ngayLap, phuongThuc, maKhuyenMai, 
-                               maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """;
+        String sql =
+            "INSERT INTO HOADON(maHoaDon, maKhachHang, ngayLap, phuongThuc, maKhuyenMai, "+
+            "                  maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)"+
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -93,12 +92,11 @@ public class HoaDon_DAO {
 
     // ==================== CẬP NHẬT HÓA ĐƠN ====================
     public boolean updateHoaDon(HoaDon hd) {
-        String sql = """
-            UPDATE HOADON
-            SET maKhachHang = ?, ngayLap = ?, phuongThuc = ?, maKhuyenMai = ?, 
-                maThue = ?, gioVao = ?, gioRa = ?, maNhanVien = ?, maPhieu = ?, daThanhToan = ?
-            WHERE maHoaDon = ?
-        """;
+        String sql = 
+            "UPDATE HOADON"+
+            "SET maKhachHang = ?, ngayLap = ?, phuongThuc = ?, maKhuyenMai = ?, "+
+            "    maThue = ?, gioVao = ?, gioRa = ?, maNhanVien = ?, maPhieu = ?, daThanhToan = ?"+
+            "WHERE maHoaDon = ?";
 
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -185,16 +183,10 @@ public class HoaDon_DAO {
     // ==================== THỐNG KÊ ====================
 
     public double getTongDoanhThu() {
-    	String sql = """
-    		    SELECT
-    		        SUM(cthd.soLuong * cthd.donGia) AS TongDoanhThu
-    		    FROM
-    		        HOADON hd
-    		    INNER JOIN
-    		        CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon
-    		    WHERE
-    		        hd.daThanhToan = 1
-    		    """;
+    	String sql = 
+    		   " SELECT SUM(cthd.soLuong * cthd.donGia) AS TongDoanhThu"+
+    		    "FROM  HOADON hd  INNER JOIN  CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon"+
+    		   " WHERE      hd.daThanhToan = 1";
         try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -239,17 +231,11 @@ public class HoaDon_DAO {
     }
 
     public double getDoanhThuTheoNgay(int ngayTruoc) {
-        String sql = """
-                SELECT
-                    SUM(cthd.soLuong * cthd.donGia) AS DoanhThuTrongNgay
-                FROM
-                    HOADON hd
-                INNER JOIN
-                    CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon
-                WHERE
-                    hd.daThanhToan = 1 AND DATEDIFF(day, hd.ngayLap, GETDATE()) <= ?
-                """;
-                
+        String sql = 
+               " SELECT      SUM(cthd.soLuong * cthd.donGia) AS DoanhThuTrongNgay"+
+               " FROM      HOADON hd  INNER JOIN     CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon"+
+               " WHERE     hd.daThanhToan = 1 AND DATEDIFF(day, hd.ngayLap, GETDATE()) <= ?";
+                		
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
@@ -270,11 +256,10 @@ public class HoaDon_DAO {
     public double tinhTongTienHoaDon(String maHoaDon) {
         double tongTien = 0;
 
-        String sqlChiTiet = """
-            SELECT SUM(ct.soLuong * ct.donGia) AS Tong
-            FROM CHITIETHOADON ct
-            WHERE ct.maHoaDon = ?
-        """;
+        String sqlChiTiet = 
+          "  SELECT SUM(ct.soLuong * ct.donGia) AS Tong"+
+          "  FROM CHITIETHOADON ct"+
+          "  WHERE ct.maHoaDon = ?";
 
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt1 = conn.prepareStatement(sqlChiTiet)) {
@@ -285,13 +270,10 @@ public class HoaDon_DAO {
                     tongTien = rs.getDouble("Tong");
             }
 
-            String sqlThueKM = """
-                    SELECT t.tyLeThue, km.giaTri
-                    FROM HOADON hd
-                    LEFT JOIN Thue t ON hd.maThue = t.maSoThue
-                    LEFT JOIN KhuyenMai km ON hd.maKhuyenMai = km.maKhuyenMai
-                    WHERE hd.maHoaDon = ?
-                """;
+            String sqlThueKM = " SELECT t.tyLeThue, km.giaTri   FROM HOADON hd"+
+                   " LEFT JOIN Thue t ON hd.maThue = t.maSoThue"+
+                    "LEFT JOIN KhuyenMai km ON hd.maKhuyenMai = km.maKhuyenMai"+
+                   " WHERE hd.maHoaDon = ?        "       ;
 
             try (PreparedStatement pstmt2 = conn.prepareStatement(sqlThueKM)) {
                 pstmt2.setString(1, maHoaDon);

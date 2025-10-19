@@ -220,7 +220,7 @@ public class KhachHang_View extends JPanel implements ActionListener {
         if (keyword.equals("Tìm kiếm khách hàng...") || keyword.isEmpty()) {
             loadDataTable(khDAO.getAllKhachHang());
         } else {
-            loadDataTable(khDAO.timKiemKhachHang(keyword));
+//            loadDataTable(khDAO.timKiemKhachHang(keyword));
         }
     }
 

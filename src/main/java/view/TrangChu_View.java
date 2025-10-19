@@ -5,8 +5,11 @@ import java.awt.*;
 
 import view.Ban.Ban_View;
 import view.Ban.DatBan_View;
+import view.HoaDon.HoaDon_TraCuu_View;
 import view.HoaDon.HoaDon_View;
+import view.KhachHang.KhachHang_View;
 import view.KhachHang.KhachHang_DiemTichLuy_View;
+import view.KhachHang.KhachHang_TraCuu_View;
 import view.NhanVien.NhanVien_View;
 import view.NhanVien.NhanVien_TraCuu_View;
 import view.NhanVien.NhanVien_ThongKe_View;
@@ -58,9 +61,10 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new ThucDon_View(), "Thực đơn");
         contentPanel.add(new HoaDon_View(), "Quản lý hóa đơn");
         contentPanel.add(new HoaDon_Thue_View(), "Quản lý thuế");
-        contentPanel.add(new HoaDon_KhuyenMai_View(), "Quản lý khuyến mãi");
+        contentPanel.add(new HoaDon_TraCuu_View(),"Tra cứu hóa đơn");
         contentPanel.add(new KhachHang_View(), "Quản lý khách hàng");
         contentPanel.add(new KhachHang_DiemTichLuy_View(), "Quản lý điểm tích lũy");
+        contentPanel.add(new KhachHang_TraCuu_View(),"Tra cứu khách hàng");
         contentPanel.add(new NhanVien_View(), "Nhân viên");
         contentPanel.add(new NhanVien_TraCuu_View(), "Tra cứu");
         contentPanel.add(new NhanVien_ThongKe_View(), "Thống kê");
@@ -91,15 +95,15 @@ public class TrangChu_View extends JPanel {
         JMenu menuHoaDon = new JMenu("Hóa đơn");
         JMenuItem mQLHD = new JMenuItem("Quản lý hóa đơn");
         JMenuItem mQLThue = new JMenuItem("Quản lý thuế");
-        JMenuItem mQLKM = new JMenuItem("Quản lý khuyến mãi");
+        JMenuItem mTCHD = new JMenuItem("Tra cứu hóa đơn");
         menuHoaDon.add(mQLHD);
         menuHoaDon.add(mQLThue);
-        menuHoaDon.add(mQLKM);
+        menuHoaDon.add(mTCHD);
 
         JMenu menuKH = new JMenu("Khách hàng");
         JMenuItem mQLKH = new JMenuItem("Quản lý khách hàng");
         JMenuItem mQLDiem = new JMenuItem("Quản lý điểm tích lũy");
-        JMenuItem mTraCuuKH = new JMenuItem("Tra cứu");
+        JMenuItem mTraCuuKH = new JMenuItem("Tra cứu khách hàng");
         menuKH.add(mQLKH);
         menuKH.add(mQLDiem);
         menuKH.add(mTraCuuKH);
@@ -128,11 +132,11 @@ public class TrangChu_View extends JPanel {
 
         mQLHD.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý hóa đơn"));
         mQLThue.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý thuế"));
-        mQLKM.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý khuyến mãi"));
+        mTCHD.addActionListener(e -> cardLayout.show(contentPanel, "Tra cứu hóa đơn"));
 
         mQLKH.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý khách hàng"));
         mQLDiem.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý điểm tích lũy"));
-        mTraCuuKH.addActionListener(e -> cardLayout.show(contentPanel, "Khách hàng"));
+        mTraCuuKH.addActionListener(e -> cardLayout.show(contentPanel, "Tra cứu khách hàng"));
 
         mQuanLy.addActionListener(e -> cardLayout.show(contentPanel, "Nhân viên"));
         mTraCuu.addActionListener(e -> cardLayout.show(contentPanel, "Tra cứu"));
@@ -150,3 +154,4 @@ public class TrangChu_View extends JPanel {
         cardLayout.show(contentPanel, "Hệ Thống");
     }
 }
+

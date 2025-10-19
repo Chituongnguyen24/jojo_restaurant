@@ -72,7 +72,7 @@ public class KhachHang_TraCuu_View extends JPanel {
         searchPanel.add(btnSearch);
 
         // ===== TABLE =====
-        String[] cols = {"Mã KH", "Tên khách hàng", "SĐT", "Email", "Điểm tích lũy", "Là thành viên"};
+        String[] cols = {"Mã KH", "Tên khách hàng", "SĐT", "Email", "Điểm tích lũy", "Hạng", "Là thành viên"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -157,15 +157,22 @@ public class KhachHang_TraCuu_View extends JPanel {
 
         for (KhachHang kh : filtered) {
             String loai = kh.isLaThanhVien() ? "Thành viên" : "Khách thường";
+            String hang = getHang(kh.getDiemTichLuy());  // Thêm hạng
             model.addRow(new Object[]{
                     kh.getMaKhachHang(),
                     kh.getTenKhachHang(),
                     kh.getSdt(),
                     kh.getEmail(),
                     kh.getDiemTichLuy(),
+                    hang,  // Thêm cột hạng
                     loai
             });
         }
+    }
+
+    // Thêm method getHang đồng bộ với DAO
+    private String getHang(int diem) {
+        return khachHangDAO.xepHangKhachHang(diem);
     }
 
     private String safeLower(String s) {
