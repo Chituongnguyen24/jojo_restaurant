@@ -1,4 +1,4 @@
-package view.Ban; // Đã đổi package
+package view.Ban; 
 
 import dao.Ban_DAO;
 import entity.Ban;
@@ -9,10 +9,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.*;
 
-/**
- * Dịch vụ Singleton chạy ngầm để quản lý các bàn đã đặt.
- * Sẽ tự động trả bàn về "Trống" nếu quá 30 phút mà khách không đến.
- */
+
 public class DichVuLapLichDatBan {
     private static DichVuLapLichDatBan instance;
     private Ban_DAO banDAO;
@@ -34,7 +31,6 @@ public class DichVuLapLichDatBan {
     public void start(Ban_DAO banDAO) {
         this.banDAO = banDAO;
         boLapLich.scheduleAtFixedRate(this::kiemTraCacLichHen, 1, 1, TimeUnit.MINUTES);
-        System.out.println("Dịch vụ Lập lịch Đặt bàn đã khởi động.");
     }
 
     private void kiemTraCacLichHen() {

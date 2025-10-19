@@ -12,8 +12,7 @@ public class KhachHang_DAO {
     // 1. Lấy tất cả khách hàng (chỉ thành viên: laThanhVien = 1)
     public List<KhachHang> getAllKhachHang() {
         List<KhachHang> ds = new ArrayList<>();
-        String sql = "SELECT * FROM KhachHang WHERE laThanhVien = 1";  // Fix: Sử dụng =1 thay vì True cho MySQL boolean
-
+        String sql = "SELECT * FROM KhachHang WHERE laThanhVien = 1"; 
         try (Connection con = ConnectDB.getConnection();
              Statement stmt = con.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -31,7 +30,7 @@ public class KhachHang_DAO {
             }
 
         } catch (SQLException e) {
-            System.err.println("[DAO] Lỗi getAllKhachHang: " + e.getMessage());  // Log lỗi rõ hơn
+            System.err.println("[DAO] Lỗi getAllKhachHang: " + e.getMessage()); 
             e.printStackTrace();
         }
         return ds;
