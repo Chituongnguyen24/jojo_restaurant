@@ -3,30 +3,58 @@ package view.ThucDon;
 import javax.swing.*;
 import dao.MonAn_DAO;
 import entity.MonAn;
+// Import thêm để vẽ và xử lý ảnh
+import java.awt.BasicStroke;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.LayoutManager;
+import java.awt.RenderingHints;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.Image;
+// Import các layout và thành phần khác
 import java.awt.*;
 import java.util.List;
 
 public class ThucDon_View extends JPanel {
     private JPanel panelDanhSach;
     private MonAn_DAO monAnDAO = new MonAn_DAO();
+    
+    // Màu cho nút thêm
+    private static final Color COLOR_BUTTON_ADD = new Color(28, 132, 221);
+    private static final Color COLOR_WHITE = Color.WHITE;
 
     public ThucDon_View() {
         setLayout(new BorderLayout());
         setBackground(new Color(251, 248, 241));
 
-        // Panel header với tiêu đề đơn giản
-        JPanel panelHeader = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        // === SỬA ĐỔI HEADER: Dùng BorderLayout để thêm nút ===
+        JPanel panelHeader = new JPanel(new BorderLayout(20, 0)); // Đổi layout
         panelHeader.setBackground(new Color(251, 248, 241));
         panelHeader.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         
         JLabel lblTitle = new JLabel("Quản lý thực đơn");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitle.setForeground(new Color(60, 60, 60));
-        panelHeader.add(lblTitle);
+        panelHeader.add(lblTitle, BorderLayout.WEST); // Tiêu đề bên trái
+        
+        // === THÊM MỚI: Nút "Thêm Món" ===
+        RoundedButton btnThemMon = new RoundedButton("Thêm Món Mới");
+        btnThemMon.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnThemMon.setBackground(COLOR_BUTTON_ADD);
+        btnThemMon.setForeground(COLOR_WHITE);
+        btnThemMon.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnThemMon.addActionListener(e -> moDialogThemMon());
+
+        // Panel để giữ nút ở bên phải
+        JPanel panelNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        panelNut.setOpaque(false);
+        panelNut.add(btnThemMon);
+        panelHeader.add(panelNut, BorderLayout.EAST); // Nút bên phải
+        // ===================================
         
         add(panelHeader, BorderLayout.NORTH);
 
-        // Panel danh sách món ăn
+        // Panel danh sách món ăn (Giữ nguyên)
         panelDanhSach = new JPanel(new GridLayout(0, 3, 15, 15));
         panelDanhSach.setBackground(new Color(251, 248, 241));
         panelDanhSach.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
@@ -38,8 +66,21 @@ public class ThucDon_View extends JPanel {
 
         loadMonAn();
     }
+    
+    /**
+     * === HÀM MỚI ===
+     * Mở dialog thêm món và truyền callback
+     */
+    private void moDialogThemMon() {
+        ThemMonAn_Dialog dialog = new ThemMonAn_Dialog(
+            (JFrame) SwingUtilities.getWindowAncestor(this),
+            this // Truyền ThucDon_View
+        );
+        dialog.setVisible(true);
+    }
 
-    // Tải danh sách món ăn từ DB
+
+    // Tải danh sách món ăn từ DB (giữ nguyên)
     public void loadMonAn() {
         panelDanhSach.removeAll();
         List<MonAn> list = monAnDAO.getAllMonAn();
@@ -53,99 +94,90 @@ public class ThucDon_View extends JPanel {
         panelDanhSach.repaint();
     }
 
-    // Tạo từng "thẻ" hiển thị món ăn
+    // Tạo thẻ món ăn (Giữ nguyên từ lần trước)
     private JPanel createMonAnCard(MonAn mon) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
-            BorderFactory.createEmptyBorder(15, 15, 15, 15)
-        ));
+        RoundedPanel panel = new RoundedPanel(new BorderLayout(15, 0));
         panel.setBackground(Color.WHITE);
-        panel.setPreferredSize(new Dimension(280, 150));
+        panel.setBorderColor(new Color(220, 220, 220));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 15));
+        panel.setPreferredSize(new Dimension(320, 110)); 
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Panel trên cùng cho tên món
-        JPanel panelTop = new JPanel(new BorderLayout());
-        panelTop.setBackground(Color.WHITE);
-        panelTop.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
-        
+        // Tải ảnh
+        ImageIcon icon = loadScaledImage(mon.getImagePath(), 90, 90);
+        JLabel lblImage = new JLabel(icon);
+        lblImage.setPreferredSize(new Dimension(90, 90));
+        lblImage.setOpaque(false);
+        panel.add(lblImage, BorderLayout.WEST);
+
+        // Panel thông tin
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false); 
+
         JLabel lblTen = new JLabel(mon.getTenMonAn());
         lblTen.setFont(new Font("Segoe UI", Font.BOLD, 16));
         lblTen.setForeground(new Color(60, 60, 60));
-        
-        panelTop.add(lblTen, BorderLayout.CENTER);
-        
-        // Panel giữa cho mô tả
-        JPanel panelMiddle = new JPanel(new BorderLayout());
-        panelMiddle.setBackground(Color.WHITE);
-        panelMiddle.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 0));
-        
-        JTextArea txtMoTa = new JTextArea(generateMoTa(mon.getTenMonAn()));
-        txtMoTa.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        txtMoTa.setForeground(new Color(80, 80, 80));
-        txtMoTa.setLineWrap(true);
-        txtMoTa.setWrapStyleWord(true);
-        txtMoTa.setEditable(false);
-        txtMoTa.setBackground(Color.WHITE);
-        txtMoTa.setRows(2);
-        
-        panelMiddle.add(txtMoTa, BorderLayout.CENTER);
-        
-        // Panel dưới cùng cho giá và trạng thái
-        JPanel panelBottom = new JPanel(new BorderLayout());
-        panelBottom.setBackground(Color.WHITE);
-        panelBottom.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
-        
+
         JLabel lblGia = new JLabel(String.format("%,.0f₫", mon.getDonGia()));
         lblGia.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblGia.setForeground(new Color(220, 0, 0));
-        
+
         JLabel lblTrangThai = new JLabel(mon.isTrangThai() ? "Có sẵn" : "Hết món");
         lblTrangThai.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblTrangThai.setForeground(mon.isTrangThai() ? new Color(0, 128, 0) : Color.RED);
         
-        panelBottom.add(lblGia, BorderLayout.WEST);
-        panelBottom.add(lblTrangThai, BorderLayout.EAST);
+        infoPanel.add(lblTen);
+        infoPanel.add(Box.createVerticalGlue()); 
+        infoPanel.add(lblGia);
+        infoPanel.add(Box.createVerticalStrut(5));
+        infoPanel.add(lblTrangThai);
 
-        panel.add(panelTop, BorderLayout.NORTH);
-        panel.add(panelMiddle, BorderLayout.CENTER);
-        panel.add(panelBottom, BorderLayout.SOUTH);
+        panel.add(infoPanel, BorderLayout.CENTER);
 
         // Hiệu ứng hover và click
         panel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
+                // Nhấp vào thẻ sẽ mở Dialog Chỉnh sửa (nơi có nút Xóa)
                 new ChinhSuaMonAn_Dialog(mon, ThucDon_View.this).setVisible(true);
             }
             
             @Override
             public void mouseEntered(java.awt.event.MouseEvent evt) {
                 panel.setBackground(new Color(245, 245, 245));
-                panel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(100, 150, 255), 2),
-                    BorderFactory.createEmptyBorder(14, 14, 14, 14)
-                ));
+                panel.setBorderColor(new Color(100, 150, 255));
+                panel.repaint();
             }
             
             @Override
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 panel.setBackground(Color.WHITE);
-                panel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createLineBorder(new Color(220, 220, 220), 1),
-                    BorderFactory.createEmptyBorder(15, 15, 15, 15)
-                ));
+                panel.setBorderColor(new Color(220, 220, 220)); 
+                panel.repaint();
             }
         });
 
         return panel;
     }
 
-    // Hàm phụ để tạo mô tả từ tên món (tạm thời)
-    private String generateMoTa(String tenMon) {
-        return tenMon + " - Món ăn đặc biệt với nguyên liệu tươi ngon, hương vị thơm ngon khó cưỡng.";
-    }
+    // Tải ảnh (Giữ nguyên)
+    private ImageIcon loadScaledImage(String path, int width, int height) {
+        ImageIcon icon = null;
+        if (path != null && !path.isEmpty()) {
+            icon = new ImageIcon(path); 
+        }
 
-    // Test riêng
+        if (icon == null || icon.getIconWidth() == -1) {
+            // Đặt tên ảnh placeholder của bạn ở đây
+            icon = new ImageIcon("images/mon an/placeholder.png"); 
+        }
+
+        Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
+        return new ImageIcon(img);
+    }
+    
+    // Test riêng (Giữ nguyên)
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getLookAndFeel());
@@ -159,5 +191,81 @@ public class ThucDon_View extends JPanel {
         frame.setSize(1200, 800);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+    
+    // =================================================================
+    // === CÁC LỚP NỘI BỘ ĐỂ BO TRÒN GÓC ===
+    // =================================================================
+
+    /**
+     * Lớp nội bộ cho Panel bo tròn (Dùng cho các thẻ Món ăn)
+     */
+    private class RoundedPanel extends JPanel {
+        private int cornerRadius = 25;
+        private Color borderColor; 
+
+        public RoundedPanel(LayoutManager layout) {
+            super(layout);
+            setOpaque(false);
+            this.borderColor = Color.GRAY; 
+        }
+        
+        public void setBorderColor(Color color) {
+            this.borderColor = color;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(getBackground());
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth()-1, getHeight()-1, cornerRadius, cornerRadius));
+            g2.dispose();
+            super.paintComponent(g); 
+        }
+        
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(this.borderColor); 
+            g2.setStroke(new BasicStroke(1)); 
+            g2.draw(new RoundRectangle2D.Double(0, 0, getWidth()-1, getHeight()-1, cornerRadius, cornerRadius));
+            g2.dispose();
+        }
+    }
+    
+    /**
+     * === THÊM MỚI ===
+     * Lớp nội bộ cho Nút bo tròn (Dùng cho nút "Thêm Món Mới")
+     */
+    private class RoundedButton extends JButton {
+        private int cornerRadius = 20; // Độ bo góc
+
+        public RoundedButton(String text) {
+            super(text);
+            setContentAreaFilled(false); 
+            setFocusPainted(false); 
+            setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); 
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            if (getModel().isPressed()) {
+                g2.setColor(getBackground().darker());
+            } else if (getModel().isRollover()) {
+                g2.setColor(getBackground().brighter());
+            } else {
+                g2.setColor(getBackground());
+            }
+            
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
+            
+            super.paintComponent(g);
+            g2.dispose();
+        }
     }
 }

@@ -22,10 +22,13 @@ public enum LoaiBan {
             throw new IllegalArgumentException("Tên LoaiBan không được null");
         }
         switch (ten.trim().toUpperCase()) {
+            // === SỬA LỖI: THÊM case "THƯỜNG" VÀO ĐÂY ===
             case "THUONG":
             case "BAN_THUONG":
             case "BÀN THƯỜNG":
+            case "THƯỜNG": // Thêm dòng này
                 return THUONG;
+            // ======================================
             case "VIP":
             case "BAN_VIP":
             case "BÀN VIP":

@@ -1,345 +1,419 @@
 package view.Ban;
 
+import dao.Ban_DAO;
+import entity.Ban;
+import enums.TrangThaiBan;
+
+// Import thêm cho Graphics
+import java.awt.BasicStroke;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.LayoutManager;
+import java.awt.RenderingHints;
+import java.awt.geom.RoundRectangle2D;
+// Import khác
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class Ban_View extends JPanel {
-    
-    private Map<String, java.util.List<TableInfo>> tablesByFloor;
+
+    // ... (Giữ nguyên các biến thành viên) ...
+    private Ban_DAO banDAO;
+    private Map<String, List<Ban>> tablesByArea; 
+    private Map<String, Integer> areaTableCounts; 
+    private List<String> areaNames;
+    private String currentArea;
     private JPanel tablesPanel;
-    private String currentFloor = "Tầng trệt";
+    private JLabel mapTitle;
+    private Map<String, JButton> floorButtons;
+    private JPanel floorButtonContainer; 
+    private JPanel leftSidebar;
     
+    // ... (Giữ nguyên các hằng số Màu sắc và Font) ...
+    private static final Color COLOR_BACKGROUND = new Color(245, 245, 240);
+    private static final Color COLOR_WHITE = Color.WHITE;
+    private static final Color COLOR_TEXT_PRIMARY = new Color(60, 60, 60);
+    private static final Color COLOR_TEXT_SECONDARY = new Color(120, 120, 120);
+    private static final Color COLOR_BORDER = new Color(230, 230, 230);
+    private static final Color COLOR_PRIMARY = new Color(255, 152, 0);
+    private static final Color COLOR_PRIMARY_DARK = new Color(220, 120, 0);
+    private static final Color COLOR_BADGE_DEFAULT = new Color(76, 175, 80);
+    private static final Color COLOR_BUTTON_ADD = new Color(28, 132, 221);
+    private static final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 28);
+    private static final Font FONT_SUBTITLE = new Font("Segoe UI", Font.PLAIN, 14);
+    private static final Font FONT_HEADER = new Font("Segoe UI", Font.BOLD, 16);
+    private static final Font FONT_BUTTON = new Font("Segoe UI", Font.PLAIN, 14);
+    private static final Font FONT_BODY = new Font("Segoe UI", Font.PLAIN, 12);
+
+
     public Ban_View() {
+        // ... (Giữ nguyên toàn bộ constructor) ...
+        banDAO = new Ban_DAO();
+        tablesByArea = new LinkedHashMap<>();
+        areaTableCounts = new LinkedHashMap<>();
+        areaNames = new ArrayList<>();
+        floorButtons = new LinkedHashMap<>();
+        
+        DichVuLapLichDatBan.getInstance().start(banDAO);
+        
         setLayout(new BorderLayout());
-        setBackground(new Color(245, 245, 240));
-        
-        initializeTableData();
-        
+        setBackground(COLOR_BACKGROUND);
         JPanel mainPanel = new JPanel(new BorderLayout(20, 20));
-        mainPanel.setBackground(new Color(245, 245, 240));
+        mainPanel.setBackground(COLOR_BACKGROUND);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(30, 40, 30, 40));
-        
-        // Header
         JPanel headerPanel = createHeaderPanel();
         mainPanel.add(headerPanel, BorderLayout.NORTH);
-        
-        // Content area with sidebar and tables
         JPanel contentPanel = new JPanel(new BorderLayout(20, 0));
         contentPanel.setOpaque(false);
-        
-        JPanel leftSidebar = createLeftSidebar();
+        leftSidebar = createLeftSidebar();
         contentPanel.add(leftSidebar, BorderLayout.WEST);
-        
         JPanel rightPanel = createRightPanel();
         contentPanel.add(rightPanel, BorderLayout.CENTER);
-        
         mainPanel.add(contentPanel, BorderLayout.CENTER);
-        
-        // Scroll pane
         JScrollPane scrollPane = new JScrollPane(mainPanel);
         scrollPane.setBorder(null);
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        
         add(scrollPane, BorderLayout.CENTER);
+        reloadDataAndRefreshUI();
     }
     
-    private void initializeTableData() {
-        tablesByFloor = new HashMap<>();
-        
-        java.util.List<TableInfo> tangTret = new ArrayList<>();
-        tangTret.add(new TableInfo("Bàn 01", 4, TableStatus.TRONG));
-        tangTret.add(new TableInfo("Bàn 02", 4, TableStatus.DA_CO_KHACH));
-        tangTret.add(new TableInfo("Bàn 03", 4, TableStatus.DA_DUOC_DAT));
-        tangTret.add(new TableInfo("Bàn 04", 4, TableStatus.TRONG));
-        tangTret.add(new TableInfo("Bàn 05", 8, TableStatus.TRONG));
-        tangTret.add(new TableInfo("Bàn 06", 4, TableStatus.TRONG));
-        tablesByFloor.put("Tầng trệt", tangTret);
-        
-        java.util.List<TableInfo> tang2 = new ArrayList<>();
-        tang2.add(new TableInfo("Bàn 07", 6, TableStatus.TRONG));
-        tang2.add(new TableInfo("Bàn 08", 4, TableStatus.DA_CO_KHACH));
-        tang2.add(new TableInfo("Bàn 09", 4, TableStatus.TRONG));
-        tang2.add(new TableInfo("Bàn 10", 8, TableStatus.DA_DUOC_DAT));
-        tablesByFloor.put("Tầng 2", tang2);
-        
-        java.util.List<TableInfo> tang3 = new ArrayList<>();
-        tang3.add(new TableInfo("Bàn 11", 4, TableStatus.TRONG));
-        tang3.add(new TableInfo("Bàn 12", 4, TableStatus.TRONG));
-        tang3.add(new TableInfo("Bàn 13", 6, TableStatus.DA_CO_KHACH));
-        tablesByFloor.put("Tầng 3", tang3);
-        
-        java.util.List<TableInfo> sanVuon = new ArrayList<>();
-        sanVuon.add(new TableInfo("Bàn SV-01", 6, TableStatus.TRONG));
-        sanVuon.add(new TableInfo("Bàn SV-02", 8, TableStatus.DA_DUOC_DAT));
-        sanVuon.add(new TableInfo("Bàn SV-03", 4, TableStatus.TRONG));
-        tablesByFloor.put("Sân vườn", sanVuon);
+    // ... (Giữ nguyên các hàm: reloadDataAndRefreshUI, loadDataFromDB, 
+    //      createHeaderPanel, createLeftSidebar, updateSidebarContent, 
+    //      switchArea, updateSidebarSelection, createFloorButton, styleFloorButton) ...
+    // (Các hàm này không thay đổi)
+    private void reloadDataAndRefreshUI() {
+        loadDataFromDB();
+        updateSidebarContent();
+        updateSidebarSelection();
+        updateTablesDisplay();
+        updateHeaderTitle();
     }
-    
+
+    private void loadDataFromDB() {
+        areaTableCounts = banDAO.getSoBanTheoKhuVuc(); 
+        areaNames = new ArrayList<>(areaTableCounts.keySet());
+        if (currentArea == null && !areaNames.isEmpty()) {
+            currentArea = areaNames.get(0); 
+        } else if (areaNames.isEmpty()) {
+            currentArea = "Không có dữ liệu";
+        }
+        tablesByArea.clear();
+        Map<String, String> khuVucMaVsTen = banDAO.getDanhSachKhuVuc();
+        for (String areaName : areaNames) {
+            String maKhuVuc = khuVucMaVsTen.entrySet().stream()
+                .filter(entry -> entry.getValue().equals(areaName))
+                .map(Map.Entry::getKey)
+                .findFirst().orElse(null);
+            if (maKhuVuc != null) {
+                List<Ban> tables = banDAO.getBanTheoKhuVuc(maKhuVuc);
+                tablesByArea.put(areaName, tables);
+            }
+        }
+    }
+
     private JPanel createHeaderPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setOpaque(false);
-        
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
-        
         JLabel titleLabel = new JLabel("Quản lý bàn");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        titleLabel.setForeground(new Color(60, 60, 60));
+        titleLabel.setFont(FONT_TITLE);
+        titleLabel.setForeground(COLOR_TEXT_PRIMARY);
         titleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
         JLabel subtitleLabel = new JLabel("Quản lý trạng thái bàn theo từng khu vực");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        subtitleLabel.setForeground(new Color(120, 120, 120));
+        subtitleLabel.setFont(FONT_SUBTITLE);
+        subtitleLabel.setForeground(COLOR_TEXT_SECONDARY);
         subtitleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
         titlePanel.add(titleLabel);
         titlePanel.add(Box.createVerticalStrut(5));
         titlePanel.add(subtitleLabel);
-        
         panel.add(titlePanel, BorderLayout.WEST);
-        
         return panel;
     }
-    
+
     private JPanel createLeftSidebar() {
         JPanel sidebar = new JPanel();
         sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
-        sidebar.setBackground(Color.WHITE);
+        sidebar.setBackground(COLOR_WHITE);
         sidebar.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(230, 230, 230), 1, true),
+            BorderFactory.createLineBorder(COLOR_BORDER, 1, true),
             BorderFactory.createEmptyBorder(25, 20, 25, 20)
         ));
         sidebar.setPreferredSize(new Dimension(280, 0));
-        
-        // Area selection section
         JLabel areaLabel = new JLabel("Khu vực");
-        areaLabel.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        areaLabel.setForeground(new Color(60, 60, 60));
+        areaLabel.setFont(FONT_HEADER);
+        areaLabel.setForeground(COLOR_TEXT_PRIMARY);
         areaLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        JLabel areaSubLabel = new JLabel("Chọn khu vực để xem số đỏ bàn");
-        areaSubLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        areaSubLabel.setForeground(new Color(120, 120, 120));
+        JLabel areaSubLabel = new JLabel("Chọn khu vực để xem sơ đồ bàn");
+        areaSubLabel.setFont(FONT_BODY);
+        areaSubLabel.setForeground(COLOR_TEXT_SECONDARY);
         areaSubLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
         sidebar.add(areaLabel);
         sidebar.add(Box.createVerticalStrut(5));
         sidebar.add(areaSubLabel);
         sidebar.add(Box.createVerticalStrut(20));
-        
-        // Floor buttons
-        String[] floors = {"Tầng trệt", "Tầng 2", "Tầng 3", "Sân vườn"};
-        int[] counts = {4, 7, 4, 3};
-        
-        for (int i = 0; i < floors.length; i++) {
-            JButton floorBtn = createFloorButton(floors[i], counts[i] + "/8", i == 0);
-            floorBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-            sidebar.add(floorBtn);
-            sidebar.add(Box.createVerticalStrut(10));
-        }
-        
-        sidebar.add(Box.createVerticalStrut(20));
-        
-        // Info section
-        JLabel infoLabel = new JLabel("Thông tin khu vực");
-        infoLabel.setFont(new Font("Segoe UI", Font.BOLD, 15));
-        infoLabel.setForeground(new Color(60, 60, 60));
-        infoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        sidebar.add(infoLabel);
-        sidebar.add(Box.createVerticalStrut(15));
-        
-        JLabel ruleTitle = new JLabel("6 bàn máy lạnh");
-        ruleTitle.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        ruleTitle.setForeground(new Color(60, 60, 60));
-        ruleTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        sidebar.add(ruleTitle);
-        sidebar.add(Box.createVerticalStrut(8));
-        
-        String[] rules = {
-            "• Mỗi bàn có bếp nướng âm + hút khói",
-            "• Phù hợp gia đình nhỏ, nhóm bạn",
-            "• Không phụ phí"
-        };
-        
-        for (String rule : rules) {
-            JLabel ruleLabel = new JLabel(rule);
-            ruleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-            ruleLabel.setForeground(new Color(100, 100, 100));
-            ruleLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            sidebar.add(ruleLabel);
-            sidebar.add(Box.createVerticalStrut(5));
-        }
-        
-        sidebar.add(Box.createVerticalGlue());
-        
+        floorButtonContainer = new JPanel();
+        floorButtonContainer.setLayout(new BoxLayout(floorButtonContainer, BoxLayout.Y_AXIS));
+        floorButtonContainer.setOpaque(false);
+        sidebar.add(floorButtonContainer);
+        sidebar.add(Box.createVerticalGlue()); 
         return sidebar;
     }
-    
-    private JButton createFloorButton(String floorName, String count, boolean selected) {
+
+    private void updateSidebarContent() {
+        floorButtonContainer.removeAll();
+        floorButtons.clear();
+        for (String areaName : areaNames) {
+            int count = areaTableCounts.getOrDefault(areaName, 0);
+            String countText = String.format("%d bàn", count);
+            JButton floorBtn = createFloorButton(areaName, countText);
+            floorBtn.addActionListener(e -> switchArea(areaName));
+            floorButtons.put(areaName, floorBtn);
+            floorButtonContainer.add(floorBtn);
+            floorButtonContainer.add(Box.createVerticalStrut(10));
+        }
+        floorButtonContainer.revalidate();
+        floorButtonContainer.repaint();
+    }
+
+    private void switchArea(String areaName) {
+        currentArea = areaName;
+        updateSidebarSelection();
+        updateTablesDisplay();
+        updateHeaderTitle();
+    }
+
+    private void updateSidebarSelection() {
+        for (Map.Entry<String, JButton> entry : floorButtons.entrySet()) {
+            boolean isSelected = entry.getKey().equals(currentArea);
+            styleFloorButton(entry.getValue(), isSelected);
+        }
+    }
+
+    private JButton createFloorButton(String floorName, String count) {
         JButton button = new JButton();
         button.setLayout(new BorderLayout(10, 0));
         button.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         button.setPreferredSize(new Dimension(240, 45));
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        
-        if (selected) {
-            button.setBackground(new Color(255, 152, 0));
-            button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(255, 152, 0), 1, true),
-                BorderFactory.createEmptyBorder(10, 15, 10, 15)
-            ));
-        } else {
-            button.setBackground(Color.WHITE);
-            button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true),
-                BorderFactory.createEmptyBorder(10, 15, 10, 15)
-            ));
-        }
-        
         JLabel nameLabel = new JLabel(floorName);
-        nameLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        nameLabel.setForeground(selected ? Color.WHITE : new Color(60, 60, 60));
-        
+        nameLabel.setFont(FONT_BUTTON);
         JLabel countLabel = new JLabel(count);
         countLabel.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        countLabel.setForeground(Color.WHITE);
-        
-        Color badgeColor = selected ? new Color(220, 120, 0) : new Color(76, 175, 80);
         countLabel.setOpaque(true);
-        countLabel.setBackground(badgeColor);
         countLabel.setBorder(BorderFactory.createEmptyBorder(4, 10, 4, 10));
         countLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        
         button.add(nameLabel, BorderLayout.WEST);
         button.add(countLabel, BorderLayout.EAST);
-        
-        button.addActionListener(e -> {
-            currentFloor = floorName;
-            updateTablesDisplay();
-        });
-        
+        styleFloorButton(button, false); 
         return button;
     }
-    
+
+    private void styleFloorButton(JButton button, boolean selected) {
+        if (button.getComponentCount() < 2) return; 
+        JLabel nameLabel = (JLabel) button.getComponent(0);
+        JLabel countLabel = (JLabel) button.getComponent(1);
+        Border border;
+        if (selected) {
+            button.setBackground(COLOR_PRIMARY);
+            border = BorderFactory.createLineBorder(COLOR_PRIMARY, 1, true);
+            nameLabel.setForeground(COLOR_WHITE);
+            countLabel.setForeground(COLOR_WHITE);
+            countLabel.setBackground(COLOR_PRIMARY_DARK);
+        } else {
+            button.setBackground(COLOR_WHITE);
+            border = BorderFactory.createLineBorder(new Color(220, 220, 220), 1, true);
+            nameLabel.setForeground(COLOR_TEXT_PRIMARY);
+            countLabel.setForeground(COLOR_WHITE);
+            countLabel.setBackground(COLOR_BADGE_DEFAULT);
+        }
+        button.setBorder(BorderFactory.createCompoundBorder(
+            border,
+            BorderFactory.createEmptyBorder(10, 15, 10, 15)
+        ));
+    }
+
+
+    /**
+     * === SỬA ĐỔI ===
+     * Tạo khung bên phải (sử dụng RoundedButton)
+     */
     private JPanel createRightPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 20));
         panel.setOpaque(false);
-        
-        // Map header
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(Color.WHITE);
+
+        JPanel headerPanel = new JPanel(new BorderLayout(10, 0));
+        headerPanel.setBackground(COLOR_WHITE);
         headerPanel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(230, 230, 230), 1, true),
+            BorderFactory.createLineBorder(COLOR_BORDER, 1, true),
             BorderFactory.createEmptyBorder(20, 25, 20, 25)
         ));
-        
+
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
-        
-        JLabel mapTitle = new JLabel("📍 Sơ đồ bàn - Tầng trệt");
-        mapTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        mapTitle.setForeground(new Color(60, 60, 60));
+        mapTitle = new JLabel("📍 Sơ đồ bàn"); 
+        mapTitle.setFont(FONT_HEADER);
+        mapTitle.setForeground(COLOR_TEXT_PRIMARY);
         mapTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
-        JLabel mapSubtitle = new JLabel("Click vào bàn để đặt bàn hoặc thay đổi trạng thái, bàn đã đặt có khách, bàn được đặt trước");
-        mapSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        mapSubtitle.setForeground(new Color(120, 120, 120));
+        JLabel mapSubtitle = new JLabel("Click vào bàn để thay đổi trạng thái (đặt bàn, nhận khách, trả bàn)");
+        mapSubtitle.setFont(FONT_BODY);
+        mapSubtitle.setForeground(COLOR_TEXT_SECONDARY);
         mapSubtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        
         titlePanel.add(mapTitle);
         titlePanel.add(Box.createVerticalStrut(5));
         titlePanel.add(mapSubtitle);
+
+        // === SỬA: Sử dụng RoundedButton ===
+        JButton btnThemBan = new RoundedButton("Thêm Bàn Mới");
+        btnThemBan.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnThemBan.setBackground(COLOR_BUTTON_ADD);
+        btnThemBan.setForeground(COLOR_WHITE);
+        // btnThemBan.setFocusPainted(false); // Đã có trong RoundedButton
+        // btnThemBan.setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); // Đã có trong RoundedButton
+        btnThemBan.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnThemBan.addActionListener(e -> moDialogThemBan());
         
+        JPanel buttonWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        buttonWrapper.setOpaque(false);
+        buttonWrapper.add(btnThemBan);
+
         headerPanel.add(titlePanel, BorderLayout.CENTER);
-        
-        // Tables grid
-        tablesPanel = new JPanel(new GridLayout(0, 3, 15, 15));
+        headerPanel.add(buttonWrapper, BorderLayout.EAST);
+
+        // ... (Giữ nguyên phần còn lại của hàm) ...
+        tablesPanel = new JPanel(new GridLayout(0, 4, 15, 15)); 
         tablesPanel.setOpaque(false);
-        
-        updateTablesDisplay();
-        
         JPanel tablesContainer = new JPanel(new BorderLayout());
-        tablesContainer.setBackground(Color.WHITE);
+        tablesContainer.setBackground(COLOR_WHITE);
         tablesContainer.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(230, 230, 230), 1, true),
+            BorderFactory.createLineBorder(COLOR_BORDER, 1, true),
             BorderFactory.createEmptyBorder(25, 25, 25, 25)
         ));
-        tablesContainer.add(tablesPanel, BorderLayout.CENTER);
-        
-        // Legend
+        tablesContainer.add(tablesPanel, BorderLayout.NORTH); 
         JPanel legendPanel = createLegendPanel();
         tablesContainer.add(legendPanel, BorderLayout.SOUTH);
-        
         panel.add(headerPanel, BorderLayout.NORTH);
         panel.add(tablesContainer, BorderLayout.CENTER);
-        
         return panel;
     }
     
+    // ... (Giữ nguyên: moDialogThemBan, updateHeaderTitle, updateTablesDisplay) ...
+    private void moDialogThemBan() {
+        ThemBan_Dialog dialog = new ThemBan_Dialog(
+            (JFrame) SwingUtilities.getWindowAncestor(this),
+            this::reloadDataAndRefreshUI 
+        );
+        dialog.setVisible(true);
+    }
+
+    private void updateHeaderTitle() {
+        if (mapTitle != null) {
+            mapTitle.setText("Sơ đồ bàn - " + currentArea);
+        }
+    }
+
     private void updateTablesDisplay() {
         tablesPanel.removeAll();
-        
-        java.util.List<TableInfo> tables = tablesByFloor.get(currentFloor);
+        List<Ban> tables = tablesByArea.get(currentArea);
         if (tables != null) {
-            for (TableInfo table : tables) {
-                tablesPanel.add(createTableCard(table));
+            for (Ban ban : tables) {
+                tablesPanel.add(createTableCard(ban));
             }
         }
-        
         tablesPanel.revalidate();
         tablesPanel.repaint();
     }
-    
-    private JPanel createTableCard(TableInfo table) {
-        JPanel card = new JPanel(new BorderLayout(0, 10));
-        table.panel = card;
 
-        card.setBorder(BorderFactory.createLineBorder(Color.GRAY, 2));
-        card.setBackground(getColorByStatus(table.status));
 
-        JLabel lblName = new JLabel(table.name, SwingConstants.CENTER);
-        lblName.setFont(new Font("Arial", Font.BOLD, 14));
-        card.add(lblName, BorderLayout.CENTER);
+    /**
+     * === SỬA ĐỔI ===
+     * Tạo một ô (Card) đại diện cho 1 bàn (sử dụng RoundedPanel)
+     */
+    private JPanel createTableCard(Ban ban) {
+        // === SỬA LỖI: Tách làm 2 dòng ===
+        // 1. Khởi tạo RoundedPanel, tạm thời chưa có layout (truyền null)
+        RoundedPanel card = new RoundedPanel(null);
+        
+        // 2. Đặt layout SAU KHI 'card' đã tồn tại
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        // ===================================
+        
+        card.setBackground(ban.getTrangThai().getColor());
+        
+        // Đặt màu viền cho RoundedPanel
+        card.setBorderColor(ban.getTrangThai().getColor().darker());
+        
+        // Giữ lại border này, nó sẽ hoạt động như padding
+        card.setBorder(BorderFactory.createEmptyBorder(20, 25, 20, 25)); 
+        
+        card.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        card.setAlignmentX(Component.CENTER_ALIGNMENT);
+        
+        String loaiBanTen = ban.getLoaiBan().getTenHienThi();
+        if (loaiBanTen.equalsIgnoreCase("Bàn VIP")) {
+            loaiBanTen = "VIP";
+        }
 
-        // === Xử lý click ===
+        JLabel lblName = new JLabel(String.format("%s (%s)", ban.getMaBan(), loaiBanTen));
+        lblName.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblName.setForeground(COLOR_WHITE);
+        lblName.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblName.setOpaque(false); // làm trong suốt JLabel
+
+        JLabel lblCapacity = new JLabel(ban.getSoCho() + " chỗ");
+        lblCapacity.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblCapacity.setForeground(new Color(240, 240, 240));
+        lblCapacity.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblCapacity.setOpaque(false); // làm trong suốt JLabel
+
+        card.add(lblName);
+        card.add(Box.createVerticalStrut(5));
+        card.add(lblCapacity);
+
+        // === Xử lý click (Giữ nguyên) ===
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (table.status == TableStatus.TRONG) {
-                    new DatBan_Dialog((JFrame) SwingUtilities.getWindowAncestor(card), table, () -> {
-                        card.setBackground(getColorByStatus(table.status));
-                    }).setVisible(true);
-                } 
-                else if (table.status == TableStatus.DA_DUOC_DAT) {
+                TrangThaiBan currentStatus = ban.getTrangThai();
+                
+                if (currentStatus == TrangThaiBan.TRONG) {
+                    DatBan_Dialog dialog = new DatBan_Dialog(
+                        (JFrame) SwingUtilities.getWindowAncestor(card),
+                        ban,
+                        () -> reloadDataAndRefreshUI() 
+                    );
+                    dialog.setVisible(true);
+                    
+                } else if (currentStatus == TrangThaiBan.DA_DAT) {
                     int confirm = JOptionPane.showConfirmDialog(
-                        card,
-                        "Khách của bàn " + table.name + " đã đến chưa?",
-                        "Xác nhận khách đến",
+                        card, 
+                        "Khách của bàn " + ban.getMaBan() + " đã đến?", 
+                        "Xác nhận khách đến", 
                         JOptionPane.YES_NO_OPTION
                     );
                     if (confirm == JOptionPane.YES_OPTION) {
-                        table.status = TableStatus.DA_CO_KHACH;
-                        card.setBackground(getColorByStatus(table.status));
+                        updateBanStatus(card, ban, TrangThaiBan.CO_KHACH, null);
                     }
-                } 
-                else if (table.status == TableStatus.DA_CO_KHACH) {
+                } else if (currentStatus == TrangThaiBan.CO_KHACH) {
                     int confirm = JOptionPane.showConfirmDialog(
-                        card,
-                        "Khách đã rời bàn " + table.name + "?",
-                        "Trả bàn",
+                        card, 
+                        "Khách đã rời bàn" + ban.getMaBan() + "?", 
+                        "Trả bàn", 
                         JOptionPane.YES_NO_OPTION
                     );
                     if (confirm == JOptionPane.YES_OPTION) {
-                        table.status = TableStatus.TRONG;
-                        card.setBackground(getColorByStatus(table.status));
-                        JOptionPane.showMessageDialog(card, "Bàn " + table.name + " đã được trả và sẵn sàng sử dụng!");
+                        String message = "Bàn " + ban.getMaBan() + "đã được trả!";
+                        updateBanStatus(card, ban, TrangThaiBan.TRONG, message);
                     }
                 }
             }
@@ -348,76 +422,151 @@ public class Ban_View extends JPanel {
         return card;
     }
 
-    
+    /**
+     * === SỬA ĐỔI ===
+     * Hàm trợ giúp để cập nhật trạng thái bàn (cho RoundedPanel)
+     */
+    private void updateBanStatus(JPanel card, Ban ban, TrangThaiBan newStatus, String successMessage) {
+        TrangThaiBan oldStatus = ban.getTrangThai();
+        
+        if (oldStatus == TrangThaiBan.DA_DAT && newStatus == TrangThaiBan.CO_KHACH) {
+            DichVuLapLichDatBan.getInstance().huyLichHen(ban.getMaBan());
+        }
+        
+        ban.setTrangThai(newStatus);
+        boolean success = banDAO.capNhatBan(ban);
+
+        if (success) {
+            // Cập nhật UI
+            card.setBackground(ban.getTrangThai().getColor());
+            
+            // === SỬA: Cập nhật màu viền của RoundedPanel ===
+            if (card instanceof RoundedPanel) {
+                ((RoundedPanel) card).setBorderColor(ban.getTrangThai().getColor().darker());
+            }
+            
+            if (successMessage != null && !successMessage.isEmpty()) {
+                JOptionPane.showMessageDialog(card, successMessage);
+            }
+        } else {
+            ban.setTrangThai(oldStatus); // Rollback
+            JOptionPane.showMessageDialog(card, "Lỗi! Không thể cập nhật trạng thái bàn.", "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // ... (Giữ nguyên các hàm: createLegendPanel, createLegendItem) ...
     private JPanel createLegendPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 20, 15));
         panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(230, 230, 230)));
-        
-        panel.add(createLegendItem("Trống", TableStatus.TRONG.getColor()));
-        panel.add(createLegendItem("Đã có khách", TableStatus.DA_CO_KHACH.getColor()));
-        panel.add(createLegendItem("Đã được đặt trước", TableStatus.DA_DUOC_DAT.getColor()));
-        
+        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, COLOR_BORDER));
+        panel.add(createLegendItem(TrangThaiBan.TRONG.toString(), TrangThaiBan.TRONG.getColor()));
+        panel.add(createLegendItem(TrangThaiBan.CO_KHACH.toString(), TrangThaiBan.CO_KHACH.getColor()));
+        panel.add(createLegendItem(TrangThaiBan.DA_DAT.toString(), TrangThaiBan.DA_DAT.getColor()));
         return panel;
     }
-    
+
     private JPanel createLegendItem(String text, Color color) {
         JPanel item = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         item.setOpaque(false);
-        
         JPanel colorBox = new JPanel();
         colorBox.setBackground(color);
         colorBox.setPreferredSize(new Dimension(20, 20));
         colorBox.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
-        
         JLabel label = new JLabel(text);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        label.setFont(FONT_BODY);
         label.setForeground(new Color(100, 100, 100));
-        
         item.add(colorBox);
         item.add(label);
-        
         return item;
     }
     
-    private Color getColorByStatus(TableStatus status) {
-        switch (status) {
-            case TRONG: return new Color(34, 197, 94);
-            case DA_DUOC_DAT: return new Color(251, 191, 36); 
-            case DA_CO_KHACH: return new Color(239, 68, 68);
-            default: return Color.LIGHT_GRAY;
+    
+    // =================================================================
+    // === CÁC LỚP NỘI BỘ MỚI ĐỂ BO TRÒN GÓC ===
+    // =================================================================
+
+    /**
+     * Lớp nội bộ cho Panel bo tròn (Dùng cho các Bàn)
+     */
+    private class RoundedPanel extends JPanel {
+        private int cornerRadius = 25; // Độ bo góc
+        private Color borderColor; // Màu viền
+
+        public RoundedPanel(LayoutManager layout) {
+            super(layout);
+            setOpaque(false); // Quan trọng: Panel phải trong suốt
+            this.borderColor = getBackground().darker(); // Màu viền mặc định
+        }
+        
+        // Hàm để cập nhật màu viền từ bên ngoài
+        public void setBorderColor(Color color) {
+            this.borderColor = color;
+            repaint(); // Yêu cầu vẽ lại
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            // Vẽ NỀN bo tròn
+            g2.setColor(getBackground());
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth()-1, getHeight()-1, cornerRadius, cornerRadius));
+            
+            g2.dispose();
+            
+            // Vẽ các component con (JLabel) LÊN TRÊN nền
+            super.paintComponent(g); 
+        }
+        
+        @Override
+        protected void paintBorder(Graphics g) {
+            // Vẽ VIỀN bo tròn
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(this.borderColor); // Sử dụng màu viền đã lưu
+            g2.setStroke(new BasicStroke(1));
+            g2.draw(new RoundRectangle2D.Double(0, 0, getWidth()-1, getHeight()-1, cornerRadius, cornerRadius));
+            g2.dispose();
         }
     }
 
-    // Inner classes
-    enum TableStatus {
-        TRONG("Trống", new Color(34, 197, 94)),
-        DA_CO_KHACH("Đã có khách", new Color(239, 68, 68)),
-        DA_DUOC_DAT("Đã được đặt trước", new Color(251, 191, 36));
-        
-        private String text;
-        private Color color;
-        
-        TableStatus(String text, Color color) {
-            this.text = text;
-            this.color = color;
+    /**
+     * Lớp nội bộ cho Nút bo tròn (Dùng cho nút "Thêm Bàn Mới")
+     */
+    private class RoundedButton extends JButton {
+        private int cornerRadius = 20; // Độ bo góc
+
+        public RoundedButton(String text) {
+            super(text);
+            setContentAreaFilled(false); // Không vẽ nền mặc định
+            setFocusPainted(false); // Không vẽ viền khi focus
+            
+            // Chúng ta giữ lại Border, nhưng dùng nó làm PADDING
+            setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); 
         }
-        
-        public String getText() { return text; }
-        public Color getColor() { return color; }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            // Chọn màu nền dựa trên trạng thái (hover, pressed)
+            if (getModel().isPressed()) {
+                g2.setColor(getBackground().darker());
+            } else if (getModel().isRollover()) {
+                g2.setColor(getBackground().brighter());
+            } else {
+                g2.setColor(getBackground());
+            }
+            
+            // Vẽ NỀN bo tròn
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
+            
+            // Vẽ TEXT của nút lên trên
+            super.paintComponent(g);
+            g2.dispose();
+        }
     }
     
-    static class TableInfo {
-        String name;
-        int capacity;
-        TableStatus status;
-        JPanel panel; // <--- Thêm dòng này để lưu panel của bàn
-
-        TableInfo(String name, int capacity, TableStatus status) {
-            this.name = name;
-            this.capacity = capacity;
-            this.status = status;
-        }
-    }
-
-}
+} 
