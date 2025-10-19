@@ -1,4 +1,6 @@
+-- =================================================================================
 -- PHẦN 1: TẠO VÀ CẤU HÌNH CƠ SỞ DỮ LIỆU
+-- =================================================================================
 USE [master]
 GO
 DROP DATABASE IF EXISTS [PTUD-JOJO-Restaurant]
@@ -83,7 +85,10 @@ ALTER DATABASE [PTUD-JOJO-Restaurant] SET QUERY_STORE = ON
 GO
 ALTER DATABASE [PTUD-JOJO-Restaurant] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP_POLICY = (STALE_QUERY_THRESHOLD_DAYS = 30), DATA_FLUSH_INTERVAL_SECONDS = 900, INTERVAL_LENGTH_MINUTES = 60, MAX_STORAGE_SIZE_MB = 1000, QUERY_CAPTURE_MODE = AUTO, SIZE_BASED_CLEANUP_MODE = AUTO, MAX_PLANS_PER_QUERY = 200, WAIT_STATS_CAPTURE_MODE = ON)
 GO
--- PHẦN 2: TẠO CÁC BẢNG
+
+-- =================================================================================
+-- PHẦN 2: TẠO CÁC BẢNG (ĐÃ THÊM soNguoi VÀO PHIEUDATBAN)
+-- =================================================================================
 USE [PTUD-JOJO-Restaurant]
 GO
 SET ANSI_NULLS ON
@@ -156,6 +161,7 @@ CREATE TABLE [dbo].[PHIEUDATBAN](
 	[maKhachHang] [nchar](10) NOT NULL,
 	[maNV] [nchar](7) NOT NULL,
 	[maBan] [nchar](10) NOT NULL,
+	[soNguoi] [int] NOT NULL, 
 	[tienCoc] [money] NULL,
 	[ghiChu] [nvarchar](max) NULL,
  CONSTRAINT [PK_PHIEUDATBAN] PRIMARY KEY CLUSTERED ([maPhieu] ASC)
@@ -217,7 +223,9 @@ CREATE TABLE [dbo].[CHITIETHOADON](
 ) ON [PRIMARY]
 GO
 
+-- =================================================================================
 -- PHẦN 3: TẠO RÀNG BUỘC KHÓA NGOẠI
+-- =================================================================================
 ALTER TABLE [dbo].[BAN]  WITH CHECK ADD  CONSTRAINT [FK_BAN_KHUVUC] FOREIGN KEY([maKhuVuc])
 REFERENCES [dbo].[KHUVUC] ([maKhuVuc])
 GO
@@ -295,7 +303,9 @@ GO
 ALTER TABLE [dbo].[CHITIETHOADON] CHECK CONSTRAINT [FK_CHITIETHOADON_MONAN]
 GO
 
+-- =================================================================================
 -- PHẦN 4: CHÈN DỮ LIỆU
+-- =================================================================================
 -- Bảng: KHUVUC
 INSERT INTO [dbo].[KHUVUC] ([maKhuVuc], [tenKhuVuc], [moTa], [trangThai]) VALUES
 (N'TRET', N'Tầng trệt', N'Khu vực máy lạnh, gần quầy lễ tân', 1),
@@ -443,49 +453,49 @@ INSERT INTO [dbo].[KHACHHANG] ([maKhachHang], [tenKhachHang], [sdt], [email], [d
 GO
 
 -- Bảng: PHIEUDATBAN
-INSERT INTO [dbo].[PHIEUDATBAN] ([maPhieu], [thoiGianDat], [maKhachHang], [maNV], [maBan], [tienCoc], [ghiChu]) VALUES
-(N'PDB000001', '2025-10-14 18:00:00', N'KH25000001', N'NV00002', N'B11', 100000, N'4 người lớn, ưu tiên bàn gần cửa sổ'),
-(N'PDB000002', '2025-10-15 19:30:00', N'KH25000004', N'NV00004', N'VIP01', 500000, N'Tổ chức tiệc công ty, 8 người'),
-(N'PDB000003', '2025-10-16 12:00:00', N'KH25000007', N'NV00002', N'B13', 200000, NULL),
-(N'PDB000004', '2025-10-16 20:00:00', N'KH25000006', N'NV00004', N'ST02', 100000, N'6 người, mang ra 1 bánh sinh nhật nhỏ'),
-(N'PDB000005', '2025-10-18 11:30:00', N'KH25000005', N'NV00010', N'SV01', 100000, NULL),
-(N'PDB000006', '2025-10-20 18:30:00', N'KH25000008', N'NV00002', N'B01', 100000, NULL),
-(N'PDB000007', '2025-10-22 19:00:00', N'KH25000002', N'NV00004', N'B03', 100000, N'Bàn cho 5 người lớn, 1 trẻ em, cần 1 ghế trẻ em'),
-(N'PDB000008', '2025-10-25 12:30:00', N'KH25000001', N'NV00010', N'ST02', 100000, NULL),
-(N'PDB000009', '2025-11-01 19:00:00', N'KH25000010', N'NV00002', N'VIP02', 200000, N'12 người, tiệc báo hỷ'),
-(N'PDB000010', '2025-11-05 20:00:00', N'KH25000005', N'NV00004', N'SV01', 100000, N'4 người, bàn ngoài trời yên tĩnh'),
-(N'PDB000011', '2025-10-17 19:00:00', N'KH25000011', N'NV00012', N'SV02', 150000, NULL),
-(N'PDB000012', '2025-10-18 20:00:00', N'KH25000013', N'NV00014', N'VIP03', 600000, NULL),
-(N'PDB000013', '2025-10-19 18:30:00', N'KH25000015', N'NV00011', N'B14', 0, N'2 người, bàn gần sạc điện'),
-(N'PDB000014', '2025-10-21 12:00:00', N'KH25000020', N'NV00013', N'TANG206', 300000, N'10 người, họp nhóm'),
-(N'PDB000015', '2025-10-23 11:00:00', N'KH25000018', N'NV00015', N'TRET05', 200000, NULL),
-(N'PDB000016', '2025-11-02 18:00:00', N'KH25000021', N'NV00002', N'B01', 100000, N'3 người lớn, 1 trẻ sơ sinh (cần chỗ để xe nôi)'),
-(N'PDB000017', '2025-11-03 12:00:00', N'KH25000022', N'NV00003', N'B03', 0, NULL),
-(N'PDB000018', '2025-11-08 19:30:00', N'KH25000030', N'NV00005', N'VIP01', 500000, N'Khách đoàn 10 người, có 2 trẻ em. Yêu cầu 2 ghế trẻ em.'),
-(N'PDB000019', '2025-11-10 20:00:00', N'KH25000028', N'NV00005', N'ST01', 100000, NULL),
-(N'PDB000020', '2025-11-15 11:30:00', N'KH25000035', N'NV00008', N'SV03', 0, N'2 người'),
-(N'PDB000021', '2025-11-18 19:00:00', N'KH25000036', N'NV00001', N'B11', 100000, NULL),
-(N'PDB000022', '2025-11-20 12:00:00', N'KH25000037', N'NV00002', N'SV02', 150000, N'5 người lớn, 2 trẻ em (7 tuổi). Không cần ghế em bé.'),
-(N'PDB000023', '2025-11-25 18:30:00', N'KH25000040', N'NV00003', N'VIP03', 700000, N'Khách VIP. Tổ chức tiệc sinh nhật. Yêu cầu bàn trang trí nến.'),
-(N'PDB000024', '2025-12-01 20:00:00', N'KH25000042', N'NV00004', N'TANG206', 300000, N'Họp lớp 10 người, cần không gian riêng tư'),
-(N'PDB000025', '2025-12-05 11:30:00', N'KH25000045', N'NV00005', N'TRET05', 0, NULL),
-(N'PDB000026', '2025-11-22 18:00:00', N'KH25000012', N'NV00008', N'B15', 100000, N'4 người, kỷ niệm ngày cưới, bàn lãng mạn'),
-(N'PDB000027', '2025-11-24 19:30:00', N'KH25000025', N'NV00009', N'ST04', 0, N'2 người lớn. Ưu tiên bàn yên tĩnh, view đẹp.'),
-(N'PDB000028', '2025-11-28 12:00:00', N'KH25000031', N'NV00010', N'SV01', 100000, N'3 người. 1 trẻ em 3 tuổi, cần 1 ghế ăn dặm'),
-(N'PDB000029', '2025-12-02 19:00:00', N'KH25000049', N'NV00011', N'VIP02', 500000, N'Tiếp khách quan trọng, 10 người'),
-(N'PDB000030', '2025-12-10 18:30:00', N'KH25000050', N'NV00012', N'VIP01', 500000, N'Tiệc sinh nhật. 8 người lớn, 3 trẻ em. Cần 3 ghế trẻ em.'),
-(N'PDB000040', '2025-08-01 18:00:00', N'KH25000034', N'NV00006', N'SV03', 100000, N'2 người, bàn mát mẻ'),
-(N'PDB000041', '2025-08-10 19:30:00', N'KH25000001', N'NV00008', N'ST04', 100000, N'Gia đình 4 người'),
-(N'PDB000042', '2025-08-15 11:00:00', N'KH25000004', N'NV00001', N'VIP03', 300000, N'Tiếp khách, 5 người'),
-(N'PDB000043', '2025-08-20 18:00:00', N'KH25000006', N'NV00009', N'TRET05', 200000, N'6 người lớn, 2 trẻ em, 2 ghế em bé'),
-(N'PDB000044', '2025-09-05 18:30:00', N'KH25000024', N'NV00005', N'VIP01', 400000, N'Tổ chức sinh nhật'),
-(N'PDB000045', '2025-09-15 19:15:00', N'KH25000025', N'NV00011', N'SV01', 0, N'2 người, bàn lãng mạn'),
-(N'PDB000046', '2025-09-20 17:00:00', N'KH25000030', N'NV00012', N'TANG206', 200000, N'Họp nhóm 8 người'),
-(N'PDB000047', '2025-09-25 18:00:00', N'KH25000028', N'NV00005', N'VIP02', 500000, N'Tiếp đối tác quan trọng'),
-(N'PDB000048', '2025-10-01 12:00:00', N'KH25000036', N'NV00001', N'B01', 0, N'3 người'),
-(N'PDB000049', '2025-10-06 17:30:00', N'KH25000040', N'NV00006', N'ST01', 100000, N'4 người, bàn view đẹp'),
-(N'PDB000050', '2025-10-10 19:30:00', N'KH25000043', N'NV00010', N'SV02', 100000, N'Gia đình 5 người, 1 ghế trẻ em'),
-(N'PDB000051', '2025-10-08 20:00:00', N'KH25000042', N'NV00008', N'ST04', 0, N'2 người')
+INSERT INTO [dbo].[PHIEUDATBAN] ([maPhieu], [thoiGianDat], [maKhachHang], [maNV], [maBan], [soNguoi], [tienCoc], [ghiChu]) VALUES
+(N'PDB000001', '2025-10-14 18:00:00', N'KH25000001', N'NV00002', N'B11', 4, 100000, N'4 người lớn, ưu tiên bàn gần cửa sổ'),
+(N'PDB000002', '2025-10-15 19:30:00', N'KH25000004', N'NV00004', N'VIP01', 8, 500000, N'Tổ chức tiệc công ty, 8 người'),
+(N'PDB000003', '2025-10-16 12:00:00', N'KH25000007', N'NV00002', N'B13', 8, 200000, NULL),
+(N'PDB000004', '2025-10-16 20:00:00', N'KH25000006', N'NV00004', N'ST02', 6, 100000, N'6 người, mang ra 1 bánh sinh nhật nhỏ'),
+(N'PDB000005', '2025-10-18 11:30:00', N'KH25000005', N'NV00010', N'SV01', 4, 100000, NULL),
+(N'PDB000006', '2025-10-20 18:30:00', N'KH25000008', N'NV00002', N'B01', 4, 100000, NULL),
+(N'PDB000007', '2025-10-22 19:00:00', N'KH25000002', N'NV00004', N'B03', 6, 100000, N'Bàn cho 5 người lớn, 1 trẻ em, cần 1 ghế trẻ em'),
+(N'PDB000008', '2025-10-25 12:30:00', N'KH25000001', N'NV00010', N'ST02', 6, 100000, NULL),
+(N'PDB000009', '2025-11-01 19:00:00', N'KH25000010', N'NV00002', N'VIP02', 12, 200000, N'12 người, tiệc báo hỷ'),
+(N'PDB000010', '2025-11-05 20:00:00', N'KH25000005', N'NV00004', N'SV01', 4, 100000, N'4 người, bàn ngoài trời yên tĩnh'),
+(N'PDB000011', '2025-10-17 19:00:00', N'KH25000011', N'NV00012', N'SV02', 6, 150000, NULL),
+(N'PDB000012', '2025-10-18 20:00:00', N'KH25000013', N'NV00014', N'VIP03', 15, 600000, NULL),
+(N'PDB000013', '2025-10-19 18:30:00', N'KH25000015', N'NV00011', N'B14', 2, 0, N'2 người, bàn gần sạc điện'),
+(N'PDB000014', '2025-10-21 12:00:00', N'KH25000020', N'NV00013', N'TANG206', 10, 300000, N'10 người, họp nhóm'),
+(N'PDB000015', '2025-10-23 11:00:00', N'KH25000018', N'NV00015', N'TRET05', 8, 200000, NULL),
+(N'PDB000016', '2025-11-02 18:00:00', N'KH25000021', N'NV00002', N'B01', 4, 100000, N'3 người lớn, 1 trẻ sơ sinh (cần chỗ để xe nôi)'),
+(N'PDB000017', '2025-11-03 12:00:00', N'KH25000022', N'NV00003', N'B03', 6, 0, NULL),
+(N'PDB000018', '2025-11-08 19:30:00', N'KH25000030', N'NV00005', N'VIP01', 10, 500000, N'Khách đoàn 10 người, có 2 trẻ em. Yêu cầu 2 ghế trẻ em.'),
+(N'PDB000019', '2025-11-10 20:00:00', N'KH25000028', N'NV00005', N'ST01', 4, 100000, NULL),
+(N'PDB000020', '2025-11-15 11:30:00', N'KH25000035', N'NV00008', N'SV03', 2, 0, N'2 người'),
+(N'PDB000021', '2025-11-18 19:00:00', N'KH25000036', N'NV00001', N'B11', 4, 100000, NULL),
+(N'PDB000022', '2025-11-20 12:00:00', N'KH25000037', N'NV00002', N'SV02', 7, 150000, N'5 người lớn, 2 trẻ em (7 tuổi). Không cần ghế em bé.'),
+(N'PDB000023', '2025-11-25 18:30:00', N'KH25000040', N'NV00003', N'VIP03', 15, 700000, N'Khách VIP. Tổ chức tiệc sinh nhật. Yêu cầu bàn trang trí nến.'),
+(N'PDB000024', '2025-12-01 20:00:00', N'KH25000042', N'NV00004', N'TANG206', 10, 300000, N'Họp lớp 10 người, cần không gian riêng tư'),
+(N'PDB000025', '2025-12-05 11:30:00', N'KH25000045', N'NV00005', N'TRET05', 8, 0, NULL),
+(N'PDB000026', '2025-11-22 18:00:00', N'KH25000012', N'NV00008', N'B15', 4, 100000, N'4 người, kỷ niệm ngày cưới, bàn lãng mạn'),
+(N'PDB000027', '2025-11-24 19:30:00', N'KH25000025', N'NV00009', N'ST04', 2, 0, N'2 người lớn. Ưu tiên bàn yên tĩnh, view đẹp.'),
+(N'PDB000028', '2025-11-28 12:00:00', N'KH25000031', N'NV00010', N'SV01', 3, 100000, N'3 người. 1 trẻ em 3 tuổi, cần 1 ghế ăn dặm'),
+(N'PDB000029', '2025-12-02 19:00:00', N'KH25000049', N'NV00011', N'VIP02', 10, 500000, N'Tiếp khách quan trọng, 10 người'),
+(N'PDB000030', '2025-12-10 18:30:00', N'KH25000050', N'NV00012', N'VIP01', 11, 500000, N'Tiệc sinh nhật. 8 người lớn, 3 trẻ em. Cần 3 ghế trẻ em.'),
+(N'PDB000040', '2025-08-01 18:00:00', N'KH25000034', N'NV00006', N'SV03', 2, 100000, N'2 người, bàn mát mẻ'),
+(N'PDB000041', '2025-08-10 19:30:00', N'KH25000001', N'NV00008', N'ST04', 4, 100000, N'Gia đình 4 người'),
+(N'PDB000042', '2025-08-15 11:00:00', N'KH25000004', N'NV00001', N'VIP03', 5, 300000, N'Tiếp khách, 5 người'),
+(N'PDB000043', '2025-08-20 18:00:00', N'KH25000006', N'NV00009', N'TRET05', 8, 200000, N'6 người lớn, 2 trẻ em, 2 ghế em bé'),
+(N'PDB000044', '2025-09-05 18:30:00', N'KH25000024', N'NV00005', N'VIP01', 10, 400000, N'Tổ chức sinh nhật'),
+(N'PDB000045', '2025-09-15 19:15:00', N'KH25000025', N'NV00011', N'SV01', 2, 0, N'2 người, bàn lãng mạn'),
+(N'PDB000046', '2025-09-20 17:00:00', N'KH25000030', N'NV00012', N'TANG206', 8, 200000, N'Họp nhóm 8 người'),
+(N'PDB000047', '2025-09-25 18:00:00', N'KH25000028', N'NV00005', N'VIP02', 12, 500000, N'Tiếp đối tác quan trọng'),
+(N'PDB000048', '2025-10-01 12:00:00', N'KH25000036', N'NV00001', N'B01', 3, 0, N'3 người'),
+(N'PDB000049', '2025-10-06 17:30:00', N'KH25000040', N'NV00006', N'ST01', 4, 100000, N'4 người, bàn view đẹp'),
+(N'PDB000050', '2025-10-10 19:30:00', N'KH25000043', N'NV00010', N'SV02', 5, 100000, N'Gia đình 5 người, 1 ghế trẻ em'),
+(N'PDB000051', '2025-10-08 20:00:00', N'KH25000042', N'NV00008', N'ST04', 2, 0, N'2 người')
 GO
 
 -- Bảng: CHITIETPHIEUDATBAN
@@ -772,7 +782,9 @@ INSERT INTO [dbo].[CHITIETHOADON] ([maHoaDon], [maMonAn], [soLuong], [donGia]) V
 (N'HD000080', N'MA0013', 1, 45000)
 GO
 
+-- =================================================================================
 -- PHẦN 5: HOÀN TẤT
+-- =================================================================================
 USE [master]
 GO
 ALTER DATABASE [PTUD-JOJO-Restaurant] SET  READ_WRITE 
