@@ -16,6 +16,7 @@ import java.awt.*;
 import java.time.*;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.function.Consumer;
 
 public class DatBan_Dialog extends JDialog {
     // ... (txtTenKhach, txtSDT, spnNgay, spnGio, spnSoNguoi, txtGhiChu giữ nguyên) ...
@@ -28,17 +29,15 @@ public class DatBan_Dialog extends JDialog {
     private Ban ban;
     private Ban_DAO banDAO;
     private DatBan_DAO datBanDAO;
-    // private KhachHang_DAO khachHangDAO; // <<< BỎ BIẾN NÀY
-    private Runnable onSuccess;
+    private Consumer<PhieuDatBan> onSuccess;
 
     // Sửa lại Constructor
-    public DatBan_Dialog(JFrame parent, Ban ban, Runnable onSuccess) {
+    public DatBan_Dialog(JFrame parent, Ban ban, Consumer<PhieuDatBan> onSuccess) { // <<< Sửa kiểu onSuccess
         super(parent, "Đặt bàn " + ban.getMaBan(), true);
         this.ban = ban;
         this.onSuccess = onSuccess;
         this.banDAO = new Ban_DAO();
         this.datBanDAO = new DatBan_DAO();
-        // this.khachHangDAO = new KhachHang_DAO(); // <<< BỎ DÒNG NÀY
 
         setLayout(new BorderLayout(10, 10));
         setSize(420, 340);
@@ -135,37 +134,36 @@ public class DatBan_Dialog extends JDialog {
 
             // === LOGIC MỚI: GÁN CHO KHÁCH VÃNG LAI ===
 
-            // 1. Gán cho Khách vãng lai (từ CSDL jojo_v6.sql)
-            KhachHang kh = new KhachHang("KH00000000"); 
-
-            // 2. Lấy Nhân viên (Giả định)
-            // !!! BẠN PHẢI THAY THẾ DÒNG NÀY bằng logic lấy NV đăng nhập
             NhanVien nv = new NhanVien("NV00001"); // Tạm thời
-            // NhanVien nv = AuthService.getLoggedInNhanVien(); 
-            if (nv == null) {
-                 JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy phiên đăng nhập của nhân viên.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                 return;
-            }
-
-            // 3. Tạo Ghi chú (Ghép Tên + SĐT vào)
+            
+            // 2. Tạo Ghi chú (Ghép Tên + SĐT vào)
             String ghiChu_final = String.format("Khách: %s - SĐT: %s.", ten, sdt);
             if (!ghiChu_form.isEmpty()) {
                 ghiChu_final += " Ghi chú: " + ghiChu_form;
             }
             
-            // 4. Tạo Phiếu Đặt Bàn
-            String maPhieu = datBanDAO.generateNewID(); // Vẫn cần hàm này trong DatBan_DAO
-            
-            // Constructor: (maPhieu, thoiGianDat, kh, nv, ban, soNguoi, tienCoc, ghiChu)
-            PhieuDatBan phieu = new PhieuDatBan(maPhieu, gioDen, kh, nv, ban, soNguoi, 0.0, ghiChu_final);
-            
+            // 3. Tạo Mã Phiếu
+            String maPhieu = datBanDAO.generateNewID();
+
+            // 4. TẠO 2 PHIẾU: MỘT ĐỂ LƯU DB, MỘT ĐỂ GỬI VỀ VIEW
+
+            // 4a. Phiếu để LƯU CSDL (Dùng Khách vãng lai "KH00000000")
+            KhachHang kh_db = new KhachHang("KH00000000");
+            PhieuDatBan phieu_luu_db = new PhieuDatBan(maPhieu, gioDen, kh_db, nv, ban, soNguoi, 0.0, ghiChu_final);
+
+            // 4b. Phiếu để GỬI VỀ VIEW (Dùng Khách hàng tạm thời chứa SĐT thật)
+            // (Constructor này là: maKH, ten, sdt, email, diem, laThanhVien)
+            KhachHang kh_tam_thoi = new KhachHang(null, ten, sdt, null, 0, false);
+            PhieuDatBan phieu_gui_view = new PhieuDatBan(maPhieu, gioDen, kh_tam_thoi, nv, ban, soNguoi, 0.0, ghiChu_final);
+
+
             // 5. Bắt đầu "Giao dịch"
             ban.setTrangThai(TrangThaiBan.DA_DAT);
             boolean updateBanSuccess = banDAO.capNhatBan(ban);
 
             if (updateBanSuccess) {
-                // 6. Thêm phiếu vào CSDL
-                boolean createPhieuSuccess = datBanDAO.insertPhieuDatBan(phieu); // Cần hàm này trong DatBan_DAO
+                // 6. Thêm phiếu (phiếu_luu_db) vào CSDL
+                boolean createPhieuSuccess = datBanDAO.insertPhieuDatBan(phieu_luu_db);
 
                 if (createPhieuSuccess) {
                     // THÀNH CÔNG
@@ -173,15 +171,17 @@ public class DatBan_Dialog extends JDialog {
                     dispose();
 
                     if (onSuccess != null) {
-                        onSuccess.run(); // Gọi callback để View tải lại
+                        // 7. Gửi phiếu (phiếu_gui_view) về View
+                        onSuccess.accept(phieu_gui_view); 
                     }
                 } else {
-                    // LỖI: Rollback trạng thái bàn
+                    // ... (Giữ nguyên logic Rollback) ...
                     ban.setTrangThai(TrangThaiBan.TRONG);
                     banDAO.capNhatBan(ban); 
                     JOptionPane.showMessageDialog(this, "Lỗi! Không thể tạo phiếu đặt bàn.", "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
                 }
             } else {
+                // ... (Giữ nguyên logic báo lỗi) ...
                 JOptionPane.showMessageDialog(this, "Lỗi! Không thể cập nhật trạng thái bàn.", "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
             }
 

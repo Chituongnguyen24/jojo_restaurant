@@ -515,4 +515,102 @@ public class DatBan_DAO {
             return false;
         }
     }
+    /**
+     * Lấy tất cả ChiTietPhieuDatBan của một Phiếu, JOIN với MonAn
+     * (Sửa lại hàm getChiTietByPhieuId cũ)
+     */
+    public List<Object[]> getChiTietTheoMaPhieu(String maPhieu) {
+        List<Object[]> ds = new ArrayList<>();
+        String sql = "SELECT ma.maMonAn, ma.tenMonAn, ct.soLuongMonAn, ct.ghiChu " +
+                     "FROM ChiTietPhieuDatBan ct " +
+                     "JOIN MonAn ma ON ct.maMonAn = ma.maMonAn " +
+                     "WHERE ct.maPhieu = ?";
+        
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+            
+            stmt.setString(1, maPhieu);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    // Trả về mảng Object[] để dễ đưa vào JTable
+                    ds.add(new Object[] {
+                        rs.getString("maMonAn"),
+                        rs.getString("tenMonAn"),
+                        rs.getInt("soLuongMonAn"),
+                        rs.getString("ghiChu")
+                    });
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+    }
+
+    /**
+     * Thêm món vào ChiTietPhieuDatBan
+     * (Hoặc cập nhật số lượng nếu đã tồn tại)
+     */
+    public boolean addOrUpdateChiTiet(String maPhieu, String maMonAn, int soLuong, String ghiChu) {
+        // 1. Kiểm tra xem món đã tồn tại trong phiếu chưa
+        String checkSql = "SELECT soLuongMonAn FROM ChiTietPhieuDatBan WHERE maPhieu = ? AND maMonAn = ?";
+        try (Connection con = ConnectDB.getInstance().getConnection()) {
+            int soLuongHienTai = -1;
+            
+            try (PreparedStatement checkStmt = con.prepareStatement(checkSql)) {
+                checkStmt.setString(1, maPhieu);
+                checkStmt.setString(2, maMonAn);
+                try (ResultSet rs = checkStmt.executeQuery()) {
+                    if (rs.next()) {
+                        soLuongHienTai = rs.getInt("soLuongMonAn");
+                    }
+                }
+            }
+
+            // 2. Nếu đã tồn tại -> Cập nhật (Cộng dồn số lượng)
+            if (soLuongHienTai != -1) {
+                String updateSql = "UPDATE ChiTietPhieuDatBan SET soLuongMonAn = ?, ghiChu = ? " +
+                                   "WHERE maPhieu = ? AND maMonAn = ?";
+                try (PreparedStatement updateStmt = con.prepareStatement(updateSql)) {
+                    updateStmt.setInt(1, soLuongHienTai + soLuong); // Cộng dồn
+                    updateStmt.setString(2, ghiChu); // Ghi đè ghi chú mới
+                    updateStmt.setString(3, maPhieu);
+                    updateStmt.setString(4, maMonAn);
+                    return updateStmt.executeUpdate() > 0;
+                }
+            } 
+            // 3. Nếu chưa tồn tại -> Thêm mới
+            else {
+                String insertSql = "INSERT INTO ChiTietPhieuDatBan (maPhieu, maMonAn, soLuongMonAn, ghiChu) " +
+                                   "VALUES (?, ?, ?, ?)";
+                try (PreparedStatement insertStmt = con.prepareStatement(insertSql)) {
+                    insertStmt.setString(1, maPhieu);
+                    insertStmt.setString(2, maMonAn);
+                    insertStmt.setInt(3, soLuong);
+                    insertStmt.setString(4, ghiChu);
+                    return insertStmt.executeUpdate() > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Xóa một món khỏi ChiTietPhieuDatBan
+     */
+    public boolean deleteChiTiet(String maPhieu, String maMonAn) {
+        String sql = "DELETE FROM ChiTietPhieuDatBan WHERE maPhieu = ? AND maMonAn = ?";
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+            
+            stmt.setString(1, maPhieu);
+            stmt.setString(2, maMonAn);
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
