@@ -15,6 +15,7 @@ import view.NhanVien.NhanVien_TraCuu_View;
 import view.NhanVien.NhanVien_ThongKe_View;
 import view.ThucDon.ThucDon_View;
 import view.ThucDon.MonAn_View;
+import view.ThucDon.MonAn_TraCuu_View;
 
 public class TrangChu_View extends JPanel {
     private JPanel contentPanel;
@@ -61,6 +62,7 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new DatBan_View(), "Quản lý đặt bàn");
         contentPanel.add(new MonAn_View(), "Món ăn");
         contentPanel.add(new ThucDon_View(), "Thực đơn");
+        contentPanel.add(new MonAn_TraCuu_View(), "Tra cứu món ăn");
         contentPanel.add(new HoaDon_View(), "Quản lý hóa đơn");
         contentPanel.add(new HoaDon_Thue_View(), "Quản lý thuế");
         contentPanel.add(new HoaDon_TraCuu_View(),"Tra cứu hóa đơn");
@@ -130,7 +132,7 @@ public class TrangChu_View extends JPanel {
 
         mQLMon.addActionListener(e -> cardLayout.show(contentPanel, "Món ăn"));
         mXemTD.addActionListener(e -> cardLayout.show(contentPanel, "Thực đơn"));
-        mTraCuuMonAn.addActionListener(e -> cardLayout.show(contentPanel, "Thực đơn"));
+        mTraCuuMonAn.addActionListener(e -> cardLayout.show(contentPanel, "Tra cứu món ăn"));
 
         mQLHD.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý hóa đơn"));
         mQLThue.addActionListener(e -> cardLayout.show(contentPanel, "Quản lý thuế"));

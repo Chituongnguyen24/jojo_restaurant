@@ -160,4 +160,43 @@ public class MonAn_DAO {
         }
         return newID;
     }
+    
+    public List<MonAn> searchMonAn(String keyword, String trangThaiFilter) {
+        List<MonAn> ds = new ArrayList<>();
+        StringBuilder sqlBuilder = new StringBuilder("SELECT maMonAn, tenMonAn, donGia, trangThai, imagePath FROM MonAn WHERE tenMonAn LIKE ?");
+        List<Object> params = new ArrayList<>();
+        params.add("%" + keyword + "%"); // Tham số cho LIKE
+
+        Boolean trangThaiValue = null;
+        if ("Còn bán".equals(trangThaiFilter)) {
+            trangThaiValue = true;
+        } else if ("Hết".equals(trangThaiFilter)) {
+            trangThaiValue = false;
+        }
+
+        if (trangThaiValue != null) {
+            sqlBuilder.append(" AND trangThai = ?");
+            params.add(trangThaiValue); // Thêm tham số trạng thái nếu cần lọc
+        }
+
+        sqlBuilder.append(" ORDER BY maMonAn"); // Sắp xếp cho dễ nhìn
+
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sqlBuilder.toString())) {
+
+            // Set các tham số vào PreparedStatement
+            for (int i = 0; i < params.size(); i++) {
+                stmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ds.add(createMonAnFromResultSet(rs)); // Dùng hàm trợ giúp cũ
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+    }
 }
