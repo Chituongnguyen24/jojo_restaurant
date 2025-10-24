@@ -209,5 +209,32 @@ public class Ban_DAO {
         }
         return map;
     }
-
+    
+    public List<Ban> getBanDangHoatDong() {
+        List<Ban> ds = new ArrayList<>();
+        // Lấy các bàn có trạng thái CO_KHACH hoặc DA_DAT
+        String sql = "SELECT * FROM Ban WHERE trangThai = ? OR trangThai = ?";
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+            
+            stmt.setString(1, TrangThaiBan.CO_KHACH.toString());
+            stmt.setString(2, TrangThaiBan.DA_DAT.toString());
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Ban ban = new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("trangThai"))
+                    );
+                    ds.add(ban);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+    }
 }

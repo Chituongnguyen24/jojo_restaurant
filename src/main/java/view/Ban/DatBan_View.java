@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Vector; // For table data
+import java.util.function.Consumer;
 
 public class DatBan_View extends JPanel {
 
@@ -124,10 +125,14 @@ public class DatBan_View extends JPanel {
 
     private void taiDuLieuVaHienThiBanDau() {
         taiDuLieuKhuVuc(); // Load khu vực
-        taiDuLieuDatBan(); // Load phiếu đặt
-        capNhatNoiDungSidebar(); // Tạo nút khu vực
-        capNhatLuaChonSidebar(); // Chọn khu vực đầu tiên
-        capNhatHienThiLuoiBan(); // Hiển thị bàn khu vực đầu tiên
+        
+        // SỬA LẠI HÀM NÀY:
+        // Khởi động danh sách đặt bàn (trống)
+        taiDuLieuDatBan(); 
+        
+        capNhatNoiDungSidebar(); 
+        capNhatLuaChonSidebar(); 
+        capNhatHienThiLuoiBan(); 
     }
 
     // --- Các hàm tải dữ liệu ---
@@ -150,10 +155,6 @@ public class DatBan_View extends JPanel {
     }
 
     private void taiDuLieuDatBan() {
-        // SỬA LẠI DÒNG SAU:
-        // Gọi hàm DAO thật (datBanDAO) thay vì hàm mock
-        danhSachPhieuDatDangHoatDong = datBanDAO.getAllPhieuDatBan();
-        // (Bạn có thể xóa dòng layDanhSachPhieuDatDangHoatDongMock() đi)
         capNhatBangDatBan(); // Cập nhật JTable
     }
 
@@ -256,8 +257,27 @@ public class DatBan_View extends JPanel {
     }
 
     private void capNhatBangDatBan() {
-        // (Giữ nguyên)
-        modelDanhSachDatBan.setRowCount(0); if (danhSachPhieuDatDangHoatDong != null) { for (PhieuDatBan p : danhSachPhieuDatDangHoatDong) { String mb = (p.getBan() != null) ? p.getBan().getMaBan().trim() : "N/A"; String s = (p.getKhachHang() != null) ? p.getKhachHang().getSdt().trim() : "N/A"; String t = p.getThoiGianDatFormatted(); modelDanhSachDatBan.addRow(new Object[]{p.getMaPhieu().trim(), mb, s, t}); } } locBang();
+        modelDanhSachDatBan.setRowCount(0);
+        if (danhSachPhieuDatDangHoatDong != null) {
+            for (PhieuDatBan p : danhSachPhieuDatDangHoatDong) {
+                
+                // Sửa dòng 1: Kiểm tra cả p.getBan() và p.getBan().getMaBan()
+                String mb = (p.getBan() != null && p.getBan().getMaBan() != null) 
+                            ? p.getBan().getMaBan().trim() : "N/A";
+                
+                // Sửa dòng 2: Kiểm tra cả p.getKhachHang() và p.getKhachHang().getSdt()
+                String s = (p.getKhachHang() != null && p.getKhachHang().getSdt() != null) 
+                            ? p.getKhachHang().getSdt().trim() : "N/A";
+                
+                String t = p.getThoiGianDatFormatted();
+                
+                // Kiểm tra p.getMaPhieu() để đảm bảo an toàn
+                String maPhieu = (p.getMaPhieu() != null) ? p.getMaPhieu().trim() : "N/A";
+                
+                modelDanhSachDatBan.addRow(new Object[]{maPhieu, mb, s, t});
+            }
+        }
+        locBang();
     }
 
     private void locBang() {
@@ -388,7 +408,15 @@ public class DatBan_View extends JPanel {
                 
                 // Xóa phiếu đặt (bao gồm cả chi tiết)
                 if (pdb != null) {
+                    // 1. Xóa khỏi CSDL
                     datBanDAO.deletePhieuDatBan(pdb.getMaPhieu());
+                    
+                    // 2. <<< THÊM MỚI: Xóa khỏi danh sách session >>>
+                    // Dùng .trim() để khớp với mã phiếu sạch trong danh sách
+                    final String maPhieuCanXoa = pdb.getMaPhieu().trim();
+                    danhSachPhieuDatDangHoatDong.removeIf(
+                        p -> p.getMaPhieu().equals(maPhieuCanXoa)
+                    );
                 }
                 
                 // Chuyển bàn về "Trống"
@@ -396,7 +424,9 @@ public class DatBan_View extends JPanel {
                 banDAO.capNhatBan(ban);
                 
                 // Tải lại cả lưới bàn và danh sách đặt
-                taiDuLieuVaHienThiBanDau(); 
+                taiDuLieuKhuVuc(); // Tải lại trạng thái bàn
+                capNhatBangDatBan(); // Cập nhật JTable (vẽ lại list)
+                capNhatHienThiLuoiBan(); // Cập nhật lưới bàn
                 JOptionPane.showMessageDialog(pnlLuoiBan, "Đã hủy đặt bàn " + ban.getMaBan().trim());
             }
         }
@@ -423,12 +453,15 @@ public class DatBan_View extends JPanel {
             // Tìm phiếu đặt bàn (nếu có)
             PhieuDatBan pdb = datBanDAO.getPhieuByBan(ban.getMaBan().trim());
             
-            // "Ẩn" (Xóa) phiếu đặt bàn
             if (pdb != null) {
-                datBanDAO.deletePhieuDatBan(pdb.getMaPhieu());
-                System.out.println("Đã hoàn tất (xóa) phiếu đặt: " + pdb.getMaPhieu());
+            	final String maPhieuCanXoa = pdb.getMaPhieu().trim();
+                danhSachPhieuDatDangHoatDong.removeIf(
+                    p -> p.getMaPhieu().equals(maPhieuCanXoa)
+                );
+                
+                System.out.println("Đã ẩn phiếu đặt khỏi danh sách: " + maPhieuCanXoa);
             }
-            
+        
             // Chuyển bàn về "Trống"
             ban.setTrangThai(TrangThaiBan.TRONG);
             boolean success = banDAO.capNhatBan(ban);
@@ -454,9 +487,18 @@ public class DatBan_View extends JPanel {
        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
 
        // Callback để tải lại view khi đặt bàn thành công
-       Runnable refreshCallback = () -> {
-           System.out.println("Callback: Đặt bàn thành công, đang tải lại dữ liệu...");
-           taiDuLieuVaHienThiBanDau(); 
+       Consumer<PhieuDatBan> refreshCallback = (phieuMoi) -> {
+           System.out.println("Callback: Đã nhận phiếu mới " + phieuMoi.getMaPhieu());
+
+           // 1. Thêm phiếu mới vào danh sách của phiên này
+           danhSachPhieuDatDangHoatDong.add(phieuMoi);
+
+           // 2. Tải lại trạng thái bàn (vì bàn đã bị đặt)
+           taiDuLieuKhuVuc();
+
+           // 3. Cập nhật cả 2 phần UI
+           capNhatBangDatBan(); // Cập nhật JTable (hiện phiếu mới)
+           capNhatHienThiLuoiBan(); // Cập nhật lưới bàn (đổi màu bàn)
        };
 
        DatBan_Dialog dialog = new DatBan_Dialog(parentFrame, ban, refreshCallback);
