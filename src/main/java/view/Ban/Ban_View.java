@@ -2,16 +2,15 @@ package view.Ban;
 
 import dao.Ban_DAO;
 import entity.Ban;
-import enums.TrangThaiBan; // Vẫn cần để kiểm tra và hiển thị
+import enums.TrangThaiBan;
 
-// Import cho Graphics
 import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.LayoutManager;
 import java.awt.RenderingHints;
 import java.awt.geom.RoundRectangle2D;
-// Import khác
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
@@ -24,21 +23,18 @@ import java.util.LinkedHashMap;
 
 public class Ban_View extends JPanel {
 
-    // --- DAOs & Dữ liệu ---
     private Ban_DAO banDAO;
     private Map<String, List<Ban>> danhSachBanTheoKhuVuc;
     private Map<String, Integer> soLuongBanTheoKhuVuc;
     private List<String> tenKhuVuc;
     private String khuVucHienTai;
 
-    // --- Giao diện ---
     private JPanel pnlLuoiBan;
     private JLabel lblTieuDeSoDo;
     private Map<String, JButton> cacNutChonKhuVuc;
     private JPanel pnlChuaNutKhuVuc;
     private JPanel pnlSidebarTrai;
 
-    // Icon paths (Giữ nguyên)
     private Map<String, String> areaImagePaths = new LinkedHashMap<String, String>() {{
         put("Sân thượng", "images/icon/bannho.png");
         put("Sân vườn", "images/icon/thongthuong.png");
@@ -50,26 +46,23 @@ public class Ban_View extends JPanel {
     private Map<String, ImageIcon> areaIcons;
 
 
-    // === Hằng số Màu sắc và Font (Giữ nguyên) ===
     private static final Color MAU_NEN = new Color(254, 252, 247);
     private static final Color MAU_TRANG = Color.WHITE;
     private static final Color MAU_CHU_CHINH = new Color(52, 58, 64);
     private static final Color MAU_CHU_PHU = new Color(108, 117, 125);
     private static final Color MAU_VIEN = new Color(233, 236, 239);
-    // Sidebar
+    
     private static final Color MAU_CAM_CHINH = new Color(242, 118, 29);
     private static final Color MAU_CAM_DAM = new Color(242, 118, 29).darker();
     private static final Color MAU_SIDEBAR_KHONGCHON_NEN = new Color(248, 249, 250);
     private static final Color MAU_SIDEBAR_KHONGCHON_NHAN_NEN = new Color(222, 226, 230);
-    // Nút Thêm
+
     private static final Color MAU_NUT_THEM = new Color(10, 102, 255);
     private static final Color MAU_NUT_THEM_HOVER = new Color(0, 84, 215);
-    // Shadow
-    private static final Color MAU_BONG = new Color(0, 0, 0, 12);
-    // Màu trạng thái (Vẫn giữ để hiển thị viền)
-    private static final Color MAU_TRANGTHAI_TRONG = new Color(40, 167, 69); // Xanh lá
-    private static final Color MAU_TRANGTHAI_CO_KHACH = new Color(220, 53, 69); // Đỏ
-    private static final Color MAU_TRANGTHAI_DA_DAT = new Color(255, 193, 7); // Vàng
+
+    private static final Color MAU_TRANGTHAI_TRONG = new Color(40, 167, 69); 
+    private static final Color MAU_TRANGTHAI_CO_KHACH = new Color(220, 53, 69); 
+    private static final Color MAU_TRANGTHAI_DA_DAT = new Color(255, 193, 7); 
     private static final Color MAU_VIEN_SANG = new Color(233, 236, 239);
 
     private static final Font FONT_TIEUDE_LON = new Font("Segoe UI", Font.BOLD, 32);
@@ -90,16 +83,10 @@ public class Ban_View extends JPanel {
         areaIcons = new LinkedHashMap<>();
 
         taiTatCaIconKhuVuc();
-        // *** KHÔNG KHỞI ĐỘNG DICHVU LAP LICH ***
-
         thietLapGiaoDien();
         taiLaiDuLieuVaLamMoiUI();
     }
 
-    // (taiLaiDuLieuVaLamMoiUI, taiTatCaIconKhuVuc, taiImageIcon, layIconChoKhuVucHienTai,
-    //  taiDuLieuTuDB, thietLapGiaoDien, taoPanelTieuDe, taoSidebarChonKhuVuc,
-    //  capNhatNoiDungSidebar, chuyenKhuVuc, capNhatLuaChonSidebar,
-    //  taoNutChonKhuVuc, dinhDangNutKhuVuc giữ nguyên)
      private void taiLaiDuLieuVaLamMoiUI() { 
     	 taiDuLieuTuDB(); 
     	 capNhatNoiDungSidebar();
@@ -304,9 +291,7 @@ public class Ban_View extends JPanel {
              button.setBorder(BorderFactory.createLineBorder(MAU_VIEN, 1));
          }
      }
-    /**
-     * === SỬA ĐỔI: Cập nhật hướng dẫn ===
-     */
+
     private JPanel taoPanelPhai() {
         JPanel panel = new JPanel(new BorderLayout(0, 25));
         panel.setOpaque(false);
@@ -323,7 +308,7 @@ public class Ban_View extends JPanel {
         lblTieuDeSoDo.setForeground(MAU_CHU_CHINH);
         lblTieuDeSoDo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel mapSubtitle = new JLabel("Nhấn vào bàn trống để chỉnh sửa thông tin hoặc xóa."); // Hướng dẫn mới
+        JLabel mapSubtitle = new JLabel("Nhấn vào bàn trống để chỉnh sửa thông tin hoặc xóa."); 
         mapSubtitle.setFont(FONT_CHU);
         mapSubtitle.setForeground(MAU_CHU_PHU);
         mapSubtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -340,8 +325,14 @@ public class Ban_View extends JPanel {
         btnThemBan.setPreferredSize(new Dimension(180, 45));
         btnThemBan.addActionListener(e -> moDialogThemBan());
         btnThemBan.addMouseListener(new MouseAdapter() {
-            @Override public void mouseEntered(MouseEvent e) { btnThemBan.setBackground(MAU_NUT_THEM_HOVER); }
-            @Override public void mouseExited(MouseEvent e) { btnThemBan.setBackground(MAU_NUT_THEM); }
+            @Override 
+            public void mouseEntered(MouseEvent e) { 
+            	btnThemBan.setBackground(MAU_NUT_THEM_HOVER);
+            }
+            @Override 
+            public void mouseExited(MouseEvent e) { 
+            	btnThemBan.setBackground(MAU_NUT_THEM);
+            }
         });
 
         JPanel buttonWrapper = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -359,7 +350,6 @@ public class Ban_View extends JPanel {
         tablesContainer.setBorder(BorderFactory.createCompoundBorder(new VienDoBong(), BorderFactory.createEmptyBorder(30, 30, 30, 30)));
         tablesContainer.add(pnlLuoiBan, BorderLayout.NORTH);
 
-        // Thêm lại chú thích
         tablesContainer.add(taoPanelChuThich(), BorderLayout.SOUTH);
 
         panel.add(headerPanel, BorderLayout.NORTH);
@@ -368,12 +358,10 @@ public class Ban_View extends JPanel {
     }
 
     private void moDialogThemBan() {
-        // (Giữ nguyên)
         ThemBan_Dialog dialog = new ThemBan_Dialog((JFrame) SwingUtilities.getWindowAncestor(this), this::taiLaiDuLieuVaLamMoiUI);
         dialog.setVisible(true);
     }
 
-    /** Mở dialog Chỉnh sửa (chỉ gọi khi bàn trống) */
     private void moDialogChinhSua(Ban ban) {
         ChinhSuaBan_Dialog dialog = new ChinhSuaBan_Dialog(
             (JFrame) SwingUtilities.getWindowAncestor(this),
@@ -384,12 +372,10 @@ public class Ban_View extends JPanel {
     }
 
     private void capNhatTieuDeSoDo() {
-        // (Giữ nguyên)
         if (lblTieuDeSoDo != null) { lblTieuDeSoDo.setText("Sơ đồ bàn - " + khuVucHienTai); }
     }
 
     private void capNhatHienThiLuoiBan() {
-        // (Giữ nguyên)
         pnlLuoiBan.removeAll(); pnlLuoiBan.setLayout(new GridLayout(0, 4, 20, 20));
         List<Ban> tables = danhSachBanTheoKhuVuc.get(khuVucHienTai);
         if (tables != null && !tables.isEmpty()) {
@@ -403,9 +389,6 @@ public class Ban_View extends JPanel {
     }
 
 
-    /**
-     * === SỬA ĐỔI: Cập nhật logic click ===
-     */
     private JPanel taoTheBan(Ban ban) {
         TheBoTron card = new TheBoTron(null, 18);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
@@ -453,17 +436,15 @@ public class Ban_View extends JPanel {
         card.add(Box.createVerticalStrut(8));
         card.add(lblStatusText);
 
-        // *** CẬP NHẬT LOGIC CLICK ***
+
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
-                    // Kiểm tra trạng thái bàn
+                    //kiểm tra trạng thái bàn
                     if (ban.getTrangThai() == TrangThaiBan.TRONG) {
-                        // Nếu bàn trống -> Mở dialog sửa
                         moDialogChinhSua(ban);
                     } else {
-                        // Nếu bàn Đã đặt hoặc Có khách -> Hiển thị thông báo
                         JOptionPane.showMessageDialog(
                             card,
                             "Không thể chỉnh sửa bàn đang ở trạng thái '" + ban.getTrangThai().toString() + "'.",
@@ -472,9 +453,7 @@ public class Ban_View extends JPanel {
                         );
                     }
                 }
-                // Không còn xử lý chuột phải ở đây
             }
-            // Hiệu ứng hover (Giữ lại)
             @Override
             public void mouseEntered(MouseEvent e) { 
             	card.setBackground(new Color(250, 251, 252));
@@ -488,9 +467,7 @@ public class Ban_View extends JPanel {
         return card;
     }
 
-    // *** KHÔNG CẦN updateBanStatus ***
 
-    /** Tạo Panel Chú thích */
     private JPanel taoPanelChuThich() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 25, 20));
         panel.setOpaque(false);
@@ -501,7 +478,7 @@ public class Ban_View extends JPanel {
         return panel;
     }
 
-    /** Tạo một mục trong Chú thích */
+
     private JPanel taoMucChuThich(String text, Color color) {
         JPanel item = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         item.setOpaque(false);
@@ -518,10 +495,8 @@ public class Ban_View extends JPanel {
     }
 
 
-    // =================================================================
-    // === CÁC LỚP NỘI BỘ ĐỂ BO TRÒN GÓC (Giữ nguyên) ===
-    // =================================================================
-    private class TheBoTron extends JPanel { /* ... Giữ nguyên ... */
+
+    private class TheBoTron extends JPanel {
         private int doBoGoc; private Color mauVien;
         public TheBoTron(LayoutManager layout, int doBoGoc) { 
         	super(layout); 
@@ -551,7 +526,7 @@ public class Ban_View extends JPanel {
         	g2.dispose();
         }
     }
-    private class VienDoBong implements Border { /* ... Giữ nguyên ... */
+    private class VienDoBong implements Border { 
         private int shadowSize = 4;
         @Override 
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {

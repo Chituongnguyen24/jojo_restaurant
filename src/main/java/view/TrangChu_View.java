@@ -14,6 +14,7 @@ import view.ThucDon.*;
 import entity.TaiKhoan;
 import view.HeThong_View;
 import view.ThucDon.MonAn_View;
+import view.ThucDon.MonAn_TraCuu_View;
 
 public class TrangChu_View extends JPanel {
 
@@ -59,13 +60,13 @@ public class TrangChu_View extends JPanel {
         menuBar.setBackground(new Color(230, 230, 230));
         menuBar.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
 
-        // ===== CONTENT (CardLayout) =====
-        cardLayout = new CardLayout();
-        contentPanel = new JPanel(cardLayout);
-
         // ===== FONT CHO MENU =====
         Font menuFont = new Font("Arial", Font.BOLD, 14);
         Font menuItemFont = new Font("Arial", Font.PLAIN, 14);
+
+        // ===== CONTENT (CardLayout) =====
+        cardLayout = new CardLayout();
+        contentPanel = new JPanel(cardLayout);
 
         // ===== Card names =====
         final String CARD_HOME = "HỆ_THỐNG";
@@ -101,8 +102,6 @@ public class TrangChu_View extends JPanel {
         }
 
         // ===== MENU =====
-
-        // --- Menu Hệ Thống ---
         JMenu menuHeThong = new JMenu("Hệ thống");
         menuHeThong.setFont(menuFont);
         JMenuItem mDangXuat = new JMenuItem("Đăng xuất");
@@ -116,7 +115,6 @@ public class TrangChu_View extends JPanel {
         menuHeThong.addSeparator();
         menuHeThong.add(mThoat);
 
-        // --- Menu Bàn ---
         JMenu menuBan = new JMenu("Bàn");
         menuBan.setFont(menuFont);
         JMenuItem mQuanLyBan = new JMenuItem("Quản lý bàn");
@@ -126,7 +124,6 @@ public class TrangChu_View extends JPanel {
         menuBan.add(mQuanLyBan);
         menuBan.add(mQuanLyDatBan);
 
-        // --- Menu Thực Đơn ---
         JMenu menuThucDon = new JMenu("Thực đơn");
         menuThucDon.setFont(menuFont);
         JMenuItem mQLMon = new JMenuItem("Quản lý món ăn");
@@ -139,7 +136,6 @@ public class TrangChu_View extends JPanel {
         menuThucDon.add(mXemTD);
         menuThucDon.add(mTraCuuMonAn);
 
-        // --- Menu Hóa Đơn ---
         JMenu menuHoaDon = new JMenu("Hóa đơn");
         menuHoaDon.setFont(menuFont);
         JMenuItem mQuanLyHoaDon = new JMenuItem("Quản lý hóa đơn");
@@ -149,7 +145,6 @@ public class TrangChu_View extends JPanel {
         menuHoaDon.add(mQuanLyHoaDon);
         menuHoaDon.add(mTraCuuHoaDon);
 
-        // --- Menu Khách Hàng ---
         JMenu menuKH = new JMenu("Khách hàng");
         menuKH.setFont(menuFont);
         JMenuItem mQLKH = new JMenuItem("Quản lý khách hàng");
@@ -162,7 +157,6 @@ public class TrangChu_View extends JPanel {
         menuKH.add(mDiem);
         menuKH.add(mTCKH);
 
-        // --- Menu Nhân Viên ---
         JMenu menuNV = null;
         JMenuItem mQLNV = null, mTCNV = null, mTKNV = null;
         if ("Quản lý".equalsIgnoreCase(vaiTro) || "NVQL".equalsIgnoreCase(tk.getVaiTro())) {
@@ -187,7 +181,7 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuKH);
         if (menuNV != null) menuBar.add(menuNV);
 
-        // ===== Lưu tất cả menu item để reset highlight =====
+        // ===== Lưu tất cả menu item =====
         allMenuItems.add(mQuanLyBan);
         allMenuItems.add(mQuanLyDatBan);
         allMenuItems.add(mQLMon);
@@ -204,13 +198,12 @@ public class TrangChu_View extends JPanel {
             allMenuItems.add(mTKNV);
         }
 
-        // ===== Hàm highlight =====
+        // ===== Hàm highlight + switch =====
         ActionListener switchPanel = e -> {
             JMenuItem src = (JMenuItem) e.getSource();
             resetMenuHighlight();
             highlightMenu(src);
 
-            // Switch-case
             switch (src.getText()) {
                 case "Quản lý bàn" -> cardLayout.show(contentPanel, CARD_QUAN_LY_BAN);
                 case "Quản lý đặt bàn" -> cardLayout.show(contentPanel, CARD_QUAN_LY_DAT_BAN);
@@ -230,11 +223,10 @@ public class TrangChu_View extends JPanel {
             contentPanel.repaint();
         };
 
-        // ===== Gán action =====
         for (JMenuItem item : allMenuItems) {
             item.addActionListener(switchPanel);
         }
-        
+
         // ===== Đăng xuất =====
         ActionListener logoutAction = e -> {
             int confirm = JOptionPane.showConfirmDialog(this,
@@ -257,11 +249,9 @@ public class TrangChu_View extends JPanel {
         add(topPanel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
 
-        // Hiển thị view mặc định
         cardLayout.show(contentPanel, CARD_HOME);
     }
 
-    // Các hàm helper
     private void highlightMenu(JMenuItem item) {
         item.setOpaque(true);
         item.setBackground(new Color(60, 120, 200));

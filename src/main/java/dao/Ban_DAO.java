@@ -63,10 +63,8 @@ public class Ban_DAO {
 
             stmt.setString(1, ban.getMaBan());
             stmt.setInt(2, ban.getSoCho());
-            // SỬA Ở ĐÂY: Lưu tên hiển thị (giống CSDL) thay vì tên enum (THUONG)
             stmt.setString(3, ban.getLoaiBan().getTenHienThi()); 
             stmt.setString(4, ban.getMaKhuVuc());
-             // Giữ nguyên: toString() của TrangThaiBan đã trả về giá trị đúng ("Trống", "Có khách"...)
             stmt.setString(5, ban.getTrangThai().toString());
 
             return stmt.executeUpdate() > 0;
@@ -82,10 +80,9 @@ public class Ban_DAO {
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setInt(1, ban.getSoCho());
-            // SỬA Ở ĐÂY: Lưu tên hiển thị (giống CSDL)
+            //Lưu tên hiển thị
             stmt.setString(2, ban.getLoaiBan().getTenHienThi());
             stmt.setString(3, ban.getMaKhuVuc());
-            // Giữ nguyên: toString() của TrangThaiBan đã trả về giá trị đúng
             stmt.setString(4, ban.getTrangThai().toString()); 
             stmt.setString(5, ban.getMaBan());
 
@@ -111,7 +108,6 @@ public class Ban_DAO {
 
     public List<Ban> getBanTheoKhuVuc(String maKhuVuc) {
         List<Ban> ds = new ArrayList<>();
-        // Sửa chính tả "makhuVuc" -> "maKhuVuc" (tên cột trong DB)
         String sql = "SELECT * FROM Ban WHERE maKhuVuc = ?"; 
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
@@ -119,7 +115,7 @@ public class Ban_DAO {
             stmt.setString(1, maKhuVuc);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    ds.add(createBanFromResultSet(rs)); // Sử dụng hàm chung
+                    ds.add(createBanFromResultSet(rs));
                 }
             }
         } catch (SQLException e) {
@@ -130,8 +126,6 @@ public class Ban_DAO {
 
     public Map<String, Integer> getSoBanTheoKhuVuc() {
         Map<String, Integer> map = new LinkedHashMap<>();
-        // Sửa chính tả "makhuVuc" -> "maKhuVuc" (tên cột trong DB)
-        // Thêm JOIN với KHUVUC để lấy tenKhuVuc, và ORDER BY để nhất quán
         String sql = "SELECT kv.tenKhuVuc, COUNT(b.maBan) AS soBan " +
                      "FROM Ban b " +
                      "JOIN KHUVUC kv ON b.maKhuVuc = kv.maKhuVuc " +
@@ -144,7 +138,7 @@ public class Ban_DAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                // Sửa: Dùng tenKhuVuc làm key để nhất quán với giao diện
+                //Dùng tenKhuVuc làm key để nhất quán với giao diện
                 map.put(rs.getString("tenKhuVuc"), rs.getInt("soBan")); 
             }
         } catch (SQLException e) {
@@ -160,11 +154,10 @@ public class Ban_DAO {
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
-            // Giữ nguyên: toString() của TrangThaiBan đã trả về giá trị đúng
             stmt.setString(1, trangThai.toString()); 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    ds.add(createBanFromResultSet(rs)); // Sử dụng hàm chung
+                    ds.add(createBanFromResultSet(rs));
                 }
             }
         } catch (SQLException e) {
@@ -190,11 +183,7 @@ public class Ban_DAO {
         return null;
     }
     
-    /**
-     * Lấy danh sách mã khu vực và tên khu vực.
-     * Cần thiết cho dialog thêm bàn.
-     * @return Map<String, String> (Mã Khu Vực, Tên Khu Vực)
-     */
+
     public Map<String, String> getDanhSachKhuVuc() {
         Map<String, String> map = new LinkedHashMap<>();
         String sql = "SELECT maKhuVuc, tenKhuVuc FROM KHUVUC WHERE trangThai = 1 ORDER BY maKhuVuc";
@@ -212,7 +201,6 @@ public class Ban_DAO {
     
     public List<Ban> getBanDangHoatDong() {
         List<Ban> ds = new ArrayList<>();
-        // Lấy các bàn có trạng thái CO_KHACH hoặc DA_DAT
         String sql = "SELECT * FROM Ban WHERE trangThai = ? OR trangThai = ?";
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {

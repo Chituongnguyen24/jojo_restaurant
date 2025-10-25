@@ -1,22 +1,21 @@
 package entity;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter; // Thêm import
+import java.time.format.DateTimeFormatter; 
 
 public class PhieuDatBan {
     private String maPhieu;
-    private LocalDateTime thoiGianDat; // Đây là thời gian khách đến (theo CSDL)
+    private LocalDateTime thoiGianDat; 
     private KhachHang khachHang;
     private NhanVien nhanVien;
     private Ban ban;
-    private int soNguoi; // <<< THÊM TRƯỜNG NÀY (NOT NULL)
+    private int soNguoi; 
     private double tienCoc;
-    private String ghiChu; // <<< THÊM TRƯỜNG NÀY
+    private String ghiChu; 
 
     public PhieuDatBan() {
     }
 
-    // Constructor đầy đủ mới
     public PhieuDatBan(String maPhieu, LocalDateTime thoiGianDat, KhachHang khachHang, NhanVien nhanVien, Ban ban,
             int soNguoi, double tienCoc, String ghiChu) {
         this.maPhieu = maPhieu;
@@ -24,17 +23,16 @@ public class PhieuDatBan {
         this.khachHang = khachHang;
         this.nhanVien = nhanVien;
         this.ban = ban;
-        this.soNguoi = soNguoi; // <<< THÊM
+        this.soNguoi = soNguoi;
         this.tienCoc = tienCoc;
-        this.ghiChu = ghiChu; // <<< THÊM
+        this.ghiChu = ghiChu;
     }
     
-    // (Các constructor cũ của bạn có thể giữ lại hoặc xóa nếu không dùng)
+
     public PhieuDatBan(String maPhieu) {
 		super();
 		this.maPhieu = maPhieu;
 	}
-    // Getter/Setter (Giữ nguyên các cái cũ)
     
     public String getMaPhieu() {
         return maPhieu;
@@ -83,8 +81,7 @@ public class PhieuDatBan {
     public void setTienCoc(double tienCoc) {
         this.tienCoc = tienCoc;
     }
-
-    // <<< THÊM GETTER/SETTER CHO CÁC TRƯỜNG MỚI >>>
+    
     public int getSoNguoi() {
         return soNguoi;
     }
@@ -101,10 +98,9 @@ public class PhieuDatBan {
         this.ghiChu = ghiChu;
     }
 
-    // Sửa hàm này để hiển thị đúng thời gian khách đến
+
     public String getThoiGianDatFormatted() {
         if (this.thoiGianDat != null) {
-            // Định dạng theo yêu cầu dd/MM/yyyy HH:mm
             return this.thoiGianDat.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
         }
         return "N/A";
