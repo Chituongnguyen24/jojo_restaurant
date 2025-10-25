@@ -72,9 +72,10 @@ public class ThucDon_View extends JPanel {
      * Mở dialog thêm món và truyền callback
      */
     private void moDialogThemMon() {
+    	Runnable refreshAction = () -> loadMonAn();
         ThemMonAn_Dialog dialog = new ThemMonAn_Dialog(
             (JFrame) SwingUtilities.getWindowAncestor(this),
-            this // Truyền ThucDon_View
+            refreshAction
         );
         dialog.setVisible(true);
     }
@@ -139,8 +140,14 @@ public class ThucDon_View extends JPanel {
         panel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                // Nhấp vào thẻ sẽ mở Dialog Chỉnh sửa (nơi có nút Xóa)
-                new ChinhSuaMonAn_Dialog(mon, ThucDon_View.this).setVisible(true);
+                // Định nghĩa hành động làm mới
+                Runnable refreshAction = () -> loadMonAn();
+                // Gọi dialog với Runnable
+                new ChinhSuaMonAn_Dialog(
+                    (JFrame) SwingUtilities.getWindowAncestor(ThucDon_View.this), // Lấy frame cha
+                    mon,
+                    refreshAction
+                ).setVisible(true);
             }
             
             @Override

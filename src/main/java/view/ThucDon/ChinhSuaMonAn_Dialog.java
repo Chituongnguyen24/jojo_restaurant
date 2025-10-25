@@ -16,7 +16,7 @@ import java.nio.file.StandardCopyOption; // Thêm import
 
 public class ChinhSuaMonAn_Dialog extends JDialog {
     private MonAn monAn;
-    private ThucDon_View parentView;
+    private Runnable refreshCallback;
     private MonAn_DAO monAnDAO = new MonAn_DAO();
     
     private JTextField txtTenMon;
@@ -29,10 +29,12 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
     private JButton btnXoa;
     private JButton btnChonAnh; // === THÊM MỚI ===
 
-    public ChinhSuaMonAn_Dialog(MonAn monAn, ThucDon_View parentView) {
+    public ChinhSuaMonAn_Dialog(JFrame owner, MonAn monAn, Runnable refreshCallback) { // << Sửa tham số
+        // super(owner); // Không cần super nếu dùng setModal(true)
         this.monAn = monAn;
-        this.parentView = parentView;
-        initComponents();
+        // this.parentView = parentView;
+        this.refreshCallback = refreshCallback; // << Lưu lại callback
+        initComponents(); // Gọi hàm này trước loadData
         loadData();
     }
 
@@ -256,13 +258,17 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
             JOptionPane.YES_NO_OPTION);
         
         if (confirm == JOptionPane.YES_OPTION) {
-            monAn.setTrangThai(!monAn.isTrangThai());
+        	monAn.setTrangThai(!monAn.isTrangThai());
             if (monAnDAO.updateMonAn(monAn)) {
                 JOptionPane.showMessageDialog(this, "Đã đổi trạng thái thành công!");
                 capNhatGiaoDienTrangThai();
-                parentView.loadMonAn(); // Refresh danh sách
+                // THAY ĐỔI: Gọi callback nếu có
+                if (refreshCallback != null) {
+                    refreshCallback.run(); // << Thực thi hành động làm mới
+                }
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi khi đổi trạng thái!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                monAn.setTrangThai(!monAn.isTrangThai()); // Rollback local object
             }
         }
     }
@@ -291,8 +297,11 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
             monAn.setImagePath(imagePathMoi); // === THÊM MỚI ===
 
             if (monAnDAO.updateMonAn(monAn)) {
-                JOptionPane.showMessageDialog(this, "Đã lưu thay đổi thành công!");
-                parentView.loadMonAn(); // Refresh danh sách
+            	JOptionPane.showMessageDialog(this, "Đã lưu thay đổi thành công!");
+                // THAY ĐỔI: Gọi callback nếu có
+                if (refreshCallback != null) {
+                    refreshCallback.run(); // << Thực thi hành động làm mới
+                }
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi khi lưu thay đổi!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -314,7 +323,6 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
         if (confirm == JOptionPane.YES_OPTION) {
             if (monAnDAO.deleteMonAn(monAn.getMaMonAn())) {
                 JOptionPane.showMessageDialog(this, "Đã xóa món ăn thành công!");
-                parentView.loadMonAn(); // Refresh danh sách
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi khi xóa món ăn! (Món ăn có thể đang nằm trong một hóa đơn)", "Lỗi", JOptionPane.ERROR_MESSAGE);

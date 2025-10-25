@@ -15,7 +15,7 @@ import java.nio.file.Paths; // Thêm import
 import java.nio.file.StandardCopyOption; // Thêm import
 
 public class ThemMonAn_Dialog extends JDialog {
-    private ThucDon_View parentView;
+	private Runnable refreshCallback;
     private MonAn_DAO monAnDAO = new MonAn_DAO();
     
     private JTextField txtMaMon;
@@ -28,9 +28,9 @@ public class ThemMonAn_Dialog extends JDialog {
     private JButton btnChonAnh; // === Nút mới ===
     private JLabel lblAnhPreview; // === Label xem trước ảnh ===
 
-    public ThemMonAn_Dialog(JFrame owner, ThucDon_View parentView) {
+    public ThemMonAn_Dialog(JFrame owner, Runnable refreshCallback) { // Tham số phải là (JFrame, Runnable)
         super(owner, "Thêm Món Ăn Mới", true);
-        this.parentView = parentView;
+        this.refreshCallback = refreshCallback; // Gán callback
         initComponents();
         loadMaMonAnTuDong();
     }
@@ -233,7 +233,6 @@ public class ThemMonAn_Dialog extends JDialog {
 
             if (monAnDAO.themMonAn(monAnMoi)) {
                 JOptionPane.showMessageDialog(this, "Đã thêm món ăn mới thành công!");
-                parentView.loadMonAn(); // Refresh danh sách
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi khi thêm món ăn! (Mã Món đã tồn tại)", "Lỗi", JOptionPane.ERROR_MESSAGE);
