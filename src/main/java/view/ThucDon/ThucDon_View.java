@@ -3,7 +3,6 @@ package view.ThucDon;
 import javax.swing.*;
 import dao.MonAn_DAO;
 import entity.MonAn;
-// Import thêm để vẽ và xử lý ảnh
 import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -11,7 +10,7 @@ import java.awt.LayoutManager;
 import java.awt.RenderingHints;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.Image;
-// Import các layout và thành phần khác
+
 import java.awt.*;
 import java.util.List;
 
@@ -19,7 +18,7 @@ public class ThucDon_View extends JPanel {
     private JPanel panelDanhSach;
     private MonAn_DAO monAnDAO = new MonAn_DAO();
     
-    // Màu cho nút thêm
+    //màu cho nút thêm
     private static final Color COLOR_BUTTON_ADD = new Color(28, 132, 221);
     private static final Color COLOR_WHITE = Color.WHITE;
 
@@ -27,17 +26,15 @@ public class ThucDon_View extends JPanel {
         setLayout(new BorderLayout());
         setBackground(new Color(251, 248, 241));
 
-        // === SỬA ĐỔI HEADER: Dùng BorderLayout để thêm nút ===
-        JPanel panelHeader = new JPanel(new BorderLayout(20, 0)); // Đổi layout
+        JPanel panelHeader = new JPanel(new BorderLayout(20, 0));
         panelHeader.setBackground(new Color(251, 248, 241));
         panelHeader.setBorder(BorderFactory.createEmptyBorder(15, 20, 15, 20));
         
         JLabel lblTitle = new JLabel("Quản lý thực đơn");
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 24));
         lblTitle.setForeground(new Color(60, 60, 60));
-        panelHeader.add(lblTitle, BorderLayout.WEST); // Tiêu đề bên trái
+        panelHeader.add(lblTitle, BorderLayout.WEST);
         
-        // === THÊM MỚI: Nút "Thêm Món" ===
         RoundedButton btnThemMon = new RoundedButton("Thêm Món Mới");
         btnThemMon.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnThemMon.setBackground(COLOR_BUTTON_ADD);
@@ -45,17 +42,15 @@ public class ThucDon_View extends JPanel {
         btnThemMon.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnThemMon.addActionListener(e -> moDialogThemMon());
 
-        // Panel để giữ nút ở bên phải
         JPanel panelNut = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         panelNut.setOpaque(false);
         panelNut.add(btnThemMon);
-        panelHeader.add(panelNut, BorderLayout.EAST); // Nút bên phải
-        // ===================================
+        panelHeader.add(panelNut, BorderLayout.EAST); 
         
         add(panelHeader, BorderLayout.NORTH);
 
-        // Panel danh sách món ăn (Giữ nguyên)
-        panelDanhSach = new JPanel(new GridLayout(0, 3, 15, 15));
+        //danh sách món ăn
+        panelDanhSach = new JPanel(new GridLayout(0, 4, 15, 15));
         panelDanhSach.setBackground(new Color(251, 248, 241));
         panelDanhSach.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         
@@ -67,10 +62,7 @@ public class ThucDon_View extends JPanel {
         loadMonAn();
     }
     
-    /**
-     * === HÀM MỚI ===
-     * Mở dialog thêm món và truyền callback
-     */
+    //dialog thêm món
     private void moDialogThemMon() {
     	Runnable refreshAction = () -> loadMonAn();
         ThemMonAn_Dialog dialog = new ThemMonAn_Dialog(
@@ -81,7 +73,7 @@ public class ThucDon_View extends JPanel {
     }
 
 
-    // Tải danh sách món ăn từ DB (giữ nguyên)
+    //tải danh sách món ăn từ DB
     public void loadMonAn() {
         panelDanhSach.removeAll();
         List<MonAn> list = monAnDAO.getAllMonAn();
@@ -95,7 +87,7 @@ public class ThucDon_View extends JPanel {
         panelDanhSach.repaint();
     }
 
-    // Tạo thẻ món ăn (Giữ nguyên từ lần trước)
+    //tạo thẻ món ăn
     private JPanel createMonAnCard(MonAn mon) {
         RoundedPanel panel = new RoundedPanel(new BorderLayout(15, 0));
         panel.setBackground(Color.WHITE);
@@ -104,14 +96,14 @@ public class ThucDon_View extends JPanel {
         panel.setPreferredSize(new Dimension(320, 110)); 
         panel.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Tải ảnh
+        //tải ảnh
         ImageIcon icon = loadScaledImage(mon.getImagePath(), 90, 90);
         JLabel lblImage = new JLabel(icon);
         lblImage.setPreferredSize(new Dimension(90, 90));
         lblImage.setOpaque(false);
         panel.add(lblImage, BorderLayout.WEST);
 
-        // Panel thông tin
+        //panel thông tin
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setOpaque(false); 
@@ -136,15 +128,15 @@ public class ThucDon_View extends JPanel {
 
         panel.add(infoPanel, BorderLayout.CENTER);
 
-        // Hiệu ứng hover và click
+        //hover và click
         panel.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                // Định nghĩa hành động làm mới
+                //làm mới
                 Runnable refreshAction = () -> loadMonAn();
-                // Gọi dialog với Runnable
+                //gọi dialog với Runnable
                 new ChinhSuaMonAn_Dialog(
-                    (JFrame) SwingUtilities.getWindowAncestor(ThucDon_View.this), // Lấy frame cha
+                    (JFrame) SwingUtilities.getWindowAncestor(ThucDon_View.this),
                     mon,
                     refreshAction
                 ).setVisible(true);
@@ -168,7 +160,6 @@ public class ThucDon_View extends JPanel {
         return panel;
     }
 
-    // Tải ảnh (Giữ nguyên)
     private ImageIcon loadScaledImage(String path, int width, int height) {
         ImageIcon icon = null;
         if (path != null && !path.isEmpty()) {
@@ -176,7 +167,7 @@ public class ThucDon_View extends JPanel {
         }
 
         if (icon == null || icon.getIconWidth() == -1) {
-            // Đặt tên ảnh placeholder của bạn ở đây
+            //dặt tên ảnh placeholder
             icon = new ImageIcon("images/mon an/placeholder.png"); 
         }
 
@@ -184,7 +175,7 @@ public class ThucDon_View extends JPanel {
         return new ImageIcon(img);
     }
     
-    // Test riêng (Giữ nguyên)
+    // Test riêng
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getLookAndFeel());
@@ -200,13 +191,7 @@ public class ThucDon_View extends JPanel {
         frame.setVisible(true);
     }
     
-    // =================================================================
-    // === CÁC LỚP NỘI BỘ ĐỂ BO TRÒN GÓC ===
-    // =================================================================
-
-    /**
-     * Lớp nội bộ cho Panel bo tròn (Dùng cho các thẻ Món ăn)
-     */
+ 
     private class RoundedPanel extends JPanel {
         private int cornerRadius = 25;
         private Color borderColor; 
@@ -242,12 +227,9 @@ public class ThucDon_View extends JPanel {
         }
     }
     
-    /**
-     * === THÊM MỚI ===
-     * Lớp nội bộ cho Nút bo tròn (Dùng cho nút "Thêm Món Mới")
-     */
+
     private class RoundedButton extends JButton {
-        private int cornerRadius = 20; // Độ bo góc
+        private int cornerRadius = 20;
 
         public RoundedButton(String text) {
             super(text);

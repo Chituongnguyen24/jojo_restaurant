@@ -26,7 +26,6 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         setLayout(new BorderLayout());
         setBackground(new Color(252, 249, 244));
 
-        // ===== HEADER =====
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         header.setBorder(new EmptyBorder(20, 30, 20, 30));
@@ -65,15 +64,15 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         header.add(btnBack, BorderLayout.EAST);
         add(header, BorderLayout.NORTH);
 
-        // ===== THÔNG TIN CHUNG PHIẾU =====
+
         JPanel infoPanel = createInfoPanel();
         add(infoPanel, BorderLayout.CENTER);
 
-        // ===== DANH SÁCH MÓN ĂN =====
+
         JPanel tablePanel = createMonAnPanel();
         add(tablePanel, BorderLayout.SOUTH);
 
-        // ===== FOOTER (TỔNG TIỀN + NÚT) =====
+
         JPanel footer = createFooterPanel();
         add(footer, BorderLayout.PAGE_END);
     }
@@ -122,15 +121,13 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                 new EmptyBorder(20, 30, 20, 30)
         ));
 
-        // Load real data from DAO
         List<ChiTietPhieuDatBan> chiTietList = daoDatBan.getChiTietByPhieuId(phieu.getMaPhieu());
         String[] cols = {"Mã món", "Tên món", "Số lượng", "Đơn giá", "Thành tiền"};
         Object[][] data = new Object[chiTietList.size()][5];
         double tongTien = 0.0;
         for (int i = 0; i < chiTietList.size(); i++) {
             ChiTietPhieuDatBan ct = chiTietList.get(i);
-            // Assume MonAn is loaded in DAO, if not, use placeholders
-            MonAn mon = ct.getMonAn() != null ? ct.getMonAn() : new MonAn(); // Placeholder MonAn if null
+            MonAn mon = ct.getMonAn() != null ? ct.getMonAn() : new MonAn();
             data[i][0] = mon.getMaMonAn() != null ? mon.getMaMonAn() : "N/A";
             data[i][1] = mon.getTenMonAn() != null ? mon.getTenMonAn() : "N/A";
             data[i][2] = ct.getSoLuongMonAn();
@@ -143,7 +140,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         DefaultTableModel model = new DefaultTableModel(data, cols) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Không cho chỉnh sửa
+                return false; 
             }
         };
 
@@ -169,7 +166,6 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         footer.setOpaque(false);
         footer.setBorder(new EmptyBorder(20, 30, 20, 30));
 
-        // Calculate total from chi tiet
         List<ChiTietPhieuDatBan> chiTietList = daoDatBan.getChiTietByPhieuId(phieu.getMaPhieu());
         double tongTien = 0.0;
         for (ChiTietPhieuDatBan ct : chiTietList) {

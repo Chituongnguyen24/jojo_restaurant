@@ -2,10 +2,8 @@ package view.Ban;
 
 import java.time.LocalDateTime;
 
-/**
- * Một đối tượng đơn giản để lưu trữ nhiệm vụ lập lịch trong bộ nhớ.
- * (Thay thế cho ScheduledTask)
- */
+//đối tượng để lưu trữ nhiệm vụ lập lịch trong bộ nhớ.
+
 public class LichHenKiemTra {
     private final String maBan;
     private final LocalDateTime gioDen;

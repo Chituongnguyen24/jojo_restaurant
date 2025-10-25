@@ -20,7 +20,6 @@ public class ThemBan_Dialog extends JDialog {
     private JComboBox<LoaiBan> cmbLoaiBan;
     private JComboBox<String> cmbKhuVuc;
 
-    // Màu sắc và Font
     private static final Color COLOR_PRIMARY = new Color(0, 123, 255);
     private static final Color COLOR_WHITE = Color.WHITE;
     private static final Font FONT_LABEL = new Font("Segoe UI", Font.BOLD, 14);
@@ -31,7 +30,7 @@ public class ThemBan_Dialog extends JDialog {
         this.banDAO = new Ban_DAO();
         this.onRefreshCallback = onRefreshCallback;
         
-        // Lấy danh sách khu vực từ DAO để điền vào ComboBox
+        //lấy danh sách khu vực để điền vào ComboBox
         this.khuVucMap = banDAO.getDanhSachKhuVuc();
 
         initComponents();
@@ -83,7 +82,7 @@ public class ThemBan_Dialog extends JDialog {
         mainPanel.add(createLabel("Khu vực:"), gbc);
         gbc.gridx = 1; gbc.gridy = 3;
         gbc.weightx = 1.0;
-        // Hiển thị Tên Khu Vực cho người dùng
+        //Tên Khu Vực
         cmbKhuVuc = new JComboBox<>(khuVucMap.values().toArray(new String[0])); 
         cmbKhuVuc.setFont(FONT_FIELD);
         mainPanel.add(cmbKhuVuc, gbc);
@@ -124,16 +123,16 @@ public class ThemBan_Dialog extends JDialog {
         int soCho = (int) spinSoCho.getValue();
         LoaiBan loaiBan = (LoaiBan) cmbLoaiBan.getSelectedItem();
         
-        // Lấy tenKhuVuc từ ComboBox
+        //tenKhuVuc từ ComboBox
         String tenKhuVuc = (String) cmbKhuVuc.getSelectedItem();
-        // Tìm maKhuVuc tương ứng
+        //tìm maKhuVuc tương ứng
         String maKhuVuc = khuVucMap.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(tenKhuVuc))
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
 
-        // --- Kiểm tra dữ liệu ---
+        //kiểm tra dữ liệu
         if (maBan.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Mã bàn không được để trống!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
@@ -143,22 +142,21 @@ public class ThemBan_Dialog extends JDialog {
             return;
         }
 
-        // Tạo đối tượng Ban mới
+        //tạo Ban mới
         Ban newBan = new Ban(
             maBan,
             soCho,
             loaiBan,
             maKhuVuc,
-            TrangThaiBan.TRONG // Bàn mới luôn trống
+            TrangThaiBan.TRONG
         );
 
-        // Gọi DAO để thêm
         boolean success = banDAO.themBan(newBan);
 
         if (success) {
             JOptionPane.showMessageDialog(this, "Thêm bàn thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-            onRefreshCallback.run(); // Gọi hàm làm mới giao diện chính
-            dispose(); // Đóng dialog
+            onRefreshCallback.run();
+            dispose(); 
         } else {
             JOptionPane.showMessageDialog(this, "Thêm bàn thất bại! (Có thể do trùng mã bàn)", "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
