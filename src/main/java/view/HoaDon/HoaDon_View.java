@@ -23,7 +23,6 @@ public class HoaDon_View extends JPanel {
         setLayout(new BorderLayout());
         setBackground(new Color(251, 248, 241));
 
-        // ===== HEADER =====
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         header.setBorder(new EmptyBorder(20, 30, 15, 30));
@@ -55,7 +54,6 @@ public class HoaDon_View extends JPanel {
         header.add(btnAdd, BorderLayout.EAST);
         add(header, BorderLayout.NORTH);
 
-        // ===== STATS =====
         JPanel statsPanel = new JPanel(new GridLayout(1, 4, 20, 0));
         statsPanel.setOpaque(false);
         statsPanel.setBorder(new EmptyBorder(10, 30, 25, 30));
@@ -70,7 +68,6 @@ public class HoaDon_View extends JPanel {
         statsPanel.add(createStatBox(lblTongHD, "Tổng hóa đơn", new Color(34, 139, 230)));
         statsPanel.add(createStatBox(lblDoanhThu, "Doanh thu", new Color(255, 152, 0)));
 
-        // ===== TABLE =====
         String[] cols = {"Mã HD", "Khách hàng", "Ngày lập", "Tổng tiền", "Phương thức", "Trạng thái", "Sửa", "Xóa"};
         model = new DefaultTableModel(cols, 0) {
             @Override
@@ -140,14 +137,14 @@ public class HoaDon_View extends JPanel {
             String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
 
             model.addRow(new Object[]{
-                    hd.getMaHoaDon(),
-                    tenKH,
-                    hd.getNgayLap(),
-                    String.format("%.0f VNĐ", tongTien),
-                    hd.getPhuongThuc(),
-                    trangThai,
-                    "Sửa",
-                    "Xóa"
+                hd.getMaHoaDon(),
+                tenKH,
+                hd.getNgayLap(),
+                String.format("%,.0f VNĐ", tongTien), // Sửa ở đây để format cả bảng
+                hd.getPhuongThuc(),
+                trangThai,
+                "Sửa",
+                "Xóa"
             });
         }
     }
@@ -171,7 +168,23 @@ public class HoaDon_View extends JPanel {
         lblChuaTT.setText(String.valueOf(chuaTT));
         lblDaTT.setText(String.valueOf(daTT));
         lblTongHD.setText(String.valueOf(tongHD));
-        lblDoanhThu.setText(String.format("%.0f VNĐ", doanhThu));
+        lblDoanhThu.setText(formatTienTe(doanhThu)); // Sửa ở đây
+    }
+
+    private String formatTienTe(double soTien) {
+        boolean isNegative = soTien < 0;
+        double giaTriTuyetDoi = Math.abs(soTien);
+        String ketQua;
+        
+        if (giaTriTuyetDoi >= 1_000_000_000) {
+            ketQua = String.format("%.2f Tỷ VNĐ", giaTriTuyetDoi / 1_000_000_000.0);
+        } else if (giaTriTuyetDoi >= 1_000_000) {
+            ketQua = String.format("%.1f Triệu VNĐ", giaTriTuyetDoi / 1_000_000.0);
+        } else {
+            ketQua = String.format("%,.0f VNĐ", giaTriTuyetDoi);
+        }
+        
+        return isNegative ? "-" + ketQua : ketQua;
     }
 
     private JButton createRoundedButton(String text, Color bg, Color fg) {

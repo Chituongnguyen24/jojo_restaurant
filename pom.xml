@@ -28,11 +28,17 @@
 			<artifactId>font-awesome</artifactId>
 			<version>6.7.2</version>
 		</dependency>
-		<!-- https://mvnrepository.com/artifact/jfree/jfreechart -->
+		<!-- https://mvnrepository.com/artifact/com.object-refinery/orsoncharts -->
 		<dependency>
-			<groupId>jfree</groupId>
-			<artifactId>jfreechart</artifactId>
-			<version>1.0.13</version>
+			<groupId>com.object-refinery</groupId>
+			<artifactId>orsoncharts</artifactId>
+			<version>1.6</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.toedter/jcalendar -->
+		<dependency>
+			<groupId>com.toedter</groupId>
+			<artifactId>jcalendar</artifactId>
+			<version>1.4</version>
 		</dependency>
 	</dependencies>
 </project>

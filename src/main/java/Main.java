@@ -9,7 +9,7 @@ import view.TiepTan_View;
 
 public class Main {
     public static void main(String[] args) {
-        // Bật khử răng cưa font chữ
+      
         System.setProperty("awt.useSystemAAFontSettings", "on");
         System.setProperty("swing.aatext", "true");
 
@@ -20,11 +20,11 @@ public class Main {
                 e.printStackTrace();
             }
 
-            // Mở màn hình đăng nhập
+            
             Login_View loginView = new Login_View();
             loginView.setVisible(true);
 
-            // Gắn sự kiện cho nút đăng nhập
+       
             loginView.addLoginListener(e -> {
                 String username = loginView.getUsername();
                 String password = loginView.getPassword();
@@ -42,15 +42,14 @@ public class Main {
                     return;
                 }
 
-                // Nếu đăng nhập đúng
                 loginView.showMessage("Đăng nhập thành công! Xin chào " + tk.getVaiTro());
                 loginView.dispose();
 
                 switch (tk.getVaiTro().toUpperCase()) {
-                    case "NVQL": // Nhân viên quản lý
+                    case "NVQL": 
                         new QuanLy_View(tk).setVisible(true);
                         break;
-                    case "NVTT": // Nhân viên tiếp tân
+                    case "NVTT":
                         new TiepTan_View(tk).setVisible(true);
                         break;
                     default:

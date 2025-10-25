@@ -240,4 +240,84 @@ public class NhanVien_DAO {
         return null;
     }
 
+    // Tìm kiếm và lọc nhân viên
+    public List<NhanVien> timKiemVaLocNhanVien(String keyword, String vaiTroFilter) {
+        List<NhanVien> dsNV = new ArrayList<>();
+        // Xây dựng câu SQL cơ bản
+        String sql = "SELECT nv.maNV, nv.tenNhanVien, nv.gioiTinh, nv.sdt, nv.email, " +
+                     "tk.tenDangNhap, tk.matKhau, tk.vaiTro " +
+                     "FROM NhanVien nv " +
+                     "LEFT JOIN TaiKhoan tk ON nv.maNV = tk.maNV ";
+        
+        // Tạo danh sách các điều kiện WHERE
+        List<String> conditions = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
+        
+        // Thêm điều kiện tìm kiếm theo keyword (nếu có)
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            conditions.add("(nv.tenNhanVien LIKE ? OR nv.sdt LIKE ? OR nv.email LIKE ? OR tk.tenDangNhap LIKE ? OR nv.maNV LIKE ?)");
+            String likeKeyword = "%" + keyword + "%";
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword);
+            params.add(likeKeyword); // Thêm tìm kiếm theo mã NV
+        }
+        
+        // Thêm điều kiện lọc theo vai trò (nếu có và không phải "Tất cả")
+        if (vaiTroFilter != null && !vaiTroFilter.equals("Tất cả")) {
+             // Kiểm tra vai trò hợp lệ (NVQL hoặc NVTT)
+             if ("NVQL".equals(vaiTroFilter) || "NVTT".equals(vaiTroFilter)) {
+                 conditions.add("tk.vaiTro = ?");
+                 params.add(vaiTroFilter);
+             } else {
+                 // Nếu vai trò không hợp lệ, trả về ds rỗng để tránh lỗi SQL
+                 return dsNV;
+             }
+        }
+        
+        // Nối các điều kiện WHERE lại (nếu có)
+        if (!conditions.isEmpty()) {
+            sql += " WHERE " + String.join(" AND ", conditions);
+        }
+
+        try (Connection conn = new ConnectDB().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            // Set các tham số cho PreparedStatement
+            for (int i = 0; i < params.size(); i++) {
+                pstmt.setObject(i + 1, params.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                     TaiKhoan tk = null;
+                     // Chỉ tạo tài khoản nếu có tenDangNhap
+                     if (rs.getString("tenDangNhap") != null) {
+                        tk = new TaiKhoan(
+                            rs.getString("maNV"), // Dùng maNV từ bảng NV
+                            rs.getString("tenDangNhap"),
+                            rs.getString("matKhau"),
+                            rs.getString("vaiTro")
+                        );
+                     }
+
+                    NhanVien nv = new NhanVien(
+                        rs.getString("maNV"),
+                        rs.getString("tenNhanVien"),
+                        rs.getBoolean("gioiTinh"),
+                        rs.getString("sdt"),
+                        rs.getString("email"),
+                        tk // Có thể là null nếu nhân viên chưa có tài khoản
+                    );
+                    dsNV.add(nv);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi tìm kiếm và lọc nhân viên: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return dsNV;
+    }
+
 }

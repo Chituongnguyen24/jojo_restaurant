@@ -43,7 +43,7 @@ public class PhieuDatBan_DAO {
 
 	            KhachHang khachHang = khDAO.getKhachHangById(maKH);
 	            NhanVien nhanVien = nvDAO.getNhanVienById(maNV);
-	            Ban ban = banDAO.getBanById(maBan);
+	            Ban ban = banDAO.getBanTheoMa(maBan);
 
 	            // Tạo object PhieuDatBan bằng constructor mới
 	            PhieuDatBan pdb = new PhieuDatBan(maPhieu, thoiGianDat, khachHang, nhanVien, ban, soNguoi, tienCoc, ghiChu);

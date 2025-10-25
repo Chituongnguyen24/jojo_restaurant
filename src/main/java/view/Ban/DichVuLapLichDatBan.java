@@ -42,7 +42,7 @@ public class DichVuLapLichDatBan {
             if (now.isAfter(lichHen.getGioDen().plusMinutes(30))) {
                 System.out.println("Phát hiện lịch hẹn hết hạn cho bàn: " + lichHen.getMaBan());
                 
-                Ban ban = banDAO.getBanById(lichHen.getMaBan());
+                Ban ban = banDAO.getBanTheoMa(lichHen.getMaBan());
 
                 if (ban != null && ban.getTrangThai() == TrangThaiBan.DA_DAT) {
                     ban.setTrangThai(TrangThaiBan.TRONG);
