@@ -4,8 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;   // <<< THÊM
-import java.sql.Timestamp;  // <<< THÊM
+import java.sql.Statement;   
+import java.sql.Timestamp;  
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +18,6 @@ import entity.PhieuDatBan;
 
 public class PhieuDatBan_DAO {
 
-    // SỬA LẠI HÀM NÀY ĐỂ ĐỌC ĐÚNG CỘT
 	public List<PhieuDatBan> getAllPhieuDatBan() {
 	    List<PhieuDatBan> list = new ArrayList<>();
 	    String sql = "SELECT * FROM PhieuDatBan";
@@ -33,19 +32,18 @@ public class PhieuDatBan_DAO {
 
 	        while (rs.next()) {
 	            String maPhieu = rs.getString("maPhieu");
-	            LocalDateTime thoiGianDat = rs.getTimestamp("thoiGianDat").toLocalDateTime(); // Đây là thời gian khách đến
-	            String maKH = rs.getString("maKhachHang"); // CSDL dùng maKhachHang
+	            LocalDateTime thoiGianDat = rs.getTimestamp("thoiGianDat").toLocalDateTime(); //thời gian khách đến
+	            String maKH = rs.getString("maKhachHang"); 
 	            String maNV = rs.getString("maNV");
 	            String maBan = rs.getString("maBan");
-                int soNguoi = rs.getInt("soNguoi"); // <<< THÊM
+                int soNguoi = rs.getInt("soNguoi");
 	            double tienCoc = rs.getDouble("tienCoc");
-                String ghiChu = rs.getString("ghiChu"); // <<< THÊM
+                String ghiChu = rs.getString("ghiChu"); 
 
 	            KhachHang khachHang = khDAO.getKhachHangById(maKH);
 	            NhanVien nhanVien = nvDAO.getNhanVienById(maNV);
 	            Ban ban = banDAO.getBanTheoMa(maBan);
 
-	            // Tạo object PhieuDatBan bằng constructor mới
 	            PhieuDatBan pdb = new PhieuDatBan(maPhieu, thoiGianDat, khachHang, nhanVien, ban, soNguoi, tienCoc, ghiChu);
 	            list.add(pdb);
 	        }
@@ -56,8 +54,7 @@ public class PhieuDatBan_DAO {
 	    return list;
 	}
 
-    // <<< THÊM PHƯƠNG THỨC NÀY >>>
-    // 2. Thêm phiếu đặt bàn mới
+    //thêm phiếu đặt bàn mới
     public boolean insertPhieuDatBan(PhieuDatBan p) {
         String sql = "INSERT INTO PhieuDatBan(MaPhieu, ThoiGianDat, MaKhachHang, MaNV, MaBan, SoNguoi, TienCoc, GhiChu) " +
                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -83,8 +80,7 @@ public class PhieuDatBan_DAO {
         return false;
     }
 
-    // <<< THÊM PHƯƠNG THỨC NÀY >>>
-    // 3. Tự động tạo mã phiếu đặt bàn mới (ví dụ: PDB00001)
+    //tạo mã phiếu đặt bàn mới
     public String generateNewID() {
         String newID = "PDB00001"; // Mã mặc định nếu bảng trống
         String sql = "SELECT TOP 1 MaPhieu FROM PhieuDatBan ORDER BY MaPhieu DESC";

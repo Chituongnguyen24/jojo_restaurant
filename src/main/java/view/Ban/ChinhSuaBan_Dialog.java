@@ -12,9 +12,9 @@ import java.util.Vector;
 
 public class ChinhSuaBan_Dialog extends JDialog {
 
-    private final Ban ban; // Bàn đang được chỉnh sửa
+    private final Ban ban; 
     private final Ban_DAO banDAO;
-    private final Runnable onRefreshCallback; // Hàm để gọi lại Ban_View.loadData()
+    private final Runnable onRefreshCallback; 
     private final Map<String, String> khuVucMap;
 
     private JTextField txtMaBan;
@@ -22,7 +22,6 @@ public class ChinhSuaBan_Dialog extends JDialog {
     private JComboBox<LoaiBan> cmbLoaiBan;
     private JComboBox<String> cmbKhuVuc;
 
-    // Màu sắc và Font
     private static final Color COLOR_PRIMARY = new Color(0, 123, 255);
     private static final Color COLOR_DANGER = new Color(220, 53, 69);
     private static final Color COLOR_WHITE = Color.WHITE;
@@ -34,8 +33,7 @@ public class ChinhSuaBan_Dialog extends JDialog {
         this.ban = ban;
         this.banDAO = new Ban_DAO();
         this.onRefreshCallback = onRefreshCallback;
-        
-        // Lấy danh sách khu vực
+
         this.khuVucMap = banDAO.getDanhSachKhuVuc();
 
         initComponents();
@@ -53,7 +51,7 @@ public class ChinhSuaBan_Dialog extends JDialog {
         gbc.insets = new Insets(8, 8, 8, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        // Mã bàn (Không cho sửa)
+        // Mã bàn
         gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST;
         mainPanel.add(createLabel("Mã bàn:"), gbc);
         gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1.0;
@@ -108,13 +106,13 @@ public class ChinhSuaBan_Dialog extends JDialog {
         add(buttonPanel, BorderLayout.SOUTH);
     }
 
-    // Tải dữ liệu của bàn vào các trường
+    //tải dữ liệu của bàn vào các trường
     private void loadData() {
         txtMaBan.setText(ban.getMaBan());
         spinSoCho.setValue(ban.getSoCho());
         cmbLoaiBan.setSelectedItem(ban.getLoaiBan());
         
-        // Tìm 'tenKhuVuc' từ 'maKhuVuc' của bàn
+        //tìm 'tenKhuVuc' từ 'maKhuVuc' của bàn
         String tenKhuVuc = khuVucMap.get(ban.getMaKhuVuc());
         if (tenKhuVuc != null) {
             cmbKhuVuc.setSelectedItem(tenKhuVuc);
@@ -138,7 +136,6 @@ public class ChinhSuaBan_Dialog extends JDialog {
         return button;
     }
 
-    // Hành động LƯU
     private void luuThayDoi() {
         try {
             int soCho = (int) spinSoCho.getValue();
@@ -156,21 +153,20 @@ public class ChinhSuaBan_Dialog extends JDialog {
                 return;
             }
 
-            // Tạo đối tượng Ban mới với thông tin cập nhật
+            //tạo đối tượng Ban mới với thông tin cập nhật
             Ban banCapNhat = new Ban(
                 ban.getMaBan(),
                 soCho,
                 loaiBan,
                 maKhuVuc,
-                ban.getTrangThai() // Giữ nguyên trạng thái (Trống, Có khách...)
+                ban.getTrangThai()
             );
 
-            // Gọi DAO
             boolean success = banDAO.capNhatBan(banCapNhat);
 
             if (success) {
                 JOptionPane.showMessageDialog(this, "Cập nhật bàn thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                onRefreshCallback.run(); // Làm mới Ban_View
+                onRefreshCallback.run(); //làm mới Ban_View
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Cập nhật bàn thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -180,11 +176,10 @@ public class ChinhSuaBan_Dialog extends JDialog {
         }
     }
 
-    // Hành động XÓA
     private void xoaBan() {
         TrangThaiBan trangThai = ban.getTrangThai();
         
-        // Kiểm tra an toàn
+        //Kiểm tra 
         if (trangThai == TrangThaiBan.CO_KHACH || trangThai == TrangThaiBan.DA_DAT) {
             JOptionPane.showMessageDialog(this,
                 "Không thể xóa bàn đang có khách hoặc đã được đặt!",

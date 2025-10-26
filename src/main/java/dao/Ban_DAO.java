@@ -13,18 +13,7 @@ import java.util.Map;
 
 public class Ban_DAO {
 
-    /**
-     * Hàm chung để tạo đối tượng Ban từ ResultSet.
-     */
-    private Ban createBanFromResultSet(ResultSet rs) throws SQLException {
-        return new Ban(
-            rs.getString("maBan"),
-            rs.getInt("soCho"),
-            LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
-            rs.getString("maKhuVuc"),
-            TrangThaiBan.fromString(rs.getString("trangThai"))
-        );
-    }
+    // --- ĐÃ XÓA HÀM createBanFromResultSet ---
 
     public List<Ban> getAllBan() {
         List<Ban> ds = new ArrayList<>();
@@ -35,7 +24,15 @@ public class Ban_DAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                ds.add(createBanFromResultSet(rs));
+                // Logic được inline
+                Ban ban = new Ban(
+                    rs.getString("maBan"),
+                    rs.getInt("soCho"),
+                    LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                    rs.getString("maKhuVuc"),
+                    TrangThaiBan.fromString(rs.getString("trangThai"))
+                );
+                ds.add(ban);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -50,7 +47,14 @@ public class Ban_DAO {
             stmt.setString(1, maBan);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return createBanFromResultSet(rs); // Sử dụng hàm chung
+                    // Logic được inline
+                    return new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("trangThai"))
+                    );
                 }
             }
         } catch (SQLException e) {
@@ -83,6 +87,7 @@ public class Ban_DAO {
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setInt(1, ban.getSoCho());
+            //Lưu tên hiển thị
             stmt.setString(2, ban.getLoaiBan().getTenHienThi());
             stmt.setString(3, ban.getMaKhuVuc());
             stmt.setString(4, ban.getTrangThai().toString());
@@ -117,7 +122,15 @@ public class Ban_DAO {
             stmt.setString(1, maKhuVuc);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    ds.add(createBanFromResultSet(rs)); // Sử dụng hàm chung
+                    // Logic được inline
+                    Ban ban = new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("trangThai"))
+                    );
+                    ds.add(ban);
                 }
             }
         } catch (SQLException e) {
@@ -138,7 +151,15 @@ public class Ban_DAO {
             stmt.setString(1, trangThai.toString());
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    ds.add(createBanFromResultSet(rs)); // Sử dụng hàm chung
+                    // Logic được inline
+                    Ban ban = new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("trangThai"))
+                    );
+                    ds.add(ban);
                 }
             }
         } catch (SQLException e) {
@@ -178,7 +199,15 @@ public class Ban_DAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    ds.add(createBanFromResultSet(rs));
+                    // Logic được inline
+                    Ban ban = new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("trangThai"))
+                    );
+                    ds.add(ban);
                 }
             }
         } catch (SQLException e) {

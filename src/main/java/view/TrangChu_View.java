@@ -12,7 +12,7 @@ import view.Login.Login_View;
 import view.NhanVien.*;
 import view.ThucDon.*;
 import entity.TaiKhoan;
-import view.HeThong_View;
+import view.HeThong_View; 
 import view.ThucDon.MonAn_View;
 
 public class TrangChu_View extends JPanel {
@@ -62,12 +62,15 @@ public class TrangChu_View extends JPanel {
         menuBar.setBackground(new Color(230, 230, 230));
         menuBar.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
 
-        cardLayout = new CardLayout();
-        contentPanel = new JPanel(cardLayout);
-
+        // ===== FONT CHO MENU =====
         Font menuFont = new Font("Arial", Font.BOLD, 14);
         Font menuItemFont = new Font("Arial", Font.PLAIN, 14);
 
+        // ===== CONTENT (CardLayout) =====
+        cardLayout = new CardLayout();
+        contentPanel = new JPanel(cardLayout);
+
+        // ===== Card names =====
         final String CARD_HOME = "HỆ_THỐNG";
         final String CARD_QUAN_LY_BAN = "QUAN_LY_BAN";
         final String CARD_QUAN_LY_DAT_BAN = "QUAN_LY_DAT_BAN";
@@ -99,6 +102,7 @@ public class TrangChu_View extends JPanel {
             contentPanel.add(new ThongKe_View(), CARD_THONGKE_NV);
         }
 
+        // ===== MENU =====
         JMenu menuHeThong = new JMenu("Hệ thống");
         menuHeThong.setFont(menuFont);
         JMenuItem mDangXuat = new JMenuItem("Đăng xuất");
@@ -177,6 +181,7 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuKH);
         if (menuNV != null) menuBar.add(menuNV);
 
+        // ===== Lưu tất cả menu item =====
         allMenuItems.add(mQuanLyBan);
         allMenuItems.add(mQuanLyDatBan);
         allMenuItems.add(mQLMon);
@@ -193,63 +198,26 @@ public class TrangChu_View extends JPanel {
             allMenuItems.add(mTKNV);
         }
 
-        ActionListener switchPanel = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JMenuItem src = (JMenuItem) e.getSource();
-                resetMenuHighlight();
-                highlightMenu(src);
+        // ===== Hàm highlight + switch =====
+        ActionListener switchPanel = e -> {
+            JMenuItem src = (JMenuItem) e.getSource();
+            resetMenuHighlight();
+            highlightMenu(src);
 
-                String text = src.getText();
-                if (text == null) {
-                    
-                } else {
-                    switch (text) {
-                        case "Quản lý bàn":
-                            cardLayout.show(contentPanel, CARD_QUAN_LY_BAN);
-                            break;
-                        case "Quản lý đặt bàn":
-                            cardLayout.show(contentPanel, CARD_QUAN_LY_DAT_BAN);
-                            break;
-                        case "Quản lý món ăn":
-                            cardLayout.show(contentPanel, CARD_MON_AN);
-                            break;
-                        case "Quản lý thực đơn":
-                            cardLayout.show(contentPanel, CARD_THUC_DON);
-                            break;
-                        case "Tra cứu":
-                            cardLayout.show(contentPanel, CARD_THUC_DON);
-                            break;
-                        case "Quản lý hóa đơn":
-                            cardLayout.show(contentPanel, CARD_QUAN_LY_HOADON);
-                            break;
-                        case "Tra cứu hóa đơn":
-                            cardLayout.show(contentPanel, CARD_TRA_CUU_HOADON);
-                            break;
-                        case "Quản lý khách hàng":
-                            cardLayout.show(contentPanel, CARD_QUAN_LY_KH);
-                            break;
-                        case "Quản lý điểm tích lũy":
-                            cardLayout.show(contentPanel, CARD_DIEM_KH);
-                            break;
-                        case "Tra cứu khách hàng":
-                            cardLayout.show(contentPanel, CARD_TRA_CUU_KH);
-                            break;
-                        case "Nhân viên":
-                            cardLayout.show(contentPanel, CARD_NHANVIEN);
-                            break;
-                        case "Tra cứu nhân viên":
-                            cardLayout.show(contentPanel, CARD_TRA_CUU_NV);
-                            break;
-                        case "Thống kê nhân viên":
-                            cardLayout.show(contentPanel, CARD_THONGKE_NV);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                contentPanel.revalidate();
-                contentPanel.repaint();
+            switch (src.getText()) {
+                case "Quản lý bàn" -> cardLayout.show(contentPanel, CARD_QUAN_LY_BAN);
+                case "Quản lý đặt bàn" -> cardLayout.show(contentPanel, CARD_QUAN_LY_DAT_BAN);
+                case "Quản lý món ăn" -> cardLayout.show(contentPanel, CARD_MON_AN);
+                case "Quản lý thực đơn" -> cardLayout.show(contentPanel, CARD_THUC_DON);
+                case "Tra cứu" -> cardLayout.show(contentPanel, CARD_THUC_DON);
+                case "Quản lý hóa đơn" -> cardLayout.show(contentPanel, CARD_QUAN_LY_HOADON);
+                case "Tra cứu hóa đơn" -> cardLayout.show(contentPanel, CARD_TRA_CUU_HOADON);
+                case "Quản lý khách hàng" -> cardLayout.show(contentPanel, CARD_QUAN_LY_KH);
+                case "Quản lý điểm tích lũy" -> cardLayout.show(contentPanel, CARD_DIEM_KH);
+                case "Tra cứu khách hàng" -> cardLayout.show(contentPanel, CARD_TRA_CUU_KH);
+                case "Nhân viên" -> cardLayout.show(contentPanel, CARD_NHANVIEN);
+                case "Tra cứu nhân viên" -> cardLayout.show(contentPanel, CARD_TRA_CUU_NV);
+                case "Thống kê nhân viên" -> cardLayout.show(contentPanel, CARD_THONGKE_NV);
             }
         };
 
@@ -257,17 +225,15 @@ public class TrangChu_View extends JPanel {
             item.addActionListener(switchPanel);
         }
 
-        ActionListener logoutAction = new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int confirm = JOptionPane.showConfirmDialog(TrangChu_View.this,
-                        "Bạn có chắc muốn đăng xuất?", "Xác nhận",
-                        JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.YES_OPTION) {
-                    frame.dispose();
-                    Login_View login = new Login_View();
-                    login.setVisible(true);
-                }
+        // ===== Đăng xuất =====
+        ActionListener logoutAction = e -> {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn đăng xuất?", "Xác nhận",
+                JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                frame.dispose();
+                Login_View login = new Login_View();
+                login.setVisible(true);
             }
         };
         logoutBtn.addActionListener(logoutAction);
