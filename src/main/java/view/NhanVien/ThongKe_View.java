@@ -16,12 +16,7 @@ import java.util.*;
 import java.util.List;
 import java.util.Map;
 
-/**
- * ThongKe_View - vẽ biểu đồ bằng Java2D (không dùng XChart / JFreeChart)
- *
- * - BarChartPanel và PieChartPanel là các JPanel vẽ thủ công bằng Graphics2D.
- * - Giữ nguyên logic filter/DAO như trước.
- */
+
 public class ThongKe_View extends JPanel {
 
     private final HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
@@ -429,9 +424,6 @@ public class ThongKe_View extends JPanel {
         }
     }
 
-    // -------------------------
-    // Inner class: PieChartPanel (Java2D)
-    // -------------------------
     private class PieChartPanel extends JPanel {
         private final Map<String, Integer> data;
         private final Color[] COLORS = {

@@ -13,8 +13,6 @@ import java.util.Map;
 
 public class Ban_DAO {
 
-    // --- ĐÃ XÓA HÀM createBanFromResultSet ---
-
     public List<Ban> getAllBan() {
         List<Ban> ds = new ArrayList<>();
         String sql = "SELECT * FROM Ban";
@@ -24,7 +22,6 @@ public class Ban_DAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                // Logic được inline
                 Ban ban = new Ban(
                     rs.getString("maBan"),
                     rs.getInt("soCho"),
@@ -47,7 +44,6 @@ public class Ban_DAO {
             stmt.setString(1, maBan);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    // Logic được inline
                     return new Ban(
                         rs.getString("maBan"),
                         rs.getInt("soCho"),
@@ -87,7 +83,6 @@ public class Ban_DAO {
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setInt(1, ban.getSoCho());
-            //Lưu tên hiển thị
             stmt.setString(2, ban.getLoaiBan().getTenHienThi());
             stmt.setString(3, ban.getMaKhuVuc());
             stmt.setString(4, ban.getTrangThai().toString());
@@ -122,7 +117,6 @@ public class Ban_DAO {
             stmt.setString(1, maKhuVuc);
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    // Logic được inline
                     Ban ban = new Ban(
                         rs.getString("maBan"),
                         rs.getInt("soCho"),
@@ -138,8 +132,6 @@ public class Ban_DAO {
         }
         return ds;
     }
-
-    // --- ĐÃ XÓA HÀM getSoBanTheoKhuVuc() CŨ ĐỂ THAY BẰNG 2 HÀM MỚI BÊN DƯỚI ---
 
     public List<Ban> getBanTheoTrangThai(TrangThaiBan trangThai) {
         List<Ban> ds = new ArrayList<>();
@@ -151,7 +143,6 @@ public class Ban_DAO {
             stmt.setString(1, trangThai.toString());
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    // Logic được inline
                     Ban ban = new Ban(
                         rs.getString("maBan"),
                         rs.getInt("soCho"),
@@ -168,11 +159,6 @@ public class Ban_DAO {
         return ds;
     }
 
-    /**
-     * Lấy danh sách mã khu vực và tên khu vực.
-     * Cần thiết cho dialog thêm bàn.
-     * @return Map<String, String> (Mã Khu Vực, Tên Khu Vực)
-     */
     public Map<String, String> getDanhSachKhuVuc() {
         Map<String, String> map = new LinkedHashMap<>();
         String sql = "SELECT maKhuVuc, tenKhuVuc FROM KHUVUC WHERE trangThai = 1 ORDER BY maKhuVuc";
@@ -199,7 +185,6 @@ public class Ban_DAO {
 
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    // Logic được inline
                     Ban ban = new Ban(
                         rs.getString("maBan"),
                         rs.getInt("soCho"),
@@ -216,19 +201,17 @@ public class Ban_DAO {
         return ds;
     }
 
-    // ===== PHẦN MỚI ĐƯỢC THÊM VÀO =====
-
-    // Lấy số bàn theo khu vực (không có khoảng thời gian)
+    /**
+     * Trả về tổng số bàn (bao gồm cả bàn chưa đặt) theo tên khu vực.
+     * Key của map = tenKhuVuc (để dễ hiển thị tên), giữ thứ tự theo maKhuVuc.
+     */
     public Map<String, Integer> getSoBanTheoKhuVuc() {
         Map<String, Integer> map = new LinkedHashMap<>();
         String sql =
-            " SELECT kv.tenKhuVuc, COUNT(DISTINCT pdb.maBan) AS SoLuong" +
+            " SELECT kv.maKhuVuc, kv.tenKhuVuc, COUNT(b.maBan) AS SoLuong" +
             " FROM KHUVUC kv" +
             " LEFT JOIN Ban b ON kv.maKhuVuc = b.maKhuVuc" +
-            " LEFT JOIN PHIEUDATBAN pdb ON b.maBan = pdb.maBan" +
-            " LEFT JOIN HOADON hd ON pdb.maPhieu = hd.maPhieu" +
-            " WHERE hd.daThanhToan = 1" +
-            " GROUP BY kv.tenKhuVuc, kv.maKhuVuc" +
+            " GROUP BY kv.maKhuVuc, kv.tenKhuVuc" +
             " ORDER BY kv.maKhuVuc";
 
         try (Connection con = ConnectDB.getInstance().getConnection();
@@ -244,7 +227,13 @@ public class Ban_DAO {
         return map;
     }
 
-    // Lấy số bàn theo khu vực có khoảng thời gian
+    /**
+     * Trả về số bàn từng khu vực có hóa đơn đã thanh toán trong khoảng from..to.
+     * Nếu from/to null => trả về getSoBanTheoKhuVuc()
+     *
+     * Lưu ý: câu SQL sử dụng LEFT JOIN với điều kiện lọc trong ON để không vô tình
+     * biến LEFT JOIN thành INNER JOIN.
+     */
     public Map<String, Integer> getSoBanTheoKhuVuc(java.util.Date from, java.util.Date to) {
         if (from == null || to == null) {
             return getSoBanTheoKhuVuc();
@@ -252,13 +241,13 @@ public class Ban_DAO {
 
         Map<String, Integer> map = new LinkedHashMap<>();
         String sql =
-            " SELECT kv.tenKhuVuc, COUNT(DISTINCT pdb.maBan) AS SoLuong" +
+            " SELECT kv.maKhuVuc, kv.tenKhuVuc, " +
+            " COUNT(DISTINCT CASE WHEN hd.maPhieu IS NOT NULL THEN b.maBan ELSE NULL END) AS SoLuong" +
             " FROM KHUVUC kv" +
             " LEFT JOIN Ban b ON kv.maKhuVuc = b.maKhuVuc" +
             " LEFT JOIN PHIEUDATBAN pdb ON b.maBan = pdb.maBan" +
-            " LEFT JOIN HOADON hd ON pdb.maPhieu = hd.maPhieu" +
-            " WHERE hd.daThanhToan = 1 AND hd.ngayLap BETWEEN ? AND ?" +
-            " GROUP BY kv.tenKhuVuc, kv.maKhuVuc" +
+            " LEFT JOIN HOADON hd ON pdb.maPhieu = hd.maPhieu AND hd.daThanhToan = 1 AND hd.ngayLap BETWEEN ? AND ?" +
+            " GROUP BY kv.maKhuVuc, kv.tenKhuVuc" +
             " ORDER BY kv.maKhuVuc";
 
         try (Connection con = ConnectDB.getInstance().getConnection();

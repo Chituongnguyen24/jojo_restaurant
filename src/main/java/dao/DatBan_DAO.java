@@ -252,7 +252,7 @@ public class DatBan_DAO {
         return null;
     }
 
-    private boolean updateTableStatus(String maBan, TrangThaiBan trangThai) {
+    public boolean updateTableStatus(String maBan, TrangThaiBan trangThai) {
         String truyVan = "UPDATE Ban SET TrangThai = ? WHERE MaBan = ?";
         try (Connection ketNoi = ConnectDB.getConnection();
              PreparedStatement lenh = ketNoi.prepareStatement(truyVan)) {

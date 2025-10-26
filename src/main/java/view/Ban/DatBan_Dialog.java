@@ -1,225 +1,246 @@
 package view.Ban;
 
-import dao.Ban_DAO;
-import dao.DatBan_DAO;     
-
+import dao.DatBan_DAO;
 import entity.Ban;
-import entity.KhachHang;  
-import entity.NhanVien;    
+import entity.KhachHang;
 import entity.PhieuDatBan;
 import enums.TrangThaiBan;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.time.*;
-import java.util.Calendar;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
-import java.text.NumberFormat; 
-import java.util.Locale;
 
+/**
+ * DatBan_Dialog - hỗ trợ cả tạo mới và chỉnh sửa phiếu đặt.
+ *
+ * - Nếu phieu == null: chế độ tạo mới.
+ * - Nếu phieu != null: chế độ chỉnh sửa (sẽ prefill dữ liệu từ phieu).
+ *
+ * NOTE: This dialog handles updating existing PhieuDatBan via DatBan_DAO.updatePhieuDatBan(...).
+ * For creating a new PhieuDatBan, this implementation expects that DatBan_DAO.insertPhieuDatBan handles
+ * creating/looking up KhachHang or you can integrate KhachHang_DAO accordingly.
+ */
 public class DatBan_Dialog extends JDialog {
-    private JTextField txtTenKhach, txtSDT;
-    private JSpinner spnNgay, spnGio;
-    private JSpinner spnSoNguoi;
-    private JTextField txtGhiChu;
-    private JFormattedTextField txtTienCoc;
-    private JButton btnXacNhan, btnHuy;
 
-    private Ban ban;
-    private Ban_DAO banDAO;
-    private DatBan_DAO datBanDAO;
-    private Runnable onSuccess;
+    private final Ban ban;
+    private final PhieuDatBan existingPhieu; // null => create mode
+    private final Runnable onRefresh;
+    private final DatBan_DAO datBanDAO = new DatBan_DAO();
 
-    public DatBan_Dialog(JFrame parent, Ban ban, Runnable onSuccess) { 
-        super(parent, "Đặt bàn " + ban.getMaBan(), true);
-        this.ban = ban;
-        this.onSuccess = onSuccess; 
-        this.banDAO = new Ban_DAO();
-        this.datBanDAO = new DatBan_DAO();
+    private JTextField txtTenKhach;
+    private JTextField txtSDT;
+    private JSpinner spinSoNguoi;
+    private JSpinner spinnerNgayGio;
+    private JTextArea txtGhiChu;
+    private JButton btnCancel;
+    private JButton btnSave;
 
-        setLayout(new BorderLayout(10, 10));
-        setSize(420, 380);
-        setLocationRelativeTo(parent);
+    private static final Font FONT_LABEL = new Font("Segoe UI", Font.BOLD, 14);
+    private static final Font FONT_FIELD = new Font("Segoe UI", Font.PLAIN, 14);
 
-        JPanel form = new JPanel(new GridBagLayout()); // <<< ĐỔI LAYOUT
-        form.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 5, 5, 5); // Khoảng cách
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-
-     // --- Hàng 1: Tên khách ---
-        gbc.gridx = 0; gbc.gridy = 0; gbc.anchor = GridBagConstraints.WEST;
-        form.add(new JLabel("Tên khách hàng:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 0; gbc.weightx = 1.0; // Cho phép giãn ngang
-        txtTenKhach = new JTextField();
-        form.add(txtTenKhach, gbc);
-
-        // --- Hàng 2: SĐT ---
-        gbc.gridx = 0; gbc.gridy = 1; gbc.weightx = 0;
-        form.add(new JLabel("Số điện thoại:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 1; gbc.weightx = 1.0;
-        txtSDT = new JTextField();
-        form.add(txtSDT, gbc);
-
-        // --- Hàng 3: Ngày đến ---
-        gbc.gridx = 0; gbc.gridy = 2; gbc.weightx = 0;
-        form.add(new JLabel("Ngày đến:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 2; gbc.weightx = 1.0;
-        spnNgay = new JSpinner(new SpinnerDateModel(new Date(), null, null, Calendar.DAY_OF_MONTH));
-        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(spnNgay, "dd/MM/yyyy");
-        spnNgay.setEditor(dateEditor);
-        form.add(spnNgay, gbc);
-
-        // --- Hàng 4: Giờ đến ---
-        gbc.gridx = 0; gbc.gridy = 3; gbc.weightx = 0;
-        form.add(new JLabel("Giờ đến:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 3; gbc.weightx = 1.0;
-        Date defaultTime = Date.from(Instant.now().plusSeconds(3600));
-        spnGio = new JSpinner(new SpinnerDateModel(defaultTime, null, null, Calendar.HOUR_OF_DAY));
-        JSpinner.DateEditor timeEditor = new JSpinner.DateEditor(spnGio, "HH:mm");
-        spnGio.setEditor(timeEditor);
-        form.add(spnGio, gbc);
-
-        // --- Hàng 5: Số người ---
-        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 0;
-        form.add(new JLabel("Số người:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 4; gbc.weightx = 1.0;
-        spnSoNguoi = new JSpinner(new SpinnerNumberModel(2, 1, 50, 1));
-        form.add(spnSoNguoi, gbc);
-
-        // --- HÀNG 6: TIỀN CỌC (THÊM MỚI) ---
-        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 0;
-        form.add(new JLabel("Tiền cọc (VNĐ):"), gbc);
-        gbc.gridx = 1; gbc.gridy = 5; gbc.weightx = 1.0;
-        // Dùng NumberFormat để định dạng tiền tệ
-        NumberFormat currencyFormat = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
-        currencyFormat.setGroupingUsed(true); // Có dấu phẩy ngăn cách
-        txtTienCoc = new JFormattedTextField(currencyFormat);
-        txtTienCoc.setValue(0.0); // Giá trị mặc định là 0
-        txtTienCoc.setColumns(15); // Độ rộng ước lượng
-        form.add(txtTienCoc, gbc);
-        // ===================================
-
-        // --- Hàng 7: Ghi chú ---
-        gbc.gridx = 0; gbc.gridy = 6; gbc.weightx = 0;
-        form.add(new JLabel("Ghi chú:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 6; gbc.weightx = 1.0;
-        txtGhiChu = new JTextField();
-        form.add(txtGhiChu, gbc);
-
-        add(form, BorderLayout.CENTER);
-        
-        JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
-        buttons.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(220,220,220)));
-        btnXacNhan = new JButton("Xác nhận đặt");
-        btnXacNhan.setBackground(new Color(0, 123, 255));
-        btnXacNhan.setForeground(Color.WHITE);
-        btnHuy = new JButton("Hủy");
-        buttons.add(btnHuy);
-        buttons.add(btnXacNhan);
-        add(buttons, BorderLayout.SOUTH);
-
-        btnXacNhan.addActionListener(e -> datBan());
-        btnHuy.addActionListener(e -> dispose());
+    // Create mode
+    public DatBan_Dialog(JFrame owner, Ban ban, Runnable onRefresh) {
+        this(owner, ban, null, onRefresh);
     }
 
+    // Edit mode (pass existing PhieuDatBan)
+    public DatBan_Dialog(JFrame owner, Ban ban, PhieuDatBan phieu, Runnable onRefresh) {
+        super(owner, (phieu == null ? "Đặt bàn - " + ban.getMaBan() : "Chỉnh sửa đặt bàn - " + phieu.getMaPhieu()), true);
+        this.ban = ban;
+        this.existingPhieu = phieu;
+        this.onRefresh = onRefresh;
+        initComponents();
+        pack();
+        setLocationRelativeTo(owner);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+    }
 
-    private void datBan() {
-        try {
-            String ten = txtTenKhach.getText().trim();
-            String sdt = txtSDT.getText().trim();
+    private void initComponents() {
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBorder(new EmptyBorder(12,12,12,12));
+        root.setBackground(Color.WHITE);
 
-            //yêu cầu nhập để lưu vào ghi chú
-            if (ten.isEmpty() || sdt.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Vui lòng nhập đầy đủ Tên và SĐT!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
+        // header
+        JLabel title = new JLabel(existingPhieu == null ? "Tạo đặt bàn" : "Chỉnh sửa đặt bàn");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        root.add(title, BorderLayout.NORTH);
 
-            //lấy thời gian khách đến
-            Date datePart = (Date) spnNgay.getValue();
-            Date timePart = (Date) spnGio.getValue();
-            LocalDate localDate = datePart.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            LocalTime localTime = timePart.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
-            LocalDateTime gioDen = LocalDateTime.of(localDate, localTime); // Đây là thoiGianDat
+        JPanel form = new JPanel(new GridBagLayout());
+        form.setBackground(Color.WHITE);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8,8,8,8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
 
-            int soNguoi = (int) spnSoNguoi.getValue();
-            String ghiChu_form = txtGhiChu.getText().trim();
-            
-            double tienCoc = 0.0;
-            try {
-                // Lấy giá trị từ JFormattedTextField
-                Number tienCocNumber = (Number) txtTienCoc.getValue();
-                if (tienCocNumber != null) {
-                    tienCoc = tienCocNumber.doubleValue();
-                }
-                if (tienCoc < 0) {
-                    JOptionPane.showMessageDialog(this, "Tiền cọc không được là số âm!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-            } catch (Exception ex) {
-                 JOptionPane.showMessageDialog(this, "Tiền cọc phải là một số hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                 return;
-            }
-            
-            //validate
-            if (gioDen.isBefore(LocalDateTime.now().plusMinutes(10))) { 
-                JOptionPane.showMessageDialog(this, "Thời gian đến phải sau thời điểm hiện tại ít nhất 10 phút!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            if (soNguoi > ban.getSoCho()) {
-                int confirm = JOptionPane.showConfirmDialog(this, 
-                    "Bàn " + ban.getMaBan() + " chỉ có " + ban.getSoCho() + " chỗ. Bạn vẫn muốn đặt " + soNguoi + " người?",
-                    "Cảnh báo", JOptionPane.YES_NO_OPTION);
-                if (confirm == JOptionPane.NO_OPTION) {
-                    return;
-                }
-            }
+        // Ten khach
+        gbc.gridx=0; gbc.gridy=0; gbc.weightx=0;
+        form.add(createLabel("Tên khách:"), gbc);
+        gbc.gridx=1; gbc.weightx=1.0;
+        txtTenKhach = new JTextField();
+        styleField(txtTenKhach);
+        form.add(txtTenKhach, gbc);
 
-            NhanVien nv = new NhanVien("NV00001"); // Tạm thời
-            
-            //tạo ghi chú ghép tên + sdt
-            String ghiChu_final = String.format("Khách: %s - SĐT: %s.", ten, sdt);
-            if (!ghiChu_form.isEmpty()) {
-                ghiChu_final += " Ghi chú: " + ghiChu_form;
-            }
-            
-            //tạo Mã Phiếu
-            String maPhieu = datBanDAO.generateNewID();
+        // SDT
+        gbc.gridx=0; gbc.gridy=1; gbc.weightx=0;
+        form.add(createLabel("SĐT:"), gbc);
+        gbc.gridx=1;
+        txtSDT = new JTextField();
+        styleField(txtSDT);
+        form.add(txtSDT, gbc);
 
-            //TẠO 2 PHIẾU: MỘT ĐỂ LƯU DB, MỘT ĐỂ GỬI VỀ VIEW
+        // So nguoi
+        gbc.gridx=0; gbc.gridy=2;
+        form.add(createLabel("Số người:"), gbc);
+        gbc.gridx=1;
+        spinSoNguoi = new JSpinner(new SpinnerNumberModel(4,1,100,1));
+        spinSoNguoi.setFont(FONT_FIELD);
+        form.add(spinSoNguoi, gbc);
 
-            //phiếu để luu CSDL
-            KhachHang kh_db = new KhachHang("KH00000000");
-            PhieuDatBan phieu_luu_db = new PhieuDatBan(maPhieu, gioDen, kh_db, nv, ban, soNguoi, 0.0, ghiChu_final);
+        // Thoi gian
+        gbc.gridx=0; gbc.gridy=3;
+        form.add(createLabel("Thời gian:"), gbc);
+        gbc.gridx=1;
+        spinnerNgayGio = new JSpinner(new SpinnerDateModel(new Date(), null, null, java.util.Calendar.MINUTE));
+        spinnerNgayGio.setEditor(new JSpinner.DateEditor(spinnerNgayGio, "dd/MM/yyyy HH:mm"));
+        form.add(spinnerNgayGio, gbc);
 
-            //bắt đầu giao dịch
-            ban.setTrangThai(TrangThaiBan.DA_DAT);
-            boolean updateBanSuccess = banDAO.capNhatBan(ban);
+        // Ghi chu
+        gbc.gridx=0; gbc.gridy=4; gbc.weighty=0;
+        form.add(createLabel("Ghi chú:"), gbc);
+        gbc.gridx=1;
+        txtGhiChu = new JTextArea(3, 20);
+        txtGhiChu.setFont(FONT_FIELD);
+        form.add(new JScrollPane(txtGhiChu), gbc);
 
-            if (updateBanSuccess) {
-                //thêm phiếu_luu_db vào CSDL
-                boolean createPhieuSuccess = datBanDAO.insertPhieuDatBan(phieu_luu_db);
+        root.add(form, BorderLayout.CENTER);
 
-                if (createPhieuSuccess) {
-                    JOptionPane.showMessageDialog(this, "Đặt bàn " + ban.getMaBan() + " thành công cho " + ten);
-                    dispose();
+        // footer buttons
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10,10));
+        footer.setBackground(Color.WHITE);
 
-                    if (onSuccess != null) {
-                        //gửi phiếu_gui_view về View
-                        onSuccess.run(); 
-                    }
-                } else {
-                    ban.setTrangThai(TrangThaiBan.TRONG);
-                    banDAO.capNhatBan(ban); 
-                    JOptionPane.showMessageDialog(this, "Lỗi! Không thể tạo phiếu đặt bàn.", "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Lỗi! Không thể cập nhật trạng thái bàn.", "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
-            }
+        btnCancel = new JButton("Hủy");
+        btnCancel.setFont(FONT_FIELD);
+        btnCancel.addActionListener(e -> dispose());
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        btnSave = new JButton(existingPhieu == null ? "Tạo đặt" : "Lưu thay đổi");
+        btnSave.setFont(FONT_FIELD);
+        btnSave.addActionListener(e -> onSave());
+
+        Dimension bs = new Dimension(140, 38);
+        btnCancel.setPreferredSize(bs);
+        btnSave.setPreferredSize(bs);
+
+        footer.add(btnCancel);
+        footer.add(btnSave);
+
+        root.add(footer, BorderLayout.SOUTH);
+
+        // prefill if edit
+        if (existingPhieu != null) {
+            prefillFromPhieu(existingPhieu);
+        } else {
+            // set default time to now + 30min
+            spinnerNgayGio.setValue(Date.from(LocalDateTime.now().plusMinutes(30).atZone(ZoneId.systemDefault()).toInstant()));
         }
+
+        setContentPane(root);
+    }
+
+    private void prefillFromPhieu(PhieuDatBan p) {
+        if (p.getKhachHang() != null) {
+            txtTenKhach.setText(p.getKhachHang().getTenKhachHang());
+            txtSDT.setText(p.getKhachHang().getSdt());
+        } else {
+            // nếu không có thông tin khách trong DB => hiển thị Khách vãng lai
+            txtTenKhach.setText("Khách vãng lai");
+            txtSDT.setText("");
+        }
+        spinSoNguoi.setValue(p.getSoNguoi());
+        if (p.getThoiGianDat() != null) {
+            spinnerNgayGio.setValue(Date.from(p.getThoiGianDat().atZone(ZoneId.systemDefault()).toInstant()));
+        }
+        txtGhiChu.setText(p.getGhiChu() != null ? p.getGhiChu() : "");
+    }
+
+    private JLabel createLabel(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(FONT_LABEL);
+        return l;
+    }
+
+    private void styleField(JComponent c) {
+        c.setFont(FONT_FIELD);
+        if (c instanceof JTextComponent || c instanceof JSpinner) {
+            c.setBackground(Color.WHITE);
+        }
+    }
+
+    private void onSave() {
+        // minimal validation
+        String ten = txtTenKhach.getText().trim();
+        String sdt = txtSDT.getText().trim();
+        int soNguoi = (int) spinSoNguoi.getValue();
+        Date when = (Date) spinnerNgayGio.getValue();
+        String ghiChu = txtGhiChu.getText().trim();
+
+        if (ten.isEmpty()) {
+            // nếu user không nhập tên => tự động đặt là "Khách vãng lai"
+            ten = "Khách vãng lai";
+        }
+
+        PhieuDatBan p;
+        if (existingPhieu != null) {
+            p = existingPhieu;
+            p.setSoNguoi(soNguoi);
+            p.setThoiGianDat(LocalDateTime.ofInstant(when.toInstant(), ZoneId.systemDefault()));
+            p.setGhiChu(ghiChu);
+            // nếu KhachHang tồn tại, cập nhật tên/SĐT; nếu không tồn tại, tạo KhachHang mới trong DAO nếu cần
+            if (p.getKhachHang() != null) {
+                p.getKhachHang().setTenKhachHang(ten);
+                p.getKhachHang().setSdt(sdt);
+            } else {
+                KhachHang kh = new KhachHang();
+                kh.setTenKhachHang(ten);
+                kh.setSdt(sdt);
+                p.setKhachHang(kh);
+            }
+        } else {
+            p = new PhieuDatBan();
+            p.setMaPhieu(datBanDAO.generateNewID());
+            p.setBan(ban);
+            p.setSoNguoi(soNguoi);
+            p.setThoiGianDat(LocalDateTime.ofInstant(when.toInstant(), ZoneId.systemDefault()));
+            p.setGhiChu(ghiChu);
+            // tạo KhachHang tạm thời: nếu user không nhập tên => "Khách vãng lai"
+            KhachHang kh = new KhachHang();
+            kh.setTenKhachHang(ten);
+            kh.setSdt(sdt);
+            p.setKhachHang(kh);
+        }
+
+        boolean ok;
+        if (existingPhieu != null) {
+            ok = datBanDAO.updatePhieuDatBan(p);
+        } else {
+            ok = datBanDAO.insertPhieuDatBan(p);
+        }
+
+        if (!ok) {
+            JOptionPane.showMessageDialog(this, "Lưu thất bại. Kiểm tra kết nối CSDL.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // update table status
+        datBanDAO.updateTableStatus(ban.getMaBan(), TrangThaiBan.DA_DAT);
+
+        if (onRefresh != null) {
+            try { onRefresh.run(); } catch (Exception ignored) {}
+        }
+
+        JOptionPane.showMessageDialog(this, "Lưu thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        dispose();
     }
 }

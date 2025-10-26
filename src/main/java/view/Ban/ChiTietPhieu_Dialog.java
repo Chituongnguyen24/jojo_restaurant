@@ -1,127 +1,246 @@
 package view.Ban;
 
+import dao.Ban_DAO;
 import dao.DatBan_DAO;
+import entity.Ban;
+import entity.KhachHang;
 import entity.PhieuDatBan;
+import enums.TrangThaiBan;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.text.NumberFormat;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Locale;
+import java.text.SimpleDateFormat;
 
+/**
+ * Dialog hiển thị chi tiết phiếu đặt, cho phép:
+ * - Đóng
+ * - Chỉnh sửa (nếu bàn không đang "Có khách")
+ * - Hủy đặt bàn (nếu bàn không đang "Có khách")
+ *
+ * Hiển thị "Khách vãng lai" nếu KhachHang rỗng/không có tên.
+ */
 public class ChiTietPhieu_Dialog extends JDialog {
 
-    private PhieuDatBan phieuDatBan;
-    private DatBan_DAO datBanDAO;
-    private DefaultTableModel modelChiTietMon;
+    private final PhieuDatBan phieu;
+    private final Runnable onRefresh; // nullable
+    private final DatBan_DAO datBanDAO = new DatBan_DAO();
+    private final Ban_DAO banDAO = new Ban_DAO();
 
-    public ChiTietPhieu_Dialog(Frame owner, PhieuDatBan pdb) {
-        super(owner, "Chi tiết Phiếu đặt bàn: " + (pdb != null ? pdb.getMaPhieu().trim() : "N/A"), true);
-        this.phieuDatBan = pdb;
-        this.datBanDAO = new DatBan_DAO();
-
+    public ChiTietPhieu_Dialog(JFrame owner, PhieuDatBan phieu, Runnable onRefresh) {
+        super(owner, "Chi tiết phiếu - " + (phieu != null ? phieu.getMaPhieu() : ""), true);
+        this.phieu = phieu;
+        this.onRefresh = onRefresh;
         initComponents();
-        loadData();
+        pack();
+        setLocationRelativeTo(owner);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
     }
 
     private void initComponents() {
-        setSize(550, 450); // Kích thước dialog
-        setLocationRelativeTo(getParent());
-        setLayout(new BorderLayout(10, 10));
-        getRootPane().setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        JPanel root = new JPanel(new BorderLayout(12, 12));
+        root.setBorder(new EmptyBorder(12, 14, 12, 14));
+        root.setBackground(Color.WHITE);
 
-        if (phieuDatBan == null) {
-            add(new JLabel("Không tìm thấy thông tin phiếu đặt.", SwingConstants.CENTER), BorderLayout.CENTER);
+        JLabel title = new JLabel("Chi tiết phiếu đặt");
+        title.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        title.setForeground(new Color(33, 37, 41));
+        root.add(title, BorderLayout.NORTH);
+
+        JPanel content = new JPanel();
+        content.setBackground(Color.WHITE);
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setBorder(new EmptyBorder(8, 8, 8, 8));
+
+        if (phieu != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
+            addLine(content, "Mã phiếu:", phieu.getMaPhieu());
+            addLine(content, "Bàn:", phieu.getBan() != null ? phieu.getBan().getMaBan() : "N/A");
+
+            KhachHang kh = phieu.getKhachHang();
+            String khTen = (kh != null && kh.getTenKhachHang() != null && !kh.getTenKhachHang().trim().isEmpty())
+                    ? kh.getTenKhachHang()
+                    : "Khách vãng lai";
+            addLine(content, "Khách hàng:", khTen);
+
+            String sdt = (kh != null && kh.getSdt() != null && !kh.getSdt().trim().isEmpty())
+                    ? kh.getSdt() : "-";
+            addLine(content, "SĐT:", sdt);
+
+            addLine(content, "Số người:", String.valueOf(phieu.getSoNguoi()));
+            addLine(content, "Thời gian đặt:", phieu.getThoiGianDat() != null ? sdf.format(java.sql.Timestamp.valueOf(phieu.getThoiGianDat())) : "N/A");
+            addLine(content, "Tiền cọc:", String.format("%.0f", phieu.getTienCoc()));
+            addLine(content, "Ghi chú:", phieu.getGhiChu() != null ? phieu.getGhiChu() : "");
+        } else {
+            JLabel l = new JLabel("Không có thông tin phiếu.");
+            l.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            l.setForeground(new Color(100, 100, 100));
+            content.add(l);
+        }
+
+        root.add(content, BorderLayout.CENTER);
+
+        // Buttons area
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        footer.setBackground(Color.WHITE);
+
+        // Always have Close
+        ButtonPill btnClose = new ButtonPill("Đóng", new Color(240,240,240), new Color(210,210,210));
+        btnClose.addActionListener(e -> dispose());
+
+        // Buttons that may be hidden when table status == CO_KHACH
+        ButtonPill btnEdit = new ButtonPill("Chỉnh sửa", new Color(0, 123, 255), new Color(0, 100, 210));
+        btnEdit.addActionListener(e -> {
+            JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+            try {
+                DatBan_Dialog editDialog = new DatBan_Dialog(parent, phieu.getBan(), phieu, onRefresh);
+                editDialog.setVisible(true);
+                dispose();
+            } catch (Exception ex) {
+                DatBan_Dialog d = new DatBan_Dialog((JFrame) SwingUtilities.getWindowAncestor(this), phieu.getBan(), onRefresh);
+                d.setVisible(true);
+                dispose();
+            }
+        });
+
+        ButtonPill btnCancel = new ButtonPill("Hủy đặt bàn", new Color(220, 53, 69), new Color(190, 45, 60));
+        btnCancel.addActionListener(e -> onCancelBooking());
+        btnCancel.setEnabled(phieu != null && phieu.getMaPhieu() != null);
+
+        // Determine whether the associated table is currently CO_KHACH
+        boolean isTableHasCustomer = false;
+        if (phieu != null && phieu.getBan() != null) {
+            Ban b = phieu.getBan();
+            isTableHasCustomer = b.getTrangThai() == TrangThaiBan.CO_KHACH;
+        }
+
+        // If table has customers (CO_KHACH), only show Close button per request
+        if (isTableHasCustomer) {
+            footer.add(btnClose);
+        } else {
+            // Otherwise show Close + Edit (if phieu exists) + Cancel
+            footer.add(btnClose);
+            if (phieu != null) footer.add(btnEdit);
+            footer.add(btnCancel);
+        }
+
+        root.add(footer, BorderLayout.SOUTH);
+
+        setContentPane(root);
+    }
+
+    private void addLine(JPanel parent, String label, String value) {
+        JPanel p = new JPanel(new BorderLayout(8, 4));
+        p.setBackground(Color.WHITE);
+        JLabel l = new JLabel(label);
+        l.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        l.setPreferredSize(new Dimension(120, 20));
+        JLabel v = new JLabel(value != null ? value : "");
+        v.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        v.setForeground(new Color(50, 50, 50));
+        p.add(l, BorderLayout.WEST);
+        p.add(v, BorderLayout.CENTER);
+        parent.add(p);
+        parent.add(Box.createVerticalStrut(6));
+    }
+
+    private void onCancelBooking() {
+        if (phieu == null || phieu.getMaPhieu() == null) {
+            JOptionPane.showMessageDialog(this, "Không có phiếu để hủy.", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // --- Panel Thông tin chung ---
-        JPanel pnlThongTin = new JPanel(new GridBagLayout());
-        pnlThongTin.setBorder(BorderFactory.createTitledBorder("Thông tin chung"));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(4, 4, 4, 4);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.WEST;
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Bạn có chắc muốn hủy đặt bàn này? Hành động sẽ xóa phiếu và trả bàn về trạng thái 'Trống'.",
+                "Xác nhận hủy",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
 
-        // Các label
-        addInfoRow(pnlThongTin, gbc, 0, "Mã phiếu:", phieuDatBan.getMaPhieu().trim());
-        addInfoRow(pnlThongTin, gbc, 1, "Bàn:", phieuDatBan.getBan() != null ? phieuDatBan.getBan().getMaBan().trim() : "N/A");
-        addInfoRow(pnlThongTin, gbc, 2, "Thời gian đến:", phieuDatBan.getThoiGianDatFormatted());
-        addInfoRow(pnlThongTin, gbc, 3, "Số người:", String.valueOf(phieuDatBan.getSoNguoi()));
+        if (confirm != JOptionPane.YES_OPTION) return;
 
-        // Định dạng tiền cọc
-        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
-        addInfoRow(pnlThongTin, gbc, 4, "Tiền cọc:", currencyFormat.format(phieuDatBan.getTienCoc()));
+        boolean ok = datBanDAO.deletePhieuDatBan(phieu.getMaPhieu());
+        if (!ok) {
+            JOptionPane.showMessageDialog(this, "Hủy đặt bàn thất bại. Vui lòng thử lại hoặc kiểm tra CSDL.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-        // Ghi chú (có thể dài, dùng JTextArea)
-        gbc.gridx = 0; gbc.gridy = 5; gbc.anchor = GridBagConstraints.NORTHWEST; // Căn lề trên trái
-        pnlThongTin.add(new JLabel("Ghi chú:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 5; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.BOTH; gbc.weighty = 1.0; // Cho phép giãn cả 2 chiều
-        JTextArea txtGhiChuArea = new JTextArea(phieuDatBan.getGhiChu() != null ? phieuDatBan.getGhiChu() : "");
-        txtGhiChuArea.setLineWrap(true);
-        txtGhiChuArea.setWrapStyleWord(true);
-        txtGhiChuArea.setEditable(false);
-        txtGhiChuArea.setBackground(pnlThongTin.getBackground()); // Nền giống panel
-        JScrollPane scrollGhiChu = new JScrollPane(txtGhiChuArea);
-        scrollGhiChu.setPreferredSize(new Dimension(200, 60)); // Kích thước ưu tiên
-        pnlThongTin.add(scrollGhiChu, gbc);
+        // Cập nhật trạng thái bàn về TRONG (nếu có)
+        try {
+            Ban ban = phieu.getBan();
+            if (ban != null) {
+                ban.setTrangThai(TrangThaiBan.TRONG);
+                banDAO.capNhatBan(ban);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
+        if (onRefresh != null) {
+            try { onRefresh.run(); } catch (Exception ignored) {}
+        }
 
-        // --- Panel Danh sách món ---
-        JPanel pnlMon = new JPanel(new BorderLayout(0, 5));
-        pnlMon.setBorder(BorderFactory.createTitledBorder("Danh sách món đã đặt"));
-
-        modelChiTietMon = new DefaultTableModel(new String[]{"Mã Món", "Tên Món", "Số Lượng", "Ghi Chú"}, 0) {
-            @Override public boolean isCellEditable(int row, int column) { return false; }
-        };
-        JTable tblChiTiet = new JTable(modelChiTietMon);
-        tblChiTiet.setRowHeight(25);
-        // Style header (tùy chọn)
-        JTableHeader header = tblChiTiet.getTableHeader();
-        header.setFont(new Font("Segoe UI", Font.BOLD, 13));
-
-        pnlMon.add(new JScrollPane(tblChiTiet), BorderLayout.CENTER);
-
-        // --- Nút Đóng ---
-        JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        JButton btnDong = new JButton("Đóng");
-        btnDong.addActionListener(e -> dispose());
-        pnlButton.add(btnDong);
-
-        // --- Bố cục chính của Dialog ---
-        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, pnlThongTin, pnlMon);
-        splitPane.setResizeWeight(0.4); // Panel thông tin chiếm khoảng 40%
-        splitPane.setBorder(null);
-
-        add(splitPane, BorderLayout.CENTER);
-        add(pnlButton, BorderLayout.SOUTH);
+        JOptionPane.showMessageDialog(this, "Hủy đặt bàn thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        dispose();
     }
 
-    // Hàm trợ giúp thêm dòng thông tin vào GridBagLayout
-    private void addInfoRow(JPanel panel, GridBagConstraints gbc, int row, String labelText, String valueText) {
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
-        JLabel label = new JLabel(labelText);
-        label.setFont(label.getFont().deriveFont(Font.BOLD)); // In đậm label
-        panel.add(label, gbc);
+    // --- simple rounded button that paints itself to avoid LAF overrides ---
+    private static class ButtonPill extends JButton {
+        private final Color base;
+        private final Color hover;
+        private boolean over = false;
 
-        gbc.gridx = 1; gbc.gridy = row; gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
-        JLabel value = new JLabel(valueText != null ? valueText : "N/A");
-        panel.add(value, gbc);
-    }
+        public ButtonPill(String text, Color base, Color hover) {
+            super(text);
+            this.base = base;
+            this.hover = hover;
+            setContentAreaFilled(false);
+            setFocusPainted(false);
+            setOpaque(false);
+            setForeground(contrastColor(base));
+            setFont(new Font("Segoe UI", Font.PLAIN, 13));
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseEntered(java.awt.event.MouseEvent evt) { over = true; repaint(); }
+                public void mouseExited(java.awt.event.MouseEvent evt) { over = false; repaint(); }
+            });
+            addPropertyChangeListener("enabled", evt -> repaint());
+        }
 
-    private void loadData() {
-        if (phieuDatBan == null) return;
+        @Override protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth(), h = getHeight(), arc = 8;
+            Color fill;
+            if (!isEnabled()) fill = new Color(240,240,240);
+            else fill = over ? hover : base;
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, w, h, arc, arc);
+            g2.setColor(fill.darker().darker());
+            g2.setStroke(new BasicStroke(1.5f));
+            g2.drawRoundRect(1, 1, w-3, h-3, arc, arc);
+            // text
+            g2.setColor(isEnabled() ? getForeground() : new Color(120,120,120));
+            FontMetrics fm = g2.getFontMetrics(getFont());
+            String s = getText();
+            int tx = (w - fm.stringWidth(s)) / 2;
+            int ty = (h - fm.getHeight()) / 2 + fm.getAscent();
+            g2.drawString(s, tx, ty);
+            g2.dispose();
+        }
 
-        // Tải danh sách món từ DAO
-        List<Object[]> dsMon = datBanDAO.getChiTietTheoMaPhieu(phieuDatBan.getMaPhieu());
-        modelChiTietMon.setRowCount(0); // Xóa dữ liệu cũ
-        for (Object[] rowData : dsMon) {
-            // rowData[0] = maMonAn, rowData[1] = tenMonAn, rowData[2] = soLuong, rowData[3] = ghiChu
-            modelChiTietMon.addRow(rowData);
+        @Override public Dimension getPreferredSize() {
+            Dimension d = super.getPreferredSize();
+            d.width += 24;
+            d.height = Math.max(d.height, 36);
+            return d;
+        }
+
+        private static Color contrastColor(Color bg) {
+            double luminance = (0.299*bg.getRed() + 0.587*bg.getGreen() + 0.114*bg.getBlue())/255;
+            return luminance > 0.6 ? new Color(34,34,34) : Color.WHITE;
         }
     }
 }

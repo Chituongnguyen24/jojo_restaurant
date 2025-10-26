@@ -17,7 +17,7 @@ public class HoaDon_DAO {
         List<HoaDon> dsHoaDon = new ArrayList<>();
         String sql = "SELECT * FROM HOADON ORDER BY ngayLap DESC, gioVao DESC";
 
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -52,11 +52,11 @@ public class HoaDon_DAO {
 
     public boolean addHoaDon(HoaDon hd) {
         String sql =
-            "INSERT INTO HOADON(maHoaDon, maKhachHang, ngayLap, phuongThuc, maKhuyenMai, "+
-            "                 maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)"+
+            "INSERT INTO HOADON(maHoaDon, maKhachHang, ngayLap, phuongThuc, maKhuyenMai, " +
+            "                  maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)" +
             " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, hd.getMaHoaDon());
@@ -91,13 +91,13 @@ public class HoaDon_DAO {
     }
 
     public boolean updateHoaDon(HoaDon hd) {
-        String sql = 
-            "UPDATE HOADON"+
-            "SET maKhachHang = ?, ngayLap = ?, phuongThuc = ?, maKhuyenMai = ?, "+
-            "    maThue = ?, gioVao = ?, gioRa = ?, maNhanVien = ?, maPhieu = ?, daThanhToan = ?"+
+        String sql =
+            "UPDATE HOADON " +
+            "SET maKhachHang = ?, ngayLap = ?, phuongThuc = ?, maKhuyenMai = ?, " +
+            "    maThue = ?, gioVao = ?, gioRa = ?, maNhanVien = ?, maPhieu = ?, daThanhToan = ? " +
             "WHERE maHoaDon = ?";
 
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, hd.getKhachHang().getMaKhachHang());
@@ -135,7 +135,7 @@ public class HoaDon_DAO {
         String sqlDeleteChiTiet = "DELETE FROM CHITIETHOADON WHERE maHoaDon = ?";
         String sqlDeleteHoaDon = "DELETE FROM HOADON WHERE maHoaDon = ?";
 
-        try (Connection conn = ConnectDB.getConnection()) {
+        try (Connection conn = ConnectDB.getInstance().getConnection()) {
             conn.setAutoCommit(false);
 
             try (PreparedStatement ps1 = conn.prepareStatement(sqlDeleteChiTiet);
@@ -164,7 +164,7 @@ public class HoaDon_DAO {
 
     public boolean updateTrangThaiThanhToan(String maHoaDon, boolean daThanhToan) {
         String sql = "UPDATE HOADON SET daThanhToan = ? WHERE maHoaDon = ?";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setBoolean(1, daThanhToan);
@@ -178,11 +178,11 @@ public class HoaDon_DAO {
     }
 
     public double getTongDoanhThu() {
-        String sql = 
+        String sql =
             " SELECT SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS TongDoanhThu" +
             " FROM HOADON hd INNER JOIN CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon" +
             " WHERE hd.daThanhToan = 1";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -197,7 +197,7 @@ public class HoaDon_DAO {
 
     public int getTongDonHang() {
         String sql = "SELECT COUNT(*) AS SoLuong FROM HOADON WHERE daThanhToan = 1";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -212,7 +212,7 @@ public class HoaDon_DAO {
 
     public int getSoLuongKhachHang() {
         String sql = "SELECT COUNT(DISTINCT maKhachHang) AS SoLuong FROM HOADON WHERE daThanhToan = 1";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -226,19 +226,19 @@ public class HoaDon_DAO {
     }
 
     public double getDoanhThuTheoNgay(int ngayTruoc) {
-        String sql = 
-               " SELECT     SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS DoanhThuTrongNgay"+
-               " FROM      HOADON hd  INNER JOIN      CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon"+
-               " WHERE    hd.daThanhToan = 1 AND DATEDIFF(day, hd.ngayLap, GETDATE()) <= ?";
-               
-        try (Connection conn = ConnectDB.getConnection();
+        String sql =
+            " SELECT       SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS DoanhThuTrongNgay" +
+            " FROM         HOADON hd  INNER JOIN     CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon" +
+            " WHERE   hd.daThanhToan = 1 AND DATEDIFF(day, hd.ngayLap, GETDATE()) <= ?";
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, ngayTruoc);
-            
+
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next())
-                    
+
                     return rs.getDouble("DoanhThuTrongNgay");
             }
 
@@ -251,12 +251,12 @@ public class HoaDon_DAO {
     public double tinhTongTienHoaDon(String maHoaDon) {
         double tongTien = 0;
 
-        String sqlChiTiet = 
+        String sqlChiTiet =
             " SELECT SUM(CAST(ct.soLuong AS DECIMAL(18, 2)) * ct.donGia) AS Tong" +
             " FROM CHITIETHOADON ct" +
             " WHERE ct.maHoaDon = ?";
 
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt1 = conn.prepareStatement(sqlChiTiet)) {
 
             pstmt1.setString(1, maHoaDon);
@@ -265,7 +265,7 @@ public class HoaDon_DAO {
                     tongTien = rs.getDouble("Tong");
             }
 
-            String sqlThueKM = 
+            String sqlThueKM =
                 " SELECT t.tyLeThue, km.giaTri, km.tenKhuyenMai" +
                 " FROM HOADON hd" +
                 " LEFT JOIN Thue t ON hd.maThue = t.maSoThue" +
@@ -278,32 +278,29 @@ public class HoaDon_DAO {
                         double thue = rs2.getDouble("tyLeThue");
                         double giamGia = rs2.getDouble("giaTri");
                         if (giamGia > 0) {
-                            // Nếu giảm giá < 1 → coi là % (0.1 = 10%)
-                            // Nếu giảm giá >= 1 → coi là số tiền cố định (50000 VNĐ)
                             if (giamGia < 1) {
-                                tongTien -= tongTien * giamGia;  // Giảm theo %
+                                tongTien -= tongTien * giamGia;
                             } else {
-                                tongTien -= giamGia;  // Giảm số tiền cố định
+                                tongTien = Math.max(0, tongTien - giamGia);
                             }
                         }
-                        
-                        // SAU ĐÓ CỘNG THUẾ
+
                         if (thue > 0) {
                             tongTien += tongTien * thue / 100;
                         }
                     }
                 }
             }
-            
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return tongTien;
     }
-    
+
     public HoaDon findByMaHD(String maHD) {
         String sql = "SELECT * FROM HOADON WHERE maHoaDon = ?";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, maHD);
@@ -334,20 +331,20 @@ public class HoaDon_DAO {
         }
         return null;
     }
-    
+
     public double getTongDoanhThu(java.util.Date from, java.util.Date to) {
         if (from == null || to == null) {
             return getTongDoanhThu();
         }
-        
-        String sql = 
+
+        String sql =
             " SELECT SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS TongDoanhThu" +
             " FROM HOADON hd INNER JOIN CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon" +
             " WHERE hd.daThanhToan = 1 AND hd.ngayLap BETWEEN ? AND ?";
-            
-        try (Connection conn = ConnectDB.getConnection();
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
+
             stmt.setDate(1, new java.sql.Date(from.getTime()));
             stmt.setDate(2, new java.sql.Date(to.getTime()));
 
@@ -365,12 +362,12 @@ public class HoaDon_DAO {
         if (from == null || to == null) {
             return getTongDonHang();
         }
-        
+
         String sql = "SELECT COUNT(*) AS SoLuong FROM HOADON WHERE daThanhToan = 1 AND ngayLap BETWEEN ? AND ?";
-        
-        try (Connection conn = ConnectDB.getConnection();
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
+
             stmt.setDate(1, new java.sql.Date(from.getTime()));
             stmt.setDate(2, new java.sql.Date(to.getTime()));
 
@@ -388,13 +385,13 @@ public class HoaDon_DAO {
         if (from == null || to == null) {
             return getSoLuongKhachHang();
         }
-        
-        String sql = "SELECT COUNT(DISTINCT maKhachHang) AS SoLuong FROM HOADON " + 
-                       "WHERE daThanhToan = 1 AND ngayLap BETWEEN ? AND ?";
-                       
-        try (Connection conn = ConnectDB.getConnection();
+
+        String sql = "SELECT COUNT(DISTINCT maKhachHang) AS SoLuong FROM HOADON " +
+            "WHERE daThanhToan = 1 AND ngayLap BETWEEN ? AND ?";
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
+
             stmt.setDate(1, new java.sql.Date(from.getTime()));
             stmt.setDate(2, new java.sql.Date(to.getTime()));
 
@@ -407,20 +404,20 @@ public class HoaDon_DAO {
         }
         return 0;
     }
-    
+
     public Map<String, Double> getDoanhThuTheoKhoangThoiGian(java.util.Date from, java.util.Date to) {
         Map<String, Double> data = new LinkedHashMap<>();
-        
-        String sql = 
+
+        String sql =
             " SELECT FORMAT(hd.ngayLap, 'dd/MM') AS Ngay, SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS DoanhThu" +
             " FROM HOADON hd INNER JOIN CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon" +
             " WHERE hd.daThanhToan = 1 AND hd.ngayLap BETWEEN ? AND ?" +
             " GROUP BY FORMAT(hd.ngayLap, 'dd/MM'), hd.ngayLap" +
             " ORDER BY hd.ngayLap";
-            
-        try (Connection conn = ConnectDB.getConnection();
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
-            
+
             stmt.setDate(1, new java.sql.Date(from.getTime()));
             stmt.setDate(2, new java.sql.Date(to.getTime()));
 
