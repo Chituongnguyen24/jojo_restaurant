@@ -299,7 +299,7 @@ public class DatBan_View extends JPanel {
 
         // --- Panel Bảng (Giữ nguyên) ---
         modelDanhSachDatBan = new DefaultTableModel(
-                new String[]{"Mã phiếu", "Số bàn", "SĐT", "Thời gian khách tới", ""}, 0) {
+                new String[]{"Mã phiếu", "Số bàn", "SĐT", "Thời gian khách tới", "Chi tiết"}, 0) {
                 @Override
                 public boolean isCellEditable(int r, int c) {
                     // Chỉ cho phép edit cột "Chi tiết" (index 4)
@@ -979,27 +979,34 @@ public class DatBan_View extends JPanel {
 
         @Override
         public Object getCellEditorValue() {
-            if (isPushed && currentMaPhieu != null && "Chi tiết".equals(label)) {
+        	
+        	final String maPhieuKhiClick = currentMaPhieu;
+        	
+        	if (isPushed && maPhieuKhiClick != null && "Chi tiết".equals(label)) {
+                // Chạy việc mở dialog trên EDT
                 SwingUtilities.invokeLater(() -> {
+                    // Tìm đối tượng PhieuDatBan trong danh sách dựa vào mã phiếu ĐÃ LƯU
                     PhieuDatBan selectedPDB = null;
                     for (PhieuDatBan pdb : danhSachPhieuDatDangHoatDong) {
-                        if (pdb.getMaPhieu() != null && pdb.getMaPhieu().trim().equals(currentMaPhieu.trim())) {
+
+                        if (pdb.getMaPhieu() != null && pdb.getMaPhieu().trim().equals(maPhieuKhiClick.trim())) {
                             selectedPDB = pdb;
                             break;
                         }
                     }
 
                     if (selectedPDB != null) {
+                        // Mở dialog chi tiết
                         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(DatBan_View.this);
                         ChiTietPhieu_Dialog detailDialog = new ChiTietPhieu_Dialog(parentFrame, selectedPDB);
                         detailDialog.setVisible(true);
                     } else {
-                        JOptionPane.showMessageDialog(button, "Không tìm thấy thông tin chi tiết cho phiếu: " + currentMaPhieu, "Lỗi", JOptionPane.ERROR_MESSAGE);
+
+                        JOptionPane.showMessageDialog(button, "Không tìm thấy thông tin chi tiết cho phiếu: " + maPhieuKhiClick, "Lỗi", JOptionPane.ERROR_MESSAGE);
                     }
                 });
             }
             isPushed = false;
-            currentMaPhieu = null;
             return label;
         }
 
