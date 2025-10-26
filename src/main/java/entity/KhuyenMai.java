@@ -1,50 +1,101 @@
 package entity;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class KhuyenMai {
     private String maKM;
-    private String tenChuongTrinh;
-    private double giamGiaPhanTram;
+    private String tenKM;
+    private double giaTri;
     private LocalDate ngayBatDau;
     private LocalDate ngayKetThuc;
     private String trangThai;
 
-    // Constructor
-    public KhuyenMai(String maKM, String tenChuongTrinh, double giamGiaPhanTram, LocalDate ngayBatDau, LocalDate ngayKetThuc, String trangThai) {
+    public KhuyenMai(String maKM, String tenKM, double giaTri, LocalDate ngayBatDau, LocalDate ngayKetThuc, String trangThai) {
         this.maKM = maKM;
-        this.tenChuongTrinh = tenChuongTrinh;
-        this.giamGiaPhanTram = giamGiaPhanTram;
+        this.tenKM = tenKM;
+        this.giaTri = giaTri;
         this.ngayBatDau = ngayBatDau;
         this.ngayKetThuc = ngayKetThuc;
         this.trangThai = trangThai;
     }
-    
+
+    public KhuyenMai(String maKM) {
+        this.maKM = maKM;
+    }
 
     public KhuyenMai() {
 	}
-    
-	public KhuyenMai(String maKM) {
-		super();
+
+	
+
+     public String getMaKM() {
+		return maKM;
+	}
+
+	public void setMaKM(String maKM) {
 		this.maKM = maKM;
 	}
 
-	// Getters/Setters
-    public String getMaKM() { return maKM; }
-    public void setMaKM(String maKM) { this.maKM = maKM; }
+	public String getTenKM() {
+		return tenKM;
+	}
 
-    public String getTenChuongTrinh() { return tenChuongTrinh; }
-    public void setTenChuongTrinh(String tenChuongTrinh) { this.tenChuongTrinh = tenChuongTrinh; }
+	public void setTenKM(String tenKM) {
+		this.tenKM = tenKM;
+	}
 
-    public double getGiamGiaPhanTram() { return giamGiaPhanTram; }
-    public void setGiamGiaPhanTram(double giamGiaPhanTram) { this.giamGiaPhanTram = giamGiaPhanTram; }
+	public double getGiaTri() {
+		return giaTri;
+	}
 
-    public LocalDate getNgayBatDau() { return ngayBatDau; }
-    public void setNgayBatDau(LocalDate ngayBatDau) { this.ngayBatDau = ngayBatDau; }
+	public void setGiaTri(double giaTri) {
+		this.giaTri = giaTri;
+	}
 
-    public LocalDate getNgayKetThuc() { return ngayKetThuc; }
-    public void setNgayKetThuc(LocalDate ngayKetThuc) { this.ngayKetThuc = ngayKetThuc; }
+	public LocalDate getNgayBatDau() {
+		return ngayBatDau;
+	}
 
-    public String getTrangThai() { return trangThai; }
-    public void setTrangThai(String trangThai) { this.trangThai = trangThai; }
+	public void setNgayBatDau(LocalDate ngayBatDau) {
+		this.ngayBatDau = ngayBatDau;
+	}
+
+	public LocalDate getNgayKetThuc() {
+		return ngayKetThuc;
+	}
+
+	public void setNgayKetThuc(LocalDate ngayKetThuc) {
+		this.ngayKetThuc = ngayKetThuc;
+	}
+
+	public String getTrangThai() {
+		return trangThai;
+	}
+
+	public void setTrangThai(String trangThai) {
+		this.trangThai = trangThai;
+	}
+
+	 @Override
+     public String toString() {
+         if ("KM00000000".equals(maKM)) {
+             return tenKM != null ? tenKM : "Không áp dụng";
+         }
+         String cleanMaKM = maKM != null ? maKM.trim() : "";
+         return cleanMaKM + " - " + (tenKM != null ? tenKM : "");
+     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        KhuyenMai khuyenMai = (KhuyenMai) o;
+        return Objects.equals(maKM, khuyenMai.maKM);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(maKM);
+    }
 }

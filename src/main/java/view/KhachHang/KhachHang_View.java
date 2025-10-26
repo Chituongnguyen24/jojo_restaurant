@@ -154,7 +154,7 @@ public class KhachHang_View extends JPanel {
     }
 
     private void loadKhachHangData(String keyword) {
-        System.out.println("[VIEW] Bắt đầu load dữ liệu, keyword: '" + (keyword != null ? keyword : "null") + "'");  // Log debug (có thể bỏ sau)
+//        System.out.println("[VIEW] Bắt đầu load dữ liệu, keyword: '" + (keyword != null ? keyword : "null") + "'");  // Log debug (có thể bỏ sau)
         model.setRowCount(0);
         List<KhachHang> dsKH;
         if (keyword == null || keyword.isEmpty()) {
@@ -163,7 +163,7 @@ public class KhachHang_View extends JPanel {
             dsKH = khachHangDAO.findKhachHang(keyword);  
         }
 
-        System.out.println("[VIEW] Nhận dsKH size: " + dsKH.size());  // Log debug
+//        System.out.println("[VIEW] Nhận dsKH size: " + dsKH.size());  // Log debug
 
         for (KhachHang kh : dsKH) {
             String hang = getHang(kh.getDiemTichLuy());  // Sử dụng method đồng bộ
@@ -179,9 +179,9 @@ public class KhachHang_View extends JPanel {
                     "Sửa",
                     "Xóa"
             });
-            System.out.println("[VIEW] Đã add row cho KH: " + kh.getMaKhachHang());  // Log debug
+//            System.out.println("[VIEW] Đã add row cho KH: " + kh.getMaKhachHang());  // Log debug
         }
-        System.out.println("[VIEW] Tổng rows trong model: " + model.getRowCount());  // Log debug
+//        System.out.println("[VIEW] Tổng rows trong model: " + model.getRowCount());  // Log debug
     }
 
     // ===== Thống kê =====
