@@ -8,21 +8,25 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.geom.RoundRectangle2D; 
+import java.time.LocalDate; 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class NhanVien_View extends JPanel {
     private JTable table;
     private DefaultTableModel model;
     private NhanVien_DAO nhanVienDAO = new NhanVien_DAO();
+    private final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private JLabel lblTongNV, lblQuanLy, lblTiepTan;
 
     public NhanVien_View() {
         setLayout(new BorderLayout());
-        setBackground(new Color(251, 248, 241)); // Nền màu be #FBF8F1
+        setBackground(new Color(251, 248, 241));
 
-        // ===== HEADER =====
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         header.setBorder(new EmptyBorder(20, 30, 15, 30));
@@ -45,7 +49,8 @@ public class NhanVien_View extends JPanel {
         btnAdd.setPreferredSize(new Dimension(200, 45));
 
         btnAdd.addActionListener(e -> {
-            NhanVien_AddDialog dialog = new NhanVien_AddDialog(null, nhanVienDAO);
+            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+            NhanVien_AddDialog dialog = new NhanVien_AddDialog(parentFrame, nhanVienDAO);
             dialog.setVisible(true);
             loadNhanVienData();
             loadThongKe();
@@ -55,7 +60,6 @@ public class NhanVien_View extends JPanel {
         header.add(btnAdd, BorderLayout.EAST);
         add(header, BorderLayout.NORTH);
 
-        // ===== STATS =====
         JPanel statsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         statsPanel.setOpaque(false);
         statsPanel.setBorder(new EmptyBorder(10, 30, 25, 30));
@@ -68,12 +72,11 @@ public class NhanVien_View extends JPanel {
         statsPanel.add(createStatBox(lblQuanLy, "Quản lý", new Color(76, 175, 80)));
         statsPanel.add(createStatBox(lblTiepTan, "Tiếp tân", new Color(255, 152, 0)));
 
-        // ===== TABLE =====
-        String[] cols = {"Mã NV", "Tên nhân viên", "Giới tính", "SĐT", "Email", "Tài khoản", "Vai trò", "Sửa", "Xóa"};
+        String[] cols = {"Mã NV", "Tên nhân viên", "Giới tính", "Ngày sinh", "SĐT", "Email", "Tài khoản", "Vai trò", "Sửa", "Xóa"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 7 || column == 8;
+                return column == 8 || column == 9;
             }
         };
 
@@ -84,33 +87,65 @@ public class NhanVien_View extends JPanel {
         table.setGridColor(new Color(230, 230, 230));
         table.setShowGrid(true);
         table.setIntercellSpacing(new Dimension(1, 1));
-        
-        JTableHeader header2 = table.getTableHeader();
-        header2.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        header2.setBackground(new Color(248, 249, 250));
-        header2.setForeground(new Color(60, 60, 60));
-        header2.setPreferredSize(new Dimension(header2.getWidth(), 45));
-        header2.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(220, 220, 220)));
 
-        // Renderer cho 2 nút với màu đậm hơn
+        JTableHeader tableHeader = table.getTableHeader();
+        tableHeader.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        tableHeader.setBackground(new Color(248, 249, 250));
+        tableHeader.setForeground(new Color(60, 60, 60));
+        tableHeader.setPreferredSize(new Dimension(tableHeader.getWidth(), 45));
+        tableHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(220, 220, 220)));
+        ((DefaultTableCellRenderer) tableHeader.getDefaultRenderer()).setHorizontalAlignment(JLabel.LEFT);
+
+        DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
+             @Override
+             public Component getTableCellRendererComponent(JTable table, Object value,
+                     boolean isSelected, boolean hasFocus, int row, int column) {
+                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                 if (!isSelected) {
+                     c.setBackground(row % 2 == 0 ? Color.WHITE : new Color(249, 250, 251));
+                 }
+                 setBorder(new EmptyBorder(5, 10, 5, 10)); 
+               
+                 if (column == 0 || column == 2 || column == 3) { 
+                     setHorizontalAlignment(CENTER);
+                 } else {
+                     setHorizontalAlignment(LEFT);
+                 }
+                
+                 if (!isSelected) {
+                    setForeground(table.getForeground());
+                 }
+                 return c;
+             }
+        };
+
+        for (int i = 0; i < cols.length - 2; i++) { 
+            table.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
+        }
+
         table.getColumn("Sửa").setCellRenderer(new ButtonRenderer("Sửa", new Color(255, 152, 0), Color.WHITE));
         table.getColumn("Sửa").setCellEditor(new ButtonEditor(new JCheckBox(), "Sửa"));
         table.getColumn("Xóa").setCellRenderer(new ButtonRenderer("Xóa", new Color(244, 67, 54), Color.WHITE));
         table.getColumn("Xóa").setCellEditor(new ButtonEditor(new JCheckBox(), "Xóa"));
 
-        // Set độ rộng cột
+        table.getColumnModel().getColumn(0).setPreferredWidth(80);
+        table.getColumnModel().getColumn(1).setPreferredWidth(180);
+        table.getColumnModel().getColumn(2).setPreferredWidth(60);
+        table.getColumnModel().getColumn(3).setPreferredWidth(90);
+        table.getColumnModel().getColumn(4).setPreferredWidth(100);
+        table.getColumnModel().getColumn(5).setPreferredWidth(180);
+        table.getColumnModel().getColumn(6).setPreferredWidth(100);
         table.getColumnModel().getColumn(7).setPreferredWidth(80);
-        table.getColumnModel().getColumn(7).setMaxWidth(80);
         table.getColumnModel().getColumn(8).setPreferredWidth(80);
         table.getColumnModel().getColumn(8).setMaxWidth(80);
+        table.getColumnModel().getColumn(9).setPreferredWidth(80);
+        table.getColumnModel().getColumn(9).setMaxWidth(80);
 
-        // ===== ScrollPane bo góc =====
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(null);
         scroll.setOpaque(false);
         scroll.getViewport().setOpaque(false);
 
-        // Panel trắng bo góc cho bảng
         JPanel tableWrapper = new RoundedPanel(15, Color.WHITE);
         tableWrapper.setLayout(new BorderLayout());
         tableWrapper.setBorder(new EmptyBorder(15, 15, 15, 15));
@@ -119,15 +154,14 @@ public class NhanVien_View extends JPanel {
         JLabel lblTableTitle = new JLabel("Danh sách nhân viên");
         lblTableTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
         lblTableTitle.setForeground(new Color(30, 30, 30));
-        lblTableTitle.setBorder(new EmptyBorder(0, 30, 15, 0));
+        lblTableTitle.setBorder(new EmptyBorder(0, 30, 15, 0)); 
 
         JPanel tablePanel = new JPanel(new BorderLayout());
         tablePanel.setOpaque(false);
-        tablePanel.setBorder(new EmptyBorder(0, 0, 30, 0));
+        tablePanel.setBorder(new EmptyBorder(0, 30, 30, 30));
         tablePanel.add(lblTableTitle, BorderLayout.NORTH);
         tablePanel.add(tableWrapper, BorderLayout.CENTER);
 
-        // ===== CONTENT =====
         JPanel content = new JPanel(new BorderLayout());
         content.setOpaque(false);
         content.add(statsPanel, BorderLayout.NORTH);
@@ -139,7 +173,6 @@ public class NhanVien_View extends JPanel {
         loadThongKe();
     }
 
-    // ===== Load dữ liệu nhân viên =====
     private void loadNhanVienData() {
         model.setRowCount(0);
         List<NhanVien> dsNV = nhanVienDAO.getAllNhanVien();
@@ -154,10 +187,13 @@ public class NhanVien_View extends JPanel {
                     default: role = "Nhân viên"; break;
                 }
             }
+            String ngaySinhStr = (nv.getNgaySinh() != null) ? nv.getNgaySinh().format(DATE_FORMATTER) : "-";
+
             model.addRow(new Object[]{
                     nv.getMaNV(),
                     nv.getTenNhanVien(),
-                    nv.isGioiTinh() ? "Nam" : "Nữ",
+                    !nv.isGioiTinh() ? "Nam" : "Nữ",
+                    ngaySinhStr,
                     nv.getSdt(),
                     nv.getEmail(),
                     tk != null ? tk.getTenDangNhap() : "Chưa có",
@@ -168,7 +204,6 @@ public class NhanVien_View extends JPanel {
         }
     }
 
-    // ===== Thống kê =====
     private void loadThongKe() {
         List<NhanVien> dsNV = nhanVienDAO.getAllNhanVien();
 
@@ -189,14 +224,13 @@ public class NhanVien_View extends JPanel {
         lblTiepTan.setText(String.valueOf(tiepTan));
     }
 
-    // ====== UI Helper Methods ======
     private JButton createRoundedButton(String text, Color bg, Color fg) {
         JButton btn = new JButton(text) {
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
+
                 if (getModel().isPressed()) {
                     g2.setColor(bg.darker());
                 } else if (getModel().isRollover()) {
@@ -204,7 +238,7 @@ public class NhanVien_View extends JPanel {
                 } else {
                     g2.setColor(bg);
                 }
-                
+
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
                 g2.dispose();
                 super.paintComponent(g);
@@ -233,19 +267,18 @@ public class NhanVien_View extends JPanel {
         JLabel textLabel = new JLabel(label, JLabel.LEFT);
         textLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         textLabel.setForeground(Color.WHITE);
-        
-        valueLabel.setForeground(Color.WHITE);
+
+        valueLabel.setForeground(Color.WHITE); 
 
         JPanel inner = new JPanel(new GridLayout(2, 1, 0, 5));
         inner.setOpaque(false);
         inner.add(valueLabel);
         inner.add(textLabel);
-        
+
         box.add(inner, BorderLayout.CENTER);
         return box;
     }
 
-    // Button Renderer
     class ButtonRenderer extends JButton implements TableCellRenderer {
         private final Color bgColor;
         private final Color fgColor;
@@ -273,14 +306,18 @@ public class NhanVien_View extends JPanel {
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus,
-                                                       int row, int column) {
+                boolean isSelected, boolean hasFocus,
+                int row, int column) {
             setForeground(fgColor);
+            if (isSelected) {
+                setBackground(bgColor.darker());
+            } else {
+                setBackground(bgColor);
+            }
             return this;
         }
     }
 
-    // Button Editor
     class ButtonEditor extends DefaultCellEditor {
         private JButton button;
         private boolean isPushed;
@@ -294,14 +331,14 @@ public class NhanVien_View extends JPanel {
                 protected void paintComponent(Graphics g) {
                     Graphics2D g2 = (Graphics2D) g.create();
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    
+
                     Color bg = type.equals("Sửa") ? new Color(255, 152, 0) : new Color(244, 67, 54);
                     if (getModel().isPressed()) {
                         g2.setColor(bg.darker());
                     } else {
                         g2.setColor(bg);
                     }
-                    
+
                     g2.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 8, 8);
                     g2.dispose();
                     super.paintComponent(g);
@@ -316,7 +353,7 @@ public class NhanVien_View extends JPanel {
 
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
+                boolean isSelected, int row, int column) {
             button.setText(type);
             button.setFont(new Font("Segoe UI", Font.BOLD, 12));
             button.setForeground(Color.WHITE);
@@ -328,40 +365,63 @@ public class NhanVien_View extends JPanel {
         @Override
         public Object getCellEditorValue() {
             if (isPushed) {
-                int selectedRow = table.getSelectedRow();
-                String maNV = table.getValueAt(selectedRow, 0).toString();
+                int selectedRow = table.convertRowIndexToModel(table.getEditingRow());
+                if (selectedRow != -1) {
+                    String maNV = model.getValueAt(selectedRow, 0).toString();
 
-                if (type.equals("Sửa")) {
-                    SwingUtilities.invokeLater(() -> {
-                        NhanVien nv = nhanVienDAO.findByMaNV(maNV);
-                        if (nv != null) {
-                            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(NhanVien_View.this);
-                            NhanVien_EditDialog dialog = new NhanVien_EditDialog(parentFrame, nv, nhanVienDAO);
-                            dialog.setVisible(true);
-                            loadNhanVienData();
-                            loadThongKe();
-                        }
-                    });
-                } else if (type.equals("Xóa")) {
-                    int confirm = JOptionPane.showConfirmDialog(
-                        table,
-                        "Bạn có chắc chắn muốn xóa nhân viên này?",
-                        "Xác nhận xóa",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.WARNING_MESSAGE
-                    );
-                    if (confirm == JOptionPane.YES_OPTION) {
-                        ((DefaultTableModel) table.getModel()).removeRow(selectedRow);
-                        loadThongKe();
+                    if (type.equals("Sửa")) {
+                        SwingUtilities.invokeLater(() -> {
+                            NhanVien nv = nhanVienDAO.findByMaNV(maNV);
+                            if (nv != null) {
+                                Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(NhanVien_View.this);
+                                NhanVien_EditDialog dialog = new NhanVien_EditDialog(parentFrame, nv, nhanVienDAO);
+                                dialog.setVisible(true);
+                                loadNhanVienData();
+                                loadThongKe();
+                            } else {
+                                JOptionPane.showMessageDialog(NhanVien_View.this, "Không tìm thấy nhân viên với mã: " + maNV);
+                            }
+                        });
+                    } else if (type.equals("Xóa")) {
+                        SwingUtilities.invokeLater(() -> {
+                            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(table);
+                            int confirm = JOptionPane.showConfirmDialog(
+                                    parentFrame,
+                                    "Bạn có chắc chắn muốn xóa nhân viên [" + maNV + "]?",
+                                    "Xác nhận xóa",
+                                    JOptionPane.YES_NO_OPTION,
+                                    JOptionPane.WARNING_MESSAGE
+                            );
+                            if (confirm == JOptionPane.YES_OPTION) {
+                                boolean deleted = nhanVienDAO.deleteNhanVien(maNV);
+                                if (deleted) {
+                                    JOptionPane.showMessageDialog(parentFrame, "Xóa nhân viên thành công!");
+                                    model.removeRow(selectedRow);
+                                    loadThongKe();
+                                } else {
+                                    JOptionPane.showMessageDialog(parentFrame, "Xóa nhân viên thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                                }
+                            }
+                        });
                     }
                 }
             }
             isPushed = false;
             return type;
         }
+
+        @Override
+        public boolean stopCellEditing() {
+            isPushed = false;
+            return super.stopCellEditing();
+        }
+
+        @Override
+        protected void fireEditingStopped() {
+            super.fireEditingStopped();
+        }
     }
 
-    // ===== RoundedPanel Helper =====
     class RoundedPanel extends JPanel {
         private final int cornerRadius;
         private final Color bgColor;

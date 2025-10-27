@@ -1,4 +1,3 @@
-// File: MonAn_View.java (Đã thay thế bằng logic GỌI MÓN)
 package view.ThucDon;
 
 import dao.Ban_DAO;
@@ -44,7 +43,6 @@ public class MonAn_View extends JPanel {
         setLayout(new BorderLayout(0, 15)); // Khoảng cách dọc giữa các phần
         setBackground(new Color(251, 248, 241));
         setBorder(BorderFactory.createEmptyBorder(15, 25, 20, 25));
-
 
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setOpaque(false); 
@@ -114,7 +112,9 @@ public class MonAn_View extends JPanel {
         pnlMonTongHop.add(new JLabel("Tính năng đang phát triển...", SwingConstants.CENTER), BorderLayout.CENTER);
         topTablesPanel.add(pnlMonTongHop);
 
-        contentPanel.add(topTablesPanel, BorderLayout.NORTH); // Thêm 2 bảng trên vào content
+        JPanel topWrapper = new JPanel(new BorderLayout()); // Wrapper dùng BorderLayout
+        topWrapper.setOpaque(false); // Nền trong suốt
+        topWrapper.add(topTablesPanel, BorderLayout.NORTH);
 
         //chi tiết Đơn đặt món
         modelDonDatMon = new DefaultTableModel(
@@ -140,9 +140,23 @@ public class MonAn_View extends JPanel {
         pnlDonDatContainer.add(donDatTitle, BorderLayout.NORTH);
         pnlDonDatContainer.add(donDatWrapper, BorderLayout.CENTER);
 
-        contentPanel.add(pnlDonDatContainer, BorderLayout.CENTER); // Thêm bảng chi tiết vào content
+        JSplitPane splitPane = new JSplitPane(
+    		JSplitPane.VERTICAL_SPLIT,
+            topWrapper, // <<< Sử dụng topWrapper thay vì topTablesPanel
+            pnlDonDatContainer
+        );
+            // splitPane.setResizeWeight(0.45); // Có thể bỏ dòng này hoặc giảm giá trị (vd: 0.1)
+        splitPane.setResizeWeight(0.1); // Ưu tiên panel dưới, panel trên chỉ lấy chiều cao cần thiết
+        splitPane.setBorder(null);
+        splitPane.setOpaque(false);
+        splitPane.setDividerSize(10);
+        // ===============================================
 
-        add(contentPanel, BorderLayout.CENTER); // Thêm content vào view chính
+        JPanel contentWrapper = new JPanel(new BorderLayout());
+        contentWrapper.setOpaque(false);
+        contentWrapper.add(splitPane, BorderLayout.CENTER);
+
+        add(contentWrapper, BorderLayout.CENTER);
 
         //Nút bấm
         JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 5));

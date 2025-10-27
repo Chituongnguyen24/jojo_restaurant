@@ -13,16 +13,6 @@ import java.util.Map;
 
 public class Ban_DAO {
 
-    private Ban createBanFromResultSet(ResultSet rs) throws SQLException {
-        return new Ban(
-            rs.getString("maBan"),
-            rs.getInt("soCho"),
-            LoaiBan.fromTenHienThi(rs.getString("loaiBan")), 
-            rs.getString("maKhuVuc"),
-            TrangThaiBan.fromString(rs.getString("trangThai")) 
-        );
-    }
-
     public List<Ban> getAllBan() {
         List<Ban> ds = new ArrayList<>();
         String sql = "SELECT * FROM Ban";
@@ -32,7 +22,14 @@ public class Ban_DAO {
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                ds.add(createBanFromResultSet(rs)); // Sử dụng hàm chung
+                Ban ban = new Ban(
+                    rs.getString("maBan"),
+                    rs.getInt("soCho"),
+                    LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                    rs.getString("maKhuVuc"),
+                    TrangThaiBan.fromString(rs.getString("trangThai"))
+                );
+                ds.add(ban);
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -47,7 +44,13 @@ public class Ban_DAO {
             stmt.setString(1, maBan);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
-                    return createBanFromResultSet(rs); // Sử dụng hàm chung
+                    return new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("trangThai"))
+                    );
                 }
             }
         } catch (SQLException e) {
@@ -63,7 +66,7 @@ public class Ban_DAO {
 
             stmt.setString(1, ban.getMaBan());
             stmt.setInt(2, ban.getSoCho());
-            stmt.setString(3, ban.getLoaiBan().getTenHienThi()); 
+            stmt.setString(3, ban.getLoaiBan().getTenHienThi());
             stmt.setString(4, ban.getMaKhuVuc());
             stmt.setString(5, ban.getTrangThai().toString());
 
@@ -80,10 +83,9 @@ public class Ban_DAO {
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setInt(1, ban.getSoCho());
-            //Lưu tên hiển thị
             stmt.setString(2, ban.getLoaiBan().getTenHienThi());
             stmt.setString(3, ban.getMaKhuVuc());
-            stmt.setString(4, ban.getTrangThai().toString()); 
+            stmt.setString(4, ban.getTrangThai().toString());
             stmt.setString(5, ban.getMaBan());
 
             return stmt.executeUpdate() > 0;
@@ -108,106 +110,11 @@ public class Ban_DAO {
 
     public List<Ban> getBanTheoKhuVuc(String maKhuVuc) {
         List<Ban> ds = new ArrayList<>();
-        String sql = "SELECT * FROM Ban WHERE maKhuVuc = ?"; 
+        String sql = "SELECT * FROM Ban WHERE maKhuVuc = ?";
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setString(1, maKhuVuc);
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    ds.add(createBanFromResultSet(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return ds;
-    }
-
-    public Map<String, Integer> getSoBanTheoKhuVuc() {
-        Map<String, Integer> map = new LinkedHashMap<>();
-        String sql = "SELECT kv.tenKhuVuc, COUNT(b.maBan) AS soBan " +
-                     "FROM Ban b " +
-                     "JOIN KHUVUC kv ON b.maKhuVuc = kv.maKhuVuc " +
-                     "GROUP BY kv.tenKhuVuc, kv.maKhuVuc " +
-                     "ORDER BY kv.maKhuVuc";
-
-
-        try (Connection con = ConnectDB.getInstance().getConnection();
-             PreparedStatement stmt = con.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-
-            while (rs.next()) {
-                //Dùng tenKhuVuc làm key để nhất quán với giao diện
-                map.put(rs.getString("tenKhuVuc"), rs.getInt("soBan")); 
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return map;
-    }
-
-    public List<Ban> getBanTheoTrangThai(TrangThaiBan trangThai) {
-        List<Ban> ds = new ArrayList<>();
-        String sql = "SELECT * FROM Ban WHERE trangThai = ?";
-
-        try (Connection con = ConnectDB.getInstance().getConnection();
-             PreparedStatement stmt = con.prepareStatement(sql)) {
-
-            stmt.setString(1, trangThai.toString()); 
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    ds.add(createBanFromResultSet(rs));
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return ds;
-    }
-
-    public Ban getBanById(String maBan) {
-        String sql = "SELECT * FROM Ban WHERE maBan = ?";
-        try (Connection con = ConnectDB.getInstance().getConnection();
-             PreparedStatement stmt = con.prepareStatement(sql)) {
-
-            stmt.setString(1, maBan);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return createBanFromResultSet(rs); // Sử dụng hàm chung
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-    
-
-    public Map<String, String> getDanhSachKhuVuc() {
-        Map<String, String> map = new LinkedHashMap<>();
-        String sql = "SELECT maKhuVuc, tenKhuVuc FROM KHUVUC WHERE trangThai = 1 ORDER BY maKhuVuc";
-        try (Connection con = ConnectDB.getInstance().getConnection();
-             PreparedStatement stmt = con.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
-            while(rs.next()) {
-                map.put(rs.getString("maKhuVuc"), rs.getString("tenKhuVuc"));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return map;
-    }
-    
-    public List<Ban> getBanDangHoatDong() {
-        List<Ban> ds = new ArrayList<>();
-        String sql = "SELECT * FROM Ban WHERE trangThai = ? OR trangThai = ?";
-        try (Connection con = ConnectDB.getInstance().getConnection();
-             PreparedStatement stmt = con.prepareStatement(sql)) {
-            
-            stmt.setString(1, TrangThaiBan.CO_KHACH.toString());
-            stmt.setString(2, TrangThaiBan.DA_DAT.toString());
-            
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     Ban ban = new Ban(
@@ -224,5 +131,139 @@ public class Ban_DAO {
             e.printStackTrace();
         }
         return ds;
+    }
+
+    public List<Ban> getBanTheoTrangThai(TrangThaiBan trangThai) {
+        List<Ban> ds = new ArrayList<>();
+        String sql = "SELECT * FROM Ban WHERE trangThai = ?";
+
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setString(1, trangThai.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Ban ban = new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("trangThai"))
+                    );
+                    ds.add(ban);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+    }
+
+    public Map<String, String> getDanhSachKhuVuc() {
+        Map<String, String> map = new LinkedHashMap<>();
+        String sql = "SELECT maKhuVuc, tenKhuVuc FROM KHUVUC WHERE trangThai = 1 ORDER BY maKhuVuc";
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                map.put(rs.getString("maKhuVuc"), rs.getString("tenKhuVuc"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    public List<Ban> getBanDangHoatDong() {
+        List<Ban> ds = new ArrayList<>();
+        String sql = "SELECT * FROM Ban WHERE trangThai = ? OR trangThai = ?";
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setString(1, TrangThaiBan.CO_KHACH.toString());
+            stmt.setString(2, TrangThaiBan.DA_DAT.toString());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    Ban ban = new Ban(
+                        rs.getString("maBan"),
+                        rs.getInt("soCho"),
+                        LoaiBan.fromTenHienThi(rs.getString("loaiBan")),
+                        rs.getString("maKhuVuc"),
+                        TrangThaiBan.fromString(rs.getString("trangThai"))
+                    );
+                    ds.add(ban);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+    }
+
+    /**
+     * Trả về tổng số bàn (bao gồm cả bàn chưa đặt) theo tên khu vực.
+     * Key của map = tenKhuVuc (để dễ hiển thị tên), giữ thứ tự theo maKhuVuc.
+     */
+    public Map<String, Integer> getSoBanTheoKhuVuc() {
+        Map<String, Integer> map = new LinkedHashMap<>();
+        String sql =
+            " SELECT kv.maKhuVuc, kv.tenKhuVuc, COUNT(b.maBan) AS SoLuong" +
+            " FROM KHUVUC kv" +
+            " LEFT JOIN Ban b ON kv.maKhuVuc = b.maKhuVuc" +
+            " GROUP BY kv.maKhuVuc, kv.tenKhuVuc" +
+            " ORDER BY kv.maKhuVuc";
+
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                map.put(rs.getString("tenKhuVuc"), rs.getInt("SoLuong"));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+    /**
+     * Trả về số bàn từng khu vực có hóa đơn đã thanh toán trong khoảng from..to.
+     * Nếu from/to null => trả về getSoBanTheoKhuVuc()
+     *
+     * Lưu ý: câu SQL sử dụng LEFT JOIN với điều kiện lọc trong ON để không vô tình
+     * biến LEFT JOIN thành INNER JOIN.
+     */
+    public Map<String, Integer> getSoBanTheoKhuVuc(java.util.Date from, java.util.Date to) {
+        if (from == null || to == null) {
+            return getSoBanTheoKhuVuc();
+        }
+
+        Map<String, Integer> map = new LinkedHashMap<>();
+        String sql =
+            " SELECT kv.maKhuVuc, kv.tenKhuVuc, " +
+            " COUNT(DISTINCT CASE WHEN hd.maPhieu IS NOT NULL THEN b.maBan ELSE NULL END) AS SoLuong" +
+            " FROM KHUVUC kv" +
+            " LEFT JOIN Ban b ON kv.maKhuVuc = b.maKhuVuc" +
+            " LEFT JOIN PHIEUDATBAN pdb ON b.maBan = pdb.maBan" +
+            " LEFT JOIN HOADON hd ON pdb.maPhieu = hd.maPhieu AND hd.daThanhToan = 1 AND hd.ngayLap BETWEEN ? AND ?" +
+            " GROUP BY kv.maKhuVuc, kv.tenKhuVuc" +
+            " ORDER BY kv.maKhuVuc";
+
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setDate(1, new java.sql.Date(from.getTime()));
+            stmt.setDate(2, new java.sql.Date(to.getTime()));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    map.put(rs.getString("tenKhuVuc"), rs.getInt("SoLuong"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return map;
     }
 }

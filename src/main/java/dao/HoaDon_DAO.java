@@ -7,7 +7,9 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class HoaDon_DAO {
 
@@ -52,15 +54,15 @@ public class HoaDon_DAO {
         List<HoaDon> dsHoaDon = new ArrayList<>();
         // Lấy tất cả các cột cần thiết
         String sql = "SELECT maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan " +
-                     "FROM HOADON ORDER BY ngayLap DESC, gioVao DESC";
+                "FROM HOADON ORDER BY ngayLap DESC, gioVao DESC";
 
         // Sử dụng try-with-resources
-        try (Connection conn = ConnectDB.getConnection(); // Dùng hàm getConnection() của bạn
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                dsHoaDon.add(createHoaDonFromResultSet(rs)); // Dùng hàm helper
+                dsHoaDon.add(createHoaDonFromResultSet(rs));
             }
         } catch (SQLException e) {
             System.err.println("Lỗi khi lấy danh sách hóa đơn: " + e.getMessage());
@@ -74,10 +76,10 @@ public class HoaDon_DAO {
      */
     public boolean addHoaDon(HoaDon hd) {
         String sql = "INSERT INTO HOADON(maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, "+
-                     "maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)"+
-                     " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)"+
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, hd.getMaHoaDon());
@@ -93,14 +95,14 @@ public class HoaDon_DAO {
 
             pstmt.setString(7, hd.getThue().getMaThue());
             pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioVao()));
-             // Xử lý null cho gioRa
+            // Xử lý null cho gioRa
             if (hd.getGioRa() != null) {
                 pstmt.setTimestamp(9, Timestamp.valueOf(hd.getGioRa()));
             } else {
-                 pstmt.setNull(9, Types.TIMESTAMP); // Hoặc giá trị mặc định nếu CSDL yêu cầu
+                pstmt.setNull(9, Types.TIMESTAMP); // Hoặc giá trị mặc định nếu CSDL yêu cầu
             }
             pstmt.setString(10, hd.getNhanVien().getMaNV());
-             // Xử lý null cho PhieuDatBan
+            // Xử lý null cho PhieuDatBan
             if (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null)
                 pstmt.setString(11, hd.getPhieuDatBan().getMaPhieu());
             else
@@ -121,10 +123,10 @@ public class HoaDon_DAO {
      */
     public boolean updateHoaDon(HoaDon hd) {
         String sql = "UPDATE HOADON SET maKhachHang = ?, maBan = ?, ngayLap = ?, phuongThuc = ?, maKhuyenMai = ?, "+
-                     "maThue = ?, gioVao = ?, gioRa = ?, maNhanVien = ?, maPhieu = ?, daThanhToan = ? "+
-                     "WHERE maHoaDon = ?";
+                "maThue = ?, gioVao = ?, gioRa = ?, maNhanVien = ?, maPhieu = ?, daThanhToan = ? "+
+                "WHERE maHoaDon = ?";
 
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, hd.getKhachHang().getMaKhachHang());
@@ -139,13 +141,13 @@ public class HoaDon_DAO {
             pstmt.setTimestamp(7, Timestamp.valueOf(hd.getGioVao()));
             // Cập nhật giờ ra khi thanh toán
             if (hd.getGioRa() != null) {
-                 pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioRa()));
+                pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioRa()));
             } else {
-                 // Giữ nguyên giờ ra cũ nếu không có giá trị mới (hoặc set null nếu logic cho phép)
-                 // Để đơn giản, nếu không có giờ ra mới, ta không cập nhật cột này
-                 // Cần điều chỉnh câu SQL nếu muốn giữ nguyên giá trị cũ: bỏ gioRa = ? ra khỏi SET
-                 // Tuy nhiên, logic thanh toán thường sẽ set giờ ra mới, nên tạm để setNull
-                 pstmt.setNull(8, Types.TIMESTAMP);
+                // Giữ nguyên giờ ra cũ nếu không có giá trị mới (hoặc set null nếu logic cho phép)
+                // Để đơn giản, nếu không có giờ ra mới, ta không cập nhật cột này
+                // Cần điều chỉnh câu SQL nếu muốn giữ nguyên giá trị cũ: bỏ gioRa = ? ra khỏi SET
+                // Tuy nhiên, logic thanh toán thường sẽ set giờ ra mới, nên tạm để setNull
+                pstmt.setNull(8, Types.TIMESTAMP);
             }
 
             pstmt.setString(9, hd.getNhanVien().getMaNV());
@@ -158,7 +160,7 @@ public class HoaDon_DAO {
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-             System.err.println("Lỗi khi cập nhật hóa đơn: " + e.getMessage());
+            System.err.println("Lỗi khi cập nhật hóa đơn: " + e.getMessage());
             e.printStackTrace();
         }
         return false;
@@ -172,7 +174,7 @@ public class HoaDon_DAO {
         String sqlDeleteHoaDon = "DELETE FROM HOADON WHERE maHoaDon = ?";
         Connection conn = null; // Khai báo ngoài để dùng trong finally
         try {
-            conn = ConnectDB.getConnection();
+            conn = ConnectDB.getInstance().getConnection();
             conn.setAutoCommit(false); // Bắt đầu transaction
 
             // Xóa chi tiết trước
@@ -205,7 +207,7 @@ public class HoaDon_DAO {
             return false;
         } finally {
             // Luôn trả lại autoCommit và đóng kết nối
-             if (conn != null) {
+            if (conn != null) {
                 try {
                     conn.setAutoCommit(true);
                     conn.close();
@@ -220,32 +222,93 @@ public class HoaDon_DAO {
     // Nhưng giữ lại nếu có nơi khác chỉ muốn cập nhật trạng thái
     public boolean updateTrangThaiThanhToan(String maHoaDon, boolean daThanhToan) {
         String sql = "UPDATE HOADON SET daThanhToan = ? WHERE maHoaDon = ?";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setBoolean(1, daThanhToan);
             pstmt.setString(2, maHoaDon);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
-             System.err.println("Lỗi khi cập nhật trạng thái thanh toán: " + e.getMessage());
+            System.err.println("Lỗi khi cập nhật trạng thái thanh toán: " + e.getMessage());
             e.printStackTrace(); }
         return false;
     }
 
-    // ==================== THỐNG KÊ ====================
-    // Giữ nguyên các hàm thống kê vì chúng không liên quan trực tiếp đến cấu trúc HoaDon object
+    public double getTongDoanhThu() {
+        String sql =
+                " SELECT SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS TongDoanhThu" +
+                        " FROM HOADON hd INNER JOIN CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon" +
+                        " WHERE hd.daThanhToan = 1";
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
 
-    public double getTongDoanhThu() { /* ... code giữ nguyên ... */ return 0; }
-    public int getTongDonHang() { /* ... code giữ nguyên ... */ return 0; }
-    public int getSoLuongKhachHang() { /* ... code giữ nguyên ... */ return 0; }
-    public double getDoanhThuTheoNgay(int ngayTruoc) { /* ... code giữ nguyên ... */ return 0; }
+            if (rs.next())
+                return rs.getDouble("TongDoanhThu");
 
-    // ==================== TÍNH TỔNG TIỀN ====================
-    // Giữ nguyên hàm tính tổng tiền đã sửa lỗi
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int getTongDonHang() {
+        String sql = "SELECT COUNT(*) AS SoLuong FROM HOADON WHERE daThanhToan = 1";
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next())
+                return rs.getInt("SoLuong");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int getSoLuongKhachHang() {
+        String sql = "SELECT COUNT(DISTINCT maKhachHang) AS SoLuong FROM HOADON WHERE daThanhToan = 1";
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next())
+                return rs.getInt("SoLuong");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public double getDoanhThuTheoNgay(int ngayTruoc) {
+        String sql =
+                " SELECT       SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS DoanhThuTrongNgay" +
+                        " FROM         HOADON hd  INNER JOIN   CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon" +
+                        " WHERE   hd.daThanhToan = 1 AND DATEDIFF(day, hd.ngayLap, GETDATE()) <= ?";
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setInt(1, ngayTruoc);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next())
+
+                    return rs.getDouble("DoanhThuTrongNgay");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
     public double tinhTongTienHoaDon(String maHoaDon) {
         double tongTienMonAn = 0;
         double tongTienSauCung = 0;
         String sqlChiTiet = "SELECT SUM(ct.soLuong * ct.donGia) AS Tong FROM CHITIETHOADON ct WHERE ct.maHoaDon = ?";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt1 = conn.prepareStatement(sqlChiTiet)) {
             pstmt1.setString(1, maHoaDon);
             try (ResultSet rs = pstmt1.executeQuery()) {
@@ -286,13 +349,13 @@ public class HoaDon_DAO {
      */
     public HoaDon findByMaHD(String maHD) {
         String sql = "SELECT maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan " +
-                     "FROM HOADON WHERE maHoaDon = ?";
-        try (Connection conn = ConnectDB.getConnection();
+                "FROM HOADON WHERE maHoaDon = ?";
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, maHD);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    return createHoaDonFromResultSet(rs); // Dùng hàm helper
+                    return createHoaDonFromResultSet(rs);
                 }
             }
         } catch (SQLException e) {
@@ -308,9 +371,9 @@ public class HoaDon_DAO {
     public List<ChiTietHoaDon> getChiTietHoaDonForPrint(String maHoaDon) {
         List<ChiTietHoaDon> chiTietList = new ArrayList<>();
         String sql = "SELECT ct.maMonAn, ma.tenMonAn, ct.soLuong, ct.donGia " +
-                     "FROM CHITIETHOADON ct JOIN MONAN ma ON ct.maMonAn = ma.maMonAn " +
-                     "WHERE ct.maHoaDon = ?";
-        try (Connection conn = ConnectDB.getConnection();
+                "FROM CHITIETHOADON ct JOIN MONAN ma ON ct.maMonAn = ma.maMonAn " +
+                "WHERE ct.maHoaDon = ?";
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, maHoaDon);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -325,8 +388,108 @@ public class HoaDon_DAO {
                 }
             }
         } catch (SQLException e) {
-             System.err.println("Lỗi khi lấy chi tiết hóa đơn " + maHoaDon + ": " + e.getMessage());
+            System.err.println("Lỗi khi lấy chi tiết hóa đơn " + maHoaDon + ": " + e.getMessage());
             e.printStackTrace(); }
         return chiTietList;
+    }
+
+    public double getTongDoanhThu(java.util.Date from, java.util.Date to) {
+        if (from == null || to == null) {
+            return getTongDoanhThu();
+        }
+
+        String sql =
+                " SELECT SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS TongDoanhThu" +
+                        " FROM HOADON hd INNER JOIN CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon" +
+                        " WHERE hd.daThanhToan = 1 AND hd.ngayLap BETWEEN ? AND ?";
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, new java.sql.Date(from.getTime()));
+            stmt.setDate(2, new java.sql.Date(to.getTime()));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next())
+                    return rs.getDouble("TongDoanhThu");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int getTongDonHang(java.util.Date from, java.util.Date to) {
+        if (from == null || to == null) {
+            return getTongDonHang();
+        }
+
+        String sql = "SELECT COUNT(*) AS SoLuong FROM HOADON WHERE daThanhToan = 1 AND ngayLap BETWEEN ? AND ?";
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, new java.sql.Date(from.getTime()));
+            stmt.setDate(2, new java.sql.Date(to.getTime()));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt("SoLuong");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int getSoLuongKhachHang(java.util.Date from, java.util.Date to) {
+        if (from == null || to == null) {
+            return getSoLuongKhachHang();
+        }
+
+        String sql = "SELECT COUNT(DISTINCT maKhachHang) AS SoLuong FROM HOADON " +
+                "WHERE daThanhToan = 1 AND ngayLap BETWEEN ? AND ?";
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, new java.sql.Date(from.getTime()));
+            stmt.setDate(2, new java.sql.Date(to.getTime()));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt("SoLuong");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public Map<String, Double> getDoanhThuTheoKhoangThoiGian(java.util.Date from, java.util.Date to) {
+        Map<String, Double> data = new LinkedHashMap<>();
+
+        String sql =
+                " SELECT FORMAT(hd.ngayLap, 'dd/MM') AS Ngay, SUM(CAST(cthd.soLuong AS DECIMAL(18, 2)) * cthd.donGia) AS DoanhThu" +
+                        " FROM HOADON hd INNER JOIN CHITIETHOADON cthd ON hd.maHoaDon = cthd.maHoaDon" +
+                        " WHERE hd.daThanhToan = 1 AND hd.ngayLap BETWEEN ? AND ?" +
+                        " GROUP BY FORMAT(hd.ngayLap, 'dd/MM'), hd.ngayLap" +
+                        " ORDER BY hd.ngayLap";
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setDate(1, new java.sql.Date(from.getTime()));
+            stmt.setDate(2, new java.sql.Date(to.getTime()));
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    data.put(rs.getString("Ngay"), rs.getDouble("DoanhThu"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return data;
     }
 }

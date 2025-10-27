@@ -12,9 +12,8 @@ import view.Login.Login_View;
 import view.NhanVien.*;
 import view.ThucDon.*;
 import entity.TaiKhoan;
-import view.HeThong_View;
+import view.HeThong_View; 
 import view.ThucDon.MonAn_View;
-import view.ThucDon.MonAn_TraCuu_View;
 
 public class TrangChu_View extends JPanel {
 
@@ -26,7 +25,6 @@ public class TrangChu_View extends JPanel {
     public TrangChu_View(JFrame frame, TaiKhoan tk, String vaiTro) {
         setLayout(new BorderLayout());
 
-        // ===== HEADER =====
         JPanel headerPanel = new JPanel(new BorderLayout());
         headerPanel.setBackground(new Color(245, 245, 245));
         headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
@@ -40,7 +38,6 @@ public class TrangChu_View extends JPanel {
         logoLabel.setForeground(new Color(50, 50, 50));
         headerPanel.add(logoLabel, BorderLayout.WEST);
 
-        // ===== USER INFO + LOGOUT =====
         JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         userPanel.setOpaque(false);
 
@@ -49,26 +46,27 @@ public class TrangChu_View extends JPanel {
         userPanel.add(userLabel);
 
         JButton logoutBtn = new JButton("Đăng xuất");
+        logoutBtn.setOpaque(true);
+        logoutBtn.setBorderPainted(false);
         logoutBtn.setBackground(new Color(200, 50, 50));
         logoutBtn.setForeground(Color.WHITE);
         logoutBtn.setFocusPainted(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setPreferredSize(new Dimension(110, 28));
+
         userPanel.add(logoutBtn);
         headerPanel.add(userPanel, BorderLayout.EAST);
 
-        // ===== MENU BAR =====
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(new Color(230, 230, 230));
         menuBar.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
 
-        // ===== FONT CHO MENU =====
         Font menuFont = new Font("Arial", Font.BOLD, 14);
         Font menuItemFont = new Font("Arial", Font.PLAIN, 14);
 
-        // ===== CONTENT (CardLayout) =====
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
 
-        // ===== Card names =====
         final String CARD_HOME = "HỆ_THỐNG";
         final String CARD_QUAN_LY_BAN = "QUAN_LY_BAN";
         final String CARD_QUAN_LY_DAT_BAN = "QUAN_LY_DAT_BAN";
@@ -80,10 +78,9 @@ public class TrangChu_View extends JPanel {
         final String CARD_TRA_CUU_KH = "TRA_CUU_KH";
         final String CARD_NHANVIEN = "NHAN_VIEN";
         final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
-        final String CARD_THONGKE_NV = "THONG_KE_NV";
+        final String CARD_THONGKE = "THONG_KE";
         final String CARD_MON_AN = "MON_AN";
 
-        // ===== ADD VIEWS =====
         contentPanel.add(new HeThong_View(), CARD_HOME);
         contentPanel.add(new Ban_View(), CARD_QUAN_LY_BAN);
         contentPanel.add(new DatBan_View(), CARD_QUAN_LY_DAT_BAN);
@@ -98,10 +95,9 @@ public class TrangChu_View extends JPanel {
         if ("Quản lý".equalsIgnoreCase(vaiTro) || "NVQL".equalsIgnoreCase(tk.getVaiTro())) {
             contentPanel.add(new NhanVien_View(), CARD_NHANVIEN);
             contentPanel.add(new NhanVien_TraCuu_View(), CARD_TRA_CUU_NV);
-            contentPanel.add(new NhanVien_ThongKe_View(), CARD_THONGKE_NV);
+            contentPanel.add(new ThongKe_View(), CARD_THONGKE);
         }
 
-        // ===== MENU =====
         JMenu menuHeThong = new JMenu("Hệ thống");
         menuHeThong.setFont(menuFont);
         JMenuItem mDangXuat = new JMenuItem("Đăng xuất");
@@ -166,14 +162,13 @@ public class TrangChu_View extends JPanel {
             mQLNV.setFont(menuItemFont);
             mTCNV = new JMenuItem("Tra cứu nhân viên");
             mTCNV.setFont(menuItemFont);
-            mTKNV = new JMenuItem("Thống kê nhân viên");
+            mTKNV = new JMenuItem("Thống kê");
             mTKNV.setFont(menuItemFont);
             menuNV.add(mQLNV);
             menuNV.add(mTCNV);
             menuNV.add(mTKNV);
         }
 
-        // ===== ADD TO MENU BAR =====
         menuBar.add(menuHeThong);
         menuBar.add(menuBan);
         menuBar.add(menuThucDon);
@@ -181,7 +176,6 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuKH);
         if (menuNV != null) menuBar.add(menuNV);
 
-        // ===== Lưu tất cả menu item =====
         allMenuItems.add(mQuanLyBan);
         allMenuItems.add(mQuanLyDatBan);
         allMenuItems.add(mQLMon);
@@ -198,7 +192,6 @@ public class TrangChu_View extends JPanel {
             allMenuItems.add(mTKNV);
         }
 
-        // ===== Hàm highlight + switch =====
         ActionListener switchPanel = e -> {
             JMenuItem src = (JMenuItem) e.getSource();
             resetMenuHighlight();
@@ -217,21 +210,18 @@ public class TrangChu_View extends JPanel {
                 case "Tra cứu khách hàng" -> cardLayout.show(contentPanel, CARD_TRA_CUU_KH);
                 case "Nhân viên" -> cardLayout.show(contentPanel, CARD_NHANVIEN);
                 case "Tra cứu nhân viên" -> cardLayout.show(contentPanel, CARD_TRA_CUU_NV);
-                case "Thống kê nhân viên" -> cardLayout.show(contentPanel, CARD_THONGKE_NV);
+                case "Thống kê" -> cardLayout.show(contentPanel, CARD_THONGKE);
             }
-            contentPanel.revalidate();
-            contentPanel.repaint();
         };
 
         for (JMenuItem item : allMenuItems) {
             item.addActionListener(switchPanel);
         }
 
-        // ===== Đăng xuất =====
         ActionListener logoutAction = e -> {
             int confirm = JOptionPane.showConfirmDialog(this,
-                    "Bạn có chắc muốn đăng xuất?", "Xác nhận",
-                    JOptionPane.YES_NO_OPTION);
+                "Bạn có chắc muốn đăng xuất?", "Xác nhận",
+                JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 frame.dispose();
                 Login_View login = new Login_View();
@@ -242,7 +232,6 @@ public class TrangChu_View extends JPanel {
         mDangXuat.addActionListener(logoutAction);
         mThoat.addActionListener(e -> System.exit(0));
 
-        // ===== ADD TO LAYOUT =====
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(headerPanel, BorderLayout.NORTH);
         topPanel.add(menuBar, BorderLayout.SOUTH);

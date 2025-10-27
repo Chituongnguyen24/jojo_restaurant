@@ -11,6 +11,8 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.util.List;
 
+import java.awt.Frame;
+
 public class HoaDon_View extends JPanel {
     private JTable table;
     private DefaultTableModel model;
@@ -57,10 +59,12 @@ public class HoaDon_View extends JPanel {
         statsPanel.add(createStatBox(lblTongHD, "Tổng hóa đơn", new Color(34, 139, 230)));
         statsPanel.add(createStatBox(lblDoanhThu, "Doanh thu", new Color(255, 152, 0)));
 
+        // GIẢI QUYẾT CONFLICT 1: Giữ phiên bản của HEAD (có cột "Thanh Toán")
         String[] cols = {"Mã HD", "Khách hàng", "Ngày lập", "Tổng tiền", "Phương thức", "Trạng thái", "Thanh Toán", "Sửa", "Xóa"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
+                // Điều chỉnh chỉ số cột cho đúng với mảng cols (Thanh Toán = 6, Sửa = 7, Xóa = 8)
                 return column == 6 || column == 7 || column == 8;
             }
         };
@@ -77,6 +81,7 @@ public class HoaDon_View extends JPanel {
         header2.setForeground(new Color(60, 60, 60));
         header2.setPreferredSize(new Dimension(header2.getWidth(), 45));
 
+        // Code này (từ HEAD) khớp với mảng cols đã chọn
         table.getColumn("Thanh Toán").setCellRenderer(new ButtonRenderer("Thanh Toán", new Color(76, 175, 80), Color.WHITE));
         table.getColumn("Thanh Toán").setCellEditor(new ButtonEditor(new JCheckBox(), "Thanh Toán"));
         table.getColumn("Sửa").setCellRenderer(new ButtonRenderer("Sửa", new Color(255, 152, 0), Color.WHITE));
@@ -84,11 +89,12 @@ public class HoaDon_View extends JPanel {
         table.getColumn("Xóa").setCellRenderer(new ButtonRenderer("Xóa", new Color(244, 67, 54), Color.WHITE));
         table.getColumn("Xóa").setCellEditor(new ButtonEditor(new JCheckBox(), "Xóa"));
 
-        table.getColumnModel().getColumn(6).setPreferredWidth(100);
+        // Điều chỉnh kích thước cột cho 3 nút
+        table.getColumnModel().getColumn(6).setPreferredWidth(100); // Thanh Toán
         table.getColumnModel().getColumn(6).setMaxWidth(100);
-        table.getColumnModel().getColumn(7).setPreferredWidth(80);
+        table.getColumnModel().getColumn(7).setPreferredWidth(80);  // Sửa
         table.getColumnModel().getColumn(7).setMaxWidth(80);
-        table.getColumnModel().getColumn(8).setPreferredWidth(80);
+        table.getColumnModel().getColumn(8).setPreferredWidth(80);  // Xóa
         table.getColumnModel().getColumn(8).setMaxWidth(80);
 
         JScrollPane scroll = new JScrollPane(table);
@@ -125,6 +131,7 @@ public class HoaDon_View extends JPanel {
         model.setRowCount(0);
         List<HoaDon> dsHD = hoaDonDAO.getAllHoaDon();
         for (HoaDon hd : dsHD) {
+            // GIẢI QUYẾT CONFLICT 2: Giữ logic của HEAD (chỉ tải HĐ chưa thanh toán)
             if (!hd.isDaThanhToan()) {
                 KhachHang kh = null;
                 // Lấy thông tin KH đầy đủ nếu có mã KH hợp lệ
@@ -136,7 +143,8 @@ public class HoaDon_View extends JPanel {
                 String trangThai = "Chưa thanh toán";
                 model.addRow(new Object[]{
                         hd.getMaHoaDon(), tenKH, hd.getNgayLap(),
-                        String.format("%.0f VNĐ", tongTien), hd.getPhuongThuc(), trangThai,
+                        // Lấy format tiền tốt hơn từ 'main'
+                        String.format("%,.0f VNĐ", tongTien), hd.getPhuongThuc(), trangThai,
                         "Thanh Toán", "Sửa", "Xóa"
                 });
             }
@@ -154,9 +162,12 @@ public class HoaDon_View extends JPanel {
         }
         lblChuaTT.setText(String.valueOf(chuaTT));
         lblDaTT.setText(String.valueOf(daTT));
+        // GIẢI QUYẾT CONFLICT 3: Giữ phiên bản của HEAD (logic đúng và format đơn giản)
         lblTongHD.setText(String.valueOf(dsHD.size()));
         lblDoanhThu.setText(String.format("%,.0f VNĐ", doanhThu)); // Format tiền tệ
     }
+
+    // Các hàm helper và class nội bên dưới được giữ nguyên (chúng không bị conflict)
 
     private JButton createRoundedButton(String text, Color bg, Color fg) {
         JButton btn = new JButton(text) {
@@ -243,7 +254,7 @@ public class HoaDon_View extends JPanel {
                     SwingUtilities.invokeLater(() -> {
                         HoaDon hd = hoaDonDAO.findByMaHD(maHD);
                         if (hd != null) {
-                             KhachHang kh = null;
+                            KhachHang kh = null;
                             if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
                                 kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
                             }
