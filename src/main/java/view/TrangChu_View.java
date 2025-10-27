@@ -46,7 +46,6 @@ public class TrangChu_View extends JPanel {
         userPanel.add(userLabel);
 
         JButton logoutBtn = new JButton("Đăng xuất");
-        
         logoutBtn.setOpaque(true);
         logoutBtn.setBorderPainted(false);
         logoutBtn.setBackground(new Color(200, 50, 50));
@@ -54,7 +53,7 @@ public class TrangChu_View extends JPanel {
         logoutBtn.setFocusPainted(false);
         logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
         logoutBtn.setPreferredSize(new Dimension(110, 28));
-        
+
         userPanel.add(logoutBtn);
         headerPanel.add(userPanel, BorderLayout.EAST);
 
@@ -62,15 +61,12 @@ public class TrangChu_View extends JPanel {
         menuBar.setBackground(new Color(230, 230, 230));
         menuBar.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
 
-        // ===== FONT CHO MENU =====
         Font menuFont = new Font("Arial", Font.BOLD, 14);
         Font menuItemFont = new Font("Arial", Font.PLAIN, 14);
 
-        // ===== CONTENT (CardLayout) =====
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
 
-        // ===== Card names =====
         final String CARD_HOME = "HỆ_THỐNG";
         final String CARD_QUAN_LY_BAN = "QUAN_LY_BAN";
         final String CARD_QUAN_LY_DAT_BAN = "QUAN_LY_DAT_BAN";
@@ -82,7 +78,7 @@ public class TrangChu_View extends JPanel {
         final String CARD_TRA_CUU_KH = "TRA_CUU_KH";
         final String CARD_NHANVIEN = "NHAN_VIEN";
         final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
-        final String CARD_THONGKE_NV = "THONG_KE_NV";
+        final String CARD_THONGKE = "THONG_KE";
         final String CARD_MON_AN = "MON_AN";
 
         contentPanel.add(new HeThong_View(), CARD_HOME);
@@ -99,10 +95,9 @@ public class TrangChu_View extends JPanel {
         if ("Quản lý".equalsIgnoreCase(vaiTro) || "NVQL".equalsIgnoreCase(tk.getVaiTro())) {
             contentPanel.add(new NhanVien_View(), CARD_NHANVIEN);
             contentPanel.add(new NhanVien_TraCuu_View(), CARD_TRA_CUU_NV);
-            contentPanel.add(new ThongKe_View(), CARD_THONGKE_NV);
+            contentPanel.add(new ThongKe_View(), CARD_THONGKE);
         }
 
-        // ===== MENU =====
         JMenu menuHeThong = new JMenu("Hệ thống");
         menuHeThong.setFont(menuFont);
         JMenuItem mDangXuat = new JMenuItem("Đăng xuất");
@@ -167,7 +162,7 @@ public class TrangChu_View extends JPanel {
             mQLNV.setFont(menuItemFont);
             mTCNV = new JMenuItem("Tra cứu nhân viên");
             mTCNV.setFont(menuItemFont);
-            mTKNV = new JMenuItem("Thống kê nhân viên");
+            mTKNV = new JMenuItem("Thống kê");
             mTKNV.setFont(menuItemFont);
             menuNV.add(mQLNV);
             menuNV.add(mTCNV);
@@ -181,7 +176,6 @@ public class TrangChu_View extends JPanel {
         menuBar.add(menuKH);
         if (menuNV != null) menuBar.add(menuNV);
 
-        // ===== Lưu tất cả menu item =====
         allMenuItems.add(mQuanLyBan);
         allMenuItems.add(mQuanLyDatBan);
         allMenuItems.add(mQLMon);
@@ -198,7 +192,6 @@ public class TrangChu_View extends JPanel {
             allMenuItems.add(mTKNV);
         }
 
-        // ===== Hàm highlight + switch =====
         ActionListener switchPanel = e -> {
             JMenuItem src = (JMenuItem) e.getSource();
             resetMenuHighlight();
@@ -217,7 +210,7 @@ public class TrangChu_View extends JPanel {
                 case "Tra cứu khách hàng" -> cardLayout.show(contentPanel, CARD_TRA_CUU_KH);
                 case "Nhân viên" -> cardLayout.show(contentPanel, CARD_NHANVIEN);
                 case "Tra cứu nhân viên" -> cardLayout.show(contentPanel, CARD_TRA_CUU_NV);
-                case "Thống kê nhân viên" -> cardLayout.show(contentPanel, CARD_THONGKE_NV);
+                case "Thống kê" -> cardLayout.show(contentPanel, CARD_THONGKE);
             }
         };
 
@@ -225,7 +218,6 @@ public class TrangChu_View extends JPanel {
             item.addActionListener(switchPanel);
         }
 
-        // ===== Đăng xuất =====
         ActionListener logoutAction = e -> {
             int confirm = JOptionPane.showConfirmDialog(this,
                 "Bạn có chắc muốn đăng xuất?", "Xác nhận",
@@ -238,12 +230,7 @@ public class TrangChu_View extends JPanel {
         };
         logoutBtn.addActionListener(logoutAction);
         mDangXuat.addActionListener(logoutAction);
-        mThoat.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
+        mThoat.addActionListener(e -> System.exit(0));
 
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.add(headerPanel, BorderLayout.NORTH);

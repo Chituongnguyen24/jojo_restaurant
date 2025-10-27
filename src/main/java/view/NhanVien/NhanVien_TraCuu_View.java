@@ -9,12 +9,11 @@ import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Giao diện tra cứu nhân viên - Đồng bộ với NhanVien_View
- */
 public class NhanVien_TraCuu_View extends JPanel {
     private JTable table;
     private DefaultTableModel model;
@@ -22,8 +21,8 @@ public class NhanVien_TraCuu_View extends JPanel {
     private JComboBox<String> cboFilter;
     private JLabel lblTotalActive, lblTotalManager, lblTotalReceptionist;
     private NhanVien_DAO nhanVienDAO = new NhanVien_DAO();
+    private final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy"); // Formatter for displaying date
 
-    // Color Palette giống NhanVien_View
     private static final Color PRIMARY_BLUE = new Color(41, 128, 185);
     private static final Color SUCCESS_GREEN = new Color(46, 204, 113);
     private static final Color WARNING_ORANGE = new Color(243, 156, 18);
@@ -38,12 +37,10 @@ public class NhanVien_TraCuu_View extends JPanel {
         setLayout(new BorderLayout());
         setBackground(BG_COLOR);
 
-        // ===== MAIN CONTENT =====
         JPanel mainContent = new JPanel(new BorderLayout(0, 20));
         mainContent.setOpaque(false);
         mainContent.setBorder(new EmptyBorder(25, 30, 30, 30));
 
-        // Header + Search
         JPanel topSection = new JPanel();
         topSection.setLayout(new BoxLayout(topSection, BoxLayout.Y_AXIS));
         topSection.setOpaque(false);
@@ -59,7 +56,6 @@ public class NhanVien_TraCuu_View extends JPanel {
 
         add(mainContent, BorderLayout.CENTER);
 
-        // Load dữ liệu
         loadNhanVienData();
     }
 
@@ -93,20 +89,19 @@ public class NhanVien_TraCuu_View extends JPanel {
         JPanel searchCard = new RoundedPanel(12, CARD_BG);
         searchCard.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
         searchCard.setBorder(new CompoundBorder(
-            new LineBorder(BORDER_COLOR, 1, true),
-            new EmptyBorder(10, 15, 10, 15)
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(10, 15, 10, 15)
         ));
         searchCard.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
-        // Search field
         JLabel lblSearch = new JLabel("Từ khóa:");
         lblSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
         txtSearch = new JTextField(25);
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtSearch.setBorder(new CompoundBorder(
-            new LineBorder(BORDER_COLOR, 1, true),
-            new EmptyBorder(8, 12, 8, 12)
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(8, 12, 8, 12)
         ));
         txtSearch.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
@@ -114,7 +109,6 @@ public class NhanVien_TraCuu_View extends JPanel {
             }
         });
 
-        // Filter combo
         JLabel lblFilter = new JLabel("Vai trò:");
         lblFilter.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
@@ -125,7 +119,6 @@ public class NhanVien_TraCuu_View extends JPanel {
         cboFilter.setBorder(new LineBorder(BORDER_COLOR, 1, true));
         cboFilter.addActionListener(e -> loadNhanVienData());
 
-        // Buttons
         JButton btnSearch = createStyledButton("Tìm kiếm", PRIMARY_BLUE);
         btnSearch.addActionListener(e -> loadNhanVienData());
 
@@ -151,15 +144,14 @@ public class NhanVien_TraCuu_View extends JPanel {
         statsPanel.setOpaque(false);
         statsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
 
-        // Stats cards
         lblTotalActive = new JLabel("0");
-        JPanel activeCard = createStatCard("15", "Nhân viên hoạt động", PRIMARY_BLUE, lblTotalActive);
+        JPanel activeCard = createStatCard("0", "Nhân viên hoạt động", PRIMARY_BLUE, lblTotalActive);
 
         lblTotalManager = new JLabel("0");
-        JPanel managerCard = createStatCard("2", "Quản lý", SUCCESS_GREEN, lblTotalManager);
+        JPanel managerCard = createStatCard("0", "Quản lý", SUCCESS_GREEN, lblTotalManager);
 
         lblTotalReceptionist = new JLabel("0");
-        JPanel receptionistCard = createStatCard("13", "Tiếp tân", WARNING_ORANGE, lblTotalReceptionist);
+        JPanel receptionistCard = createStatCard("0", "Tiếp tân", WARNING_ORANGE, lblTotalReceptionist);
 
         statsPanel.add(activeCard);
         statsPanel.add(managerCard);
@@ -196,8 +188,8 @@ public class NhanVien_TraCuu_View extends JPanel {
     }
 
     private JPanel createTableSection() {
-        // Table setup
-        String[] cols = {"Mã NV", "Tên nhân viên", "Giới tính", "SĐT", "Email", "Tài khoản", "Vai trò"};
+        // Add "Ngày sinh" column
+        String[] cols = {"Mã NV", "Tên nhân viên", "Giới tính", "Ngày sinh", "SĐT", "Email", "Tài khoản", "Vai trò"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -214,7 +206,6 @@ public class NhanVien_TraCuu_View extends JPanel {
         table.setShowGrid(true);
         table.setIntercellSpacing(new Dimension(1, 1));
 
-        // Custom cell renderer
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -228,15 +219,16 @@ public class NhanVien_TraCuu_View extends JPanel {
                 setBorder(new EmptyBorder(5, 10, 5, 10));
                 setFont(new Font("Segoe UI", Font.PLAIN, 13));
                 
-                // Center align for some columns
-                if (column == 0 || column == 2) {
+                // Center align specific columns
+                if (column == 0 || column == 2 || column == 3) { // Center align MaNV, GioiTinh, NgaySinh
                     setHorizontalAlignment(CENTER);
                 } else {
                     setHorizontalAlignment(LEFT);
                 }
                 
-                // Color for role column
-                if (column == 6 && value != null) {
+                // Color for role column (adjust index if needed)
+                int roleColumnIndex = 7; // Index of VaiTro column
+                if (column == roleColumnIndex && value != null) {
                     if (value.equals("Quản lý")) {
                         setForeground(SUCCESS_GREEN);
                         setFont(getFont().deriveFont(Font.BOLD));
@@ -245,7 +237,8 @@ public class NhanVien_TraCuu_View extends JPanel {
                         setFont(getFont().deriveFont(Font.BOLD));
                     }
                 } else if (!isSelected) {
-                    setForeground(TEXT_PRIMARY);
+                     setForeground(TEXT_PRIMARY); // Reset color for other columns
+                     setFont(getFont().deriveFont(Font.PLAIN)); // Reset font style
                 }
                 
                 return c;
@@ -256,35 +249,32 @@ public class NhanVien_TraCuu_View extends JPanel {
             table.getColumnModel().getColumn(i).setCellRenderer(centerRenderer);
         }
 
-        // Header styling
         JTableHeader header = table.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 14));
         header.setBackground(new Color(248, 249, 250));
         header.setForeground(TEXT_PRIMARY);
         header.setPreferredSize(new Dimension(header.getWidth(), 48));
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, BORDER_COLOR));
-        ((DefaultTableCellRenderer) header.getDefaultRenderer()).setHorizontalAlignment(JLabel.LEFT);
+        ((DefaultTableCellRenderer) header.getDefaultRenderer()).setHorizontalAlignment(JLabel.LEFT); // Keep header left-aligned
 
-        // Column widths
-        table.getColumnModel().getColumn(0).setPreferredWidth(80);
-        table.getColumnModel().getColumn(1).setPreferredWidth(180);
-        table.getColumnModel().getColumn(2).setPreferredWidth(80);
-        table.getColumnModel().getColumn(3).setPreferredWidth(120);
-        table.getColumnModel().getColumn(4).setPreferredWidth(200);
-        table.getColumnModel().getColumn(5).setPreferredWidth(120);
-        table.getColumnModel().getColumn(6).setPreferredWidth(100);
+        // Adjust column widths including NgaySinh
+        table.getColumnModel().getColumn(0).setPreferredWidth(80);  // MaNV
+        table.getColumnModel().getColumn(1).setPreferredWidth(180); // Ten NV
+        table.getColumnModel().getColumn(2).setPreferredWidth(80);  // Gioi Tinh
+        table.getColumnModel().getColumn(3).setPreferredWidth(100); // Ngay Sinh
+        table.getColumnModel().getColumn(4).setPreferredWidth(120); // SDT
+        table.getColumnModel().getColumn(5).setPreferredWidth(180); // Email
+        table.getColumnModel().getColumn(6).setPreferredWidth(100); // Tai Khoan
+        table.getColumnModel().getColumn(7).setPreferredWidth(100); // Vai Tro
 
-        // Scroll pane
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(Color.WHITE);
 
-        // Table wrapper
         JPanel tableCard = new RoundedPanel(12, CARD_BG);
         tableCard.setLayout(new BorderLayout());
         tableCard.setBorder(new LineBorder(BORDER_COLOR, 1, true));
 
-        // Table title
         JPanel tableHeader = new JPanel(new BorderLayout());
         tableHeader.setOpaque(false);
         tableHeader.setBorder(new EmptyBorder(20, 25, 15, 25));
@@ -303,67 +293,58 @@ public class NhanVien_TraCuu_View extends JPanel {
 
     private void loadNhanVienData() {
         model.setRowCount(0);
-        List<NhanVien> dsNV = nhanVienDAO.getAllNhanVien();
+        List<NhanVien> dsNV = nhanVienDAO.getAllNhanVien(); // Assume DAO returns List<NhanVien> with LocalDate
 
         String keyword = txtSearch.getText().trim().toLowerCase();
         String filter = (String) cboFilter.getSelectedItem();
+        String filterRoleCode = filter.equals("Quản lý") ? "NVQL" : (filter.equals("Tiếp tân") ? "NVTT" : "");
 
-        // Count statistics
         int totalActive = 0;
         int totalManager = 0;
         int totalReceptionist = 0;
 
-        List<NhanVien> filtered = dsNV.stream().filter(nv -> {
+        for (NhanVien nv : dsNV) {
             TaiKhoan tk = nv.getTaiKhoan();
             String ten = safeLower(nv.getTenNhanVien());
             String sdt = safeLower(nv.getSdt());
             String email = safeLower(nv.getEmail());
             String user = tk != null ? safeLower(tk.getTenDangNhap()) : "";
-            String vaiTro = tk != null && tk.getVaiTro() != null ? tk.getVaiTro() : "";
-            
-            String roleDisplay = "";
-            if (vaiTro.equals("NVQL")) {
-                roleDisplay = "quản lý";
-            } else if (vaiTro.equals("NVTT")) {
-                roleDisplay = "tiếp tân";
-            }
+            String vaiTroCode = tk != null && tk.getVaiTro() != null ? tk.getVaiTro() : "";
+            String maNV = safeLower(nv.getMaNV()); // Added MaNV to search
+            String ngaySinhStr = nv.getNgaySinh() != null ? nv.getNgaySinh().format(DATE_FORMATTER) : ""; // Format date for search
+
 
             boolean matchKeyword = keyword.isEmpty()
+                    || maNV.contains(keyword)
                     || ten.contains(keyword)
                     || sdt.contains(keyword)
                     || email.contains(keyword)
                     || user.contains(keyword)
-                    || roleDisplay.contains(keyword);
+                    || ngaySinhStr.contains(keyword); // Search by formatted date string
 
-            boolean matchFilter = filter.equals("Tất cả")
-                    || (filter.equals("Quản lý") && vaiTro.equals("NVQL"))
-                    || (filter.equals("Tiếp tân") && vaiTro.equals("NVTT"));
 
-            return matchKeyword && matchFilter;
-        }).collect(Collectors.toList());
+            boolean matchFilter = filter.equals("Tất cả") || vaiTroCode.equals(filterRoleCode);
 
-        // Add to table and count
-        for (NhanVien nv : filtered) {
-            TaiKhoan tk = nv.getTaiKhoan();
-            String vaiTro = tk != null && tk.getVaiTro() != null ? tk.getVaiTro() : "";
-            String roleDisplay = vaiTro.equals("NVQL") ? "Quản lý" : (vaiTro.equals("NVTT") ? "Tiếp tân" : "-");
-            
-            model.addRow(new Object[]{
-                    nv.getMaNV(),
-                    nv.getTenNhanVien(),
-                    nv.isGioiTinh() ? "Nữ" : "Nam",
-                    nv.getSdt(),
-                    nv.getEmail(),
-                    tk != null ? tk.getTenDangNhap() : "Chưa có",
-                    roleDisplay
-            });
+            if (matchKeyword && matchFilter) {
+                String roleDisplay = vaiTroCode.equals("NVQL") ? "Quản lý" : (vaiTroCode.equals("NVTT") ? "Tiếp tân" : "-");
+                
+                model.addRow(new Object[]{
+                        nv.getMaNV(),
+                        nv.getTenNhanVien(),
+                        !nv.isGioiTinh() ? "Nam" : "Nữ", // Nam is false, Nữ is true
+                        ngaySinhStr, // Display formatted date
+                        nv.getSdt(),
+                        nv.getEmail(),
+                        tk != null ? tk.getTenDangNhap() : "Chưa có",
+                        roleDisplay
+                });
 
-            totalActive++;
-            if (vaiTro.equals("NVQL")) totalManager++;
-            if (vaiTro.equals("NVTT")) totalReceptionist++;
+                totalActive++;
+                if (vaiTroCode.equals("NVQL")) totalManager++;
+                if (vaiTroCode.equals("NVTT")) totalReceptionist++;
+            }
         }
 
-        // Update stats
         lblTotalActive.setText(String.valueOf(totalActive));
         lblTotalManager.setText(String.valueOf(totalManager));
         lblTotalReceptionist.setText(String.valueOf(totalReceptionist));
