@@ -44,6 +44,9 @@ public class Ban {
 		return "Ban [maBan=" + maBan + ", soCho=" + soCho + ", loaiBan=" + loaiBan + ", maKhuVuc=" + maKhuVuc
 				+ ", trangThai=" + trangThai + "]";
 	}
+	public Ban(String maBan) {
+        this.maBan = maBan;
+    }
 	public Ban() {
 		super();
 	}

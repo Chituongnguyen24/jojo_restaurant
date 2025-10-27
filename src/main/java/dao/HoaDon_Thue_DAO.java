@@ -1,42 +1,55 @@
 package dao;
 
+import connectDB.ConnectDB;
 import entity.Thue;
 
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class HoaDon_Thue_DAO {
-	private List<Thue> list = new ArrayList<>();
 
-    public HoaDon_Thue_DAO(){
-        // Mock data
-        list.add(new Thue("T001", "VAT", 10.0, "Thuế giá trị gia tăng", "Đang áp dụng"));
-        list.add(new Thue("T002", "Phí dịch vụ", 5.0, "Phí dịch vụ nhà hàng", "Đang áp dụng"));
-        list.add(new Thue("T003", "Thuế GTGT đặc biệt", 8.0, "Cho món ăn đặc biệt", "Tạm ngưng"));
+    private Thue createThueFromResultSet(ResultSet rs) throws SQLException {
+        String maThue = rs.getString("maSoThue");
+        String tenThue = rs.getString("tenThue");
+        double tyLeThue = rs.getDouble("tyLeThue");
+        String moTa = rs.getString("moTa");
+        boolean trangThai = rs.getBoolean("trangThai");
+        return new Thue(maThue, tenThue, tyLeThue, moTa, trangThai);
     }
 
-    public List<Thue> getAll() {
-        return new ArrayList<>(list);
+    public List<Thue> getAllThue() {
+        List<Thue> dsThue = new ArrayList<>();
+        String sql = "SELECT * FROM THUE ORDER BY maSoThue";
+        try (Connection conn = ConnectDB.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) { dsThue.add(createThueFromResultSet(rs)); }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return dsThue;
     }
 
-    public Thue getById(String maThue) {
-        return list.stream().filter(t -> t.getMaThue().equals(maThue)).findFirst().orElse(null);
+    public List<Thue> getAllThueActive() {
+        List<Thue> dsThue = new ArrayList<>();
+        String sql = "SELECT * FROM THUE WHERE trangThai = 1 ORDER BY maSoThue";
+        try (Connection conn = ConnectDB.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) { dsThue.add(createThueFromResultSet(rs)); }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return dsThue;
     }
 
-    public void add(Thue thue) {
-        list.add(thue);
-    }
-
-    public void update(Thue thue) {
-        list.stream().filter(t -> t.getMaThue().equals(thue.getMaThue())).forEach(t -> {
-            t.setTenThue(thue.getTenThue());
-            t.setPhanTram(thue.getPhanTram());
-            t.setMoTa(thue.getMoTa());
-            t.setTrangThai(thue.getTrangThai());
-        });
-    }
-
-    public void delete(String maThue) {
-        list.removeIf(t -> t.getMaThue().equals(maThue));
+    public Thue getThueById(String maThue) {
+        Thue thue = null;
+        String sql = "SELECT * FROM THUE WHERE maSoThue = ?";
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, maThue);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) { thue = createThueFromResultSet(rs); }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return thue;
     }
 }

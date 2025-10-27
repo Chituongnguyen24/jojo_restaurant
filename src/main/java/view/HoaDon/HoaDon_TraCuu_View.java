@@ -29,97 +29,58 @@ public class HoaDon_TraCuu_View extends JPanel {
         header.setBorder(new EmptyBorder(20, 30, 15, 30));
 
         JLabel title = new JLabel("Tra cứu hóa đơn");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 26));
-        title.setForeground(new Color(30, 30, 30));
-
+        title.setFont(new Font("Segoe UI", Font.BOLD, 26)); title.setForeground(new Color(30, 30, 30));
         JLabel subtitle = new JLabel("Tìm kiếm và lọc hóa đơn theo trạng thái hoặc thông tin khách hàng");
-        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        subtitle.setForeground(new Color(100, 100, 100));
-
-        JPanel titlePanel = new JPanel(new GridLayout(2, 1));
-        titlePanel.setOpaque(false);
-        titlePanel.add(title);
-        titlePanel.add(subtitle);
-        header.add(titlePanel, BorderLayout.WEST);
-        add(header, BorderLayout.NORTH);
+        subtitle.setFont(new Font("Segoe UI", Font.PLAIN, 14)); subtitle.setForeground(new Color(100, 100, 100));
+        JPanel titlePanel = new JPanel(new GridLayout(2, 1)); titlePanel.setOpaque(false);
+        titlePanel.add(title); titlePanel.add(subtitle);
+        header.add(titlePanel, BorderLayout.WEST); add(header, BorderLayout.NORTH);
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 10));
-        searchPanel.setOpaque(false);
-        searchPanel.setBorder(new EmptyBorder(0, 30, 10, 30));
-
-        txtSearch = new JTextField(28);
-        txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        txtSearch.setBorder(new CompoundBorder(
-                new LineBorder(new Color(210, 210, 200), 1, true),
-                new EmptyBorder(8, 10, 8, 10)
-        ));
+        searchPanel.setOpaque(false); searchPanel.setBorder(new EmptyBorder(0, 30, 10, 30));
+        txtSearch = new JTextField(28); txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        txtSearch.setBorder(new CompoundBorder(new LineBorder(new Color(210, 210, 200), 1, true), new EmptyBorder(8, 10, 8, 10)));
         txtSearch.addActionListener(e -> loadHoaDonData());
-
         cboFilter = new JComboBox<>(new String[]{"Tất cả", "Đã thanh toán", "Chưa thanh toán"});
-        cboFilter.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        cboFilter.setBackground(Color.WHITE);
-        cboFilter.setBorder(new LineBorder(new Color(220, 210, 200), 1, true));
-        cboFilter.addActionListener(e -> loadHoaDonData());
-
+        cboFilter.setFont(new Font("Segoe UI", Font.PLAIN, 13)); cboFilter.setBackground(Color.WHITE);
+        cboFilter.setBorder(new LineBorder(new Color(220, 210, 200), 1, true)); cboFilter.addActionListener(e -> loadHoaDonData());
         JButton btnSearch = createRoundedButton("Tìm kiếm", new Color(34, 139, 230), Color.WHITE);
-        btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnSearch.setPreferredSize(new Dimension(120, 36));
+        btnSearch.setFont(new Font("Segoe UI", Font.BOLD, 14)); btnSearch.setPreferredSize(new Dimension(120, 36));
         btnSearch.addActionListener(e -> loadHoaDonData());
+        searchPanel.add(new JLabel("Từ khóa (Mã HD/Tên KH/SĐT):")); searchPanel.add(txtSearch);
+        searchPanel.add(new JLabel("Trạng thái:")); searchPanel.add(cboFilter); searchPanel.add(btnSearch);
 
-        searchPanel.add(new JLabel("Từ khóa:"));
-        searchPanel.add(txtSearch);
-        searchPanel.add(new JLabel("Trạng thái:"));
-        searchPanel.add(cboFilter);
-        searchPanel.add(btnSearch);
-
-        String[] cols = {"Mã HD", "Khách hàng", "Ngày lập", "Tổng tiền", "Phương thức", "Trạng thái"};
+        String[] cols = {"Mã HD", "Khách hàng", "Ngày lập", "Tổng tiền", "Phương thức", "Trạng thái", "Chi tiết"};
         model = new DefaultTableModel(cols, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+            @Override public boolean isCellEditable(int row, int column) { return column == 6; } // Chỉ cho nhấn nút Chi tiết
         };
 
         table = new JTable(model);
-        table.setRowHeight(42);
-        table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        table.setSelectionBackground(new Color(230, 240, 255));
-        table.setGridColor(new Color(230, 230, 230));
-        table.setShowGrid(true);
-        table.setIntercellSpacing(new Dimension(1, 1));
+        table.setRowHeight(42); table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        table.setSelectionBackground(new Color(230, 240, 255)); table.setGridColor(new Color(230, 230, 230));
+        table.setShowGrid(true); table.setIntercellSpacing(new Dimension(1, 1));
 
-        JTableHeader header2 = table.getTableHeader();
-        header2.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        header2.setBackground(new Color(248, 249, 250));
-        header2.setForeground(new Color(60, 60, 60));
+        JTableHeader header2 = table.getTableHeader(); header2.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        header2.setBackground(new Color(248, 249, 250)); header2.setForeground(new Color(60, 60, 60));
         header2.setPreferredSize(new Dimension(header2.getWidth(), 45));
         header2.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(220, 220, 220)));
 
-        JScrollPane scroll = new JScrollPane(table);
-        scroll.setBorder(null);
-        scroll.setOpaque(false);
-        scroll.getViewport().setOpaque(false);
+        // Thêm nút xem chi tiết
+        table.getColumn("Chi tiết").setCellRenderer(new ButtonRenderer("Xem", new Color(0, 120, 215), Color.WHITE));
+        table.getColumn("Chi tiết").setCellEditor(new ButtonEditor(new JCheckBox(), "Xem"));
+        table.getColumnModel().getColumn(6).setPreferredWidth(80);
+        table.getColumnModel().getColumn(6).setMaxWidth(80);
 
-        JPanel tableWrapper = new RoundedPanel(15, Color.WHITE);
-        tableWrapper.setLayout(new BorderLayout());
-        tableWrapper.setBorder(new EmptyBorder(15, 15, 15, 15));
-        tableWrapper.add(scroll, BorderLayout.CENTER);
 
-        JLabel lblTableTitle = new JLabel("Danh sách hóa đơn tra cứu được");
-        lblTableTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblTableTitle.setForeground(new Color(30, 30, 30));
-        lblTableTitle.setBorder(new EmptyBorder(10, 30, 15, 0));
-
-        JPanel tablePanel = new JPanel(new BorderLayout());
-        tablePanel.setOpaque(false);
-        tablePanel.add(lblTableTitle, BorderLayout.NORTH);
-        tablePanel.add(tableWrapper, BorderLayout.CENTER);
-
-        JPanel content = new JPanel(new BorderLayout());
-        content.setOpaque(false);
-        content.add(searchPanel, BorderLayout.NORTH);
-        content.add(tablePanel, BorderLayout.CENTER);
-
+        JScrollPane scroll = new JScrollPane(table); scroll.setBorder(null); scroll.setOpaque(false); scroll.getViewport().setOpaque(false);
+        JPanel tableWrapper = new RoundedPanel(15, Color.WHITE); tableWrapper.setLayout(new BorderLayout());
+        tableWrapper.setBorder(new EmptyBorder(15, 15, 15, 15)); tableWrapper.add(scroll, BorderLayout.CENTER);
+        JLabel lblTableTitle = new JLabel("Danh sách hóa đơn tra cứu được"); lblTableTitle.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTableTitle.setForeground(new Color(30, 30, 30)); lblTableTitle.setBorder(new EmptyBorder(10, 30, 15, 0));
+        JPanel tablePanel = new JPanel(new BorderLayout()); tablePanel.setOpaque(false);
+        tablePanel.add(lblTableTitle, BorderLayout.NORTH); tablePanel.add(tableWrapper, BorderLayout.CENTER);
+        JPanel content = new JPanel(new BorderLayout()); content.setOpaque(false);
+        content.add(searchPanel, BorderLayout.NORTH); content.add(tablePanel, BorderLayout.CENTER);
         add(content, BorderLayout.CENTER);
 
         loadHoaDonData();
@@ -128,23 +89,31 @@ public class HoaDon_TraCuu_View extends JPanel {
     private void loadHoaDonData() {
         model.setRowCount(0);
         List<HoaDon> dsHD = hoaDonDAO.getAllHoaDon();
-
         String keyword = txtSearch.getText().trim().toLowerCase();
         String filter = (String) cboFilter.getSelectedItem();
 
         List<HoaDon> filtered = dsHD.stream().filter(hd -> {
-            KhachHang kh = hd.getKhachHang();
-            String tenKH = kh != null ? safeLower(kh.getTenKhachHang()) : "";
+            KhachHang kh = null;
+            String tenKH = "";
+            String sdtKH = "";
+            // Lấy thông tin KH nếu có mã hợp lệ
+            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
+                 kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
+                 if (kh != null) {
+                     tenKH = safeLower(kh.getTenKhachHang());
+                     sdtKH = safeLower(kh.getSdt());
+                 }
+            }
             String maHD = safeLower(hd.getMaHoaDon());
-            String phuongThuc = safeLower(hd.getPhuongThuc());
-            String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
+            String trangThai = hd.isDaThanhToan() ? "đã thanh toán" : "chưa thanh toán"; // Lowercase for easier search
 
+            // Kiểm tra keyword khớp với mã HD, tên KH hoặc SĐT KH
             boolean matchKeyword = keyword.isEmpty()
-                    || tenKH.contains(keyword)
                     || maHD.contains(keyword)
-                    || phuongThuc.contains(keyword)
-                    || trangThai.toLowerCase().contains(keyword);
+                    || tenKH.contains(keyword)
+                    || sdtKH.contains(keyword);
 
+            // Lọc theo trạng thái
             boolean matchFilter = filter.equals("Tất cả")
                     || (filter.equals("Đã thanh toán") && hd.isDaThanhToan())
                     || (filter.equals("Chưa thanh toán") && !hd.isDaThanhToan());
@@ -153,67 +122,84 @@ public class HoaDon_TraCuu_View extends JPanel {
         }).collect(Collectors.toList());
 
         for (HoaDon hd : filtered) {
-            KhachHang kh = hd.getKhachHang();
-            String tenKH = kh != null ? kh.getTenKhachHang() : "Khách lẻ";
+             KhachHang kh = null;
+             if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
+                 kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
+             }
+            String tenKHDisplay = (kh != null) ? kh.getTenKhachHang() : "Khách lẻ";
             double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon());
-            String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
+            String trangThaiDisplay = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
 
             model.addRow(new Object[]{
-                    hd.getMaHoaDon(),
-                    tenKH,
-                    hd.getNgayLap().toString(),
-                    String.format("%.0f VNĐ", tongTien),
-                    hd.getPhuongThuc(),
-                    trangThai
+                    hd.getMaHoaDon(), tenKHDisplay, hd.getNgayLap().toString(),
+                    String.format("%,.0f VNĐ", tongTien), hd.getPhuongThuc(), trangThaiDisplay,
+                    "Xem" // Nút xem chi tiết
             });
         }
     }
 
-    private String safeLower(String s) {
-        return (s == null) ? "" : s.toLowerCase();
-    }
+    private String safeLower(String s) { return (s == null) ? "" : s.toLowerCase(); }
 
     private JButton createRoundedButton(String text, Color bg, Color fg) {
         JButton btn = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                if (getModel().isPressed()) g2.setColor(bg.darker());
-                else if (getModel().isRollover()) g2.setColor(bg.brighter());
-                else g2.setColor(bg);
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                g2.dispose();
-                super.paintComponent(g);
+            @Override protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(getModel().isPressed() ? bg.darker() : getModel().isRollover() ? bg.brighter() : bg);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12); g2.dispose(); super.paintComponent(g);
             }
         };
-        btn.setForeground(fg);
-        btn.setContentAreaFilled(false);
-        btn.setBorderPainted(false);
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return btn;
+        btn.setForeground(fg); btn.setContentAreaFilled(false); btn.setBorderPainted(false);
+        btn.setFocusPainted(false); btn.setCursor(new Cursor(Cursor.HAND_CURSOR)); return btn;
     }
 
     class RoundedPanel extends JPanel {
-        private final int cornerRadius;
-        private final Color bgColor;
-
-        public RoundedPanel(int radius, Color color) {
-            super();
-            cornerRadius = radius;
-            bgColor = color;
-            setOpaque(false);
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            Graphics2D g2 = (Graphics2D) g.create();
+        private final int cornerRadius; private final Color bgColor;
+        public RoundedPanel(int radius, Color color) { super(); cornerRadius = radius; bgColor = color; setOpaque(false); }
+        @Override protected void paintComponent(Graphics g) {
+            super.paintComponent(g); Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setColor(bgColor);
-            g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, cornerRadius, cornerRadius);
+            g2.setColor(bgColor); g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, cornerRadius, cornerRadius);
             g2.dispose();
+        }
+    }
+
+    // --- Renderer và Editor cho nút trong bảng ---
+    class ButtonRenderer extends JButton implements TableCellRenderer {
+         private final Color bgColor; private final Color fgColor;
+        public ButtonRenderer(String text, Color bg, Color fg) { setText(text); this.bgColor = bg; this.fgColor = fg; setOpaque(false); setFont(new Font("Segoe UI", Font.BOLD, 12)); setFocusPainted(false); setBorderPainted(false); setContentAreaFilled(false); }
+        @Override protected void paintComponent(Graphics g) { Graphics2D g2 = (Graphics2D) g.create(); g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); g2.setColor(bgColor); g2.fillRoundRect(5, 5, getWidth() - 10, getHeight() - 10, 8, 8); g2.dispose(); super.paintComponent(g); }
+        @Override public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) { setForeground(fgColor); return this; }
+    }
+
+    class ButtonEditor extends DefaultCellEditor {
+        private JButton button; private boolean isPushed; private final String type;
+        public ButtonEditor(JCheckBox checkBox, String type) { super(checkBox); this.type = type; button = new JButton(); button.setOpaque(false); button.setContentAreaFilled(false); button.setBorderPainted(false); button.setFocusPainted(false); button.addActionListener(e -> fireEditingStopped()); }
+        @Override public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) { button.setText(type); button.setFont(new Font("Segoe UI", Font.BOLD, 12)); button.setForeground(Color.WHITE); button.setCursor(new Cursor(Cursor.HAND_CURSOR)); isPushed = true; return button; }
+        @Override public Object getCellEditorValue() {
+            if (isPushed) {
+                int selectedRow = table.getSelectedRow();
+                if (selectedRow < 0 || selectedRow >= table.getRowCount()) { isPushed = false; return type; }
+                String maHD = table.getValueAt(selectedRow, 0).toString();
+
+                if (type.equals("Xem")) {
+                    SwingUtilities.invokeLater(() -> {
+                        HoaDon hd = hoaDonDAO.findByMaHD(maHD);
+                        if (hd != null) {
+                             KhachHang kh = null;
+                            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
+                                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
+                            }
+                            hd.setKhachHang(kh); // Gán KH đầy đủ
+                            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(HoaDon_TraCuu_View.this);
+                            HoaDon_ChiTietHoaDon_View detailDialog = new HoaDon_ChiTietHoaDon_View(parentFrame, hd);
+                            detailDialog.setVisible(true);
+                        } else {
+                            JOptionPane.showMessageDialog(table, "Không tìm thấy thông tin hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                        }
+                    });
+                }
+            }
+            isPushed = false; return type;
         }
     }
 }
