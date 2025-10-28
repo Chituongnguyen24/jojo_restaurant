@@ -278,7 +278,7 @@ public class Login_View extends JFrame {
             public void mouseClicked(MouseEvent e) {
                 isShowing = !isShowing;
                 txtPassword.setEchoChar(isShowing ? (char) 0 : '●');
-                lblShowPassword.setText(isShowing ? "🙈" : "👁");
+                lblShowPassword.setText(isShowing ?"👁" : "🙈" );
             }
         });
 
