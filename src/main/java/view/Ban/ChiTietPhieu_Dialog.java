@@ -2,39 +2,40 @@ package view.Ban;
 
 import dao.Ban_DAO;
 import dao.DatBan_DAO;
+import dao.HoaDon_DAO;
 import entity.Ban;
 import entity.KhachHang;
 import entity.PhieuDatBan;
+import entity.HoaDon;
+import entity.Thue;
 import enums.TrangThaiBan;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.geom.RoundRectangle2D;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
-/**
- * Dialog hiển thị chi tiết phiếu đặt, cho phép:
- * - Đóng
- * - Chỉnh sửa (nếu bàn không đang "Có khách")
- * - Hủy đặt bàn (nếu bàn không đang "Có khách")
- *
- * Hiển thị "Khách vãng lai" nếu KhachHang rỗng/không có tên.
- */
 public class ChiTietPhieu_Dialog extends JDialog {
 
     private final PhieuDatBan phieu;
-    private final Runnable onRefresh; // nullable
+    private final Runnable onRefresh;
     private final DatBan_DAO datBanDAO = new DatBan_DAO();
     private final Ban_DAO banDAO = new Ban_DAO();
+    private final HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
 
     public ChiTietPhieu_Dialog(JFrame owner, PhieuDatBan phieu, Runnable onRefresh) {
-        super(owner, "Chi tiết phiếu - " + (phieu != null ? phieu.getMaPhieu() : ""), true);
+        super(owner, "Chi tiết phiếu - " + (phieu != null && phieu.getMaPhieu() != null ? phieu.getMaPhieu().trim() : "N/A"), true);
         this.phieu = phieu;
         this.onRefresh = onRefresh;
         initComponents();
         pack();
+        setMinimumSize(new Dimension(450, getHeight()));
         setLocationRelativeTo(owner);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setResizable(false);
     }
 
     private void initComponents() {
@@ -55,23 +56,53 @@ public class ChiTietPhieu_Dialog extends JDialog {
         if (phieu != null) {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
 
-            addLine(content, "Mã phiếu:", phieu.getMaPhieu());
-            addLine(content, "Bàn:", phieu.getBan() != null ? phieu.getBan().getMaBan() : "N/A");
+            addLine(content, "Mã phiếu:", phieu.getMaPhieu() != null ? phieu.getMaPhieu().trim() : "N/A");
+            addLine(content, "Bàn:", phieu.getBan() != null && phieu.getBan().getMaBan() != null ? phieu.getBan().getMaBan().trim() : "N/A");
 
             KhachHang kh = phieu.getKhachHang();
-            String khTen = (kh != null && kh.getTenKhachHang() != null && !kh.getTenKhachHang().trim().isEmpty())
-                    ? kh.getTenKhachHang()
-                    : "Khách vãng lai";
+            String khTen = "Khách vãng lai";
+            String sdt = "-";
+            
+            if (kh != null && !"KH00000000".equals(kh.getMaKhachHang().trim())) {
+                khTen = (kh.getTenKhachHang() != null && !kh.getTenKhachHang().trim().isEmpty()) ? kh.getTenKhachHang() : khTen;
+                sdt = (kh.getSdt() != null && !kh.getSdt().trim().isEmpty()) ? kh.getSdt() : sdt;
+            } else if (phieu.getGhiChu() != null) {
+                String ghiChu = phieu.getGhiChu();
+                try {
+                    String[] parts = ghiChu.split(" - SĐT: ");
+                    if (parts.length >= 2) {
+                        String namePart = parts[0];
+                        if (namePart.startsWith("Khách: ")) {
+                            khTen = namePart.substring(7).trim();
+                        }
+                        String phoneAndNote = parts[1];
+                        String[] phoneParts = phoneAndNote.split("\\. Ghi chú: ");
+                        sdt = phoneParts[0].trim();
+                    } else if (ghiChu.startsWith("Khách: ")) {
+                        khTen = ghiChu.substring(7).trim();
+                    }
+                } catch (Exception e) {
+                    // Keep defaults
+                }
+            }
+
             addLine(content, "Khách hàng:", khTen);
-
-            String sdt = (kh != null && kh.getSdt() != null && !kh.getSdt().trim().isEmpty())
-                    ? kh.getSdt() : "-";
             addLine(content, "SĐT:", sdt);
-
             addLine(content, "Số người:", String.valueOf(phieu.getSoNguoi()));
             addLine(content, "Thời gian đặt:", phieu.getThoiGianDat() != null ? sdf.format(java.sql.Timestamp.valueOf(phieu.getThoiGianDat())) : "N/A");
-            addLine(content, "Tiền cọc:", String.format("%.0f", phieu.getTienCoc()));
-            addLine(content, "Ghi chú:", phieu.getGhiChu() != null ? phieu.getGhiChu() : "");
+            addLine(content, "Tiền cọc:", String.format("%,.0f VNĐ", phieu.getTienCoc()));
+            
+            String ghiChuDisplay = "";
+            if (phieu.getGhiChu() != null) {
+                int noteIndex = phieu.getGhiChu().indexOf(". Ghi chú: ");
+                if (noteIndex != -1) {
+                    ghiChuDisplay = phieu.getGhiChu().substring(noteIndex + 10).trim();
+                } else if (!phieu.getGhiChu().startsWith("Khách: ")) {
+                    ghiChuDisplay = phieu.getGhiChu();
+                }
+            }
+            addLine(content, "Ghi chú:", !ghiChuDisplay.isEmpty() ? ghiChuDisplay : "-");
+
         } else {
             JLabel l = new JLabel("Không có thông tin phiếu.");
             l.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -81,26 +112,21 @@ public class ChiTietPhieu_Dialog extends JDialog {
 
         root.add(content, BorderLayout.CENTER);
 
-        // Buttons area
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         footer.setBackground(Color.WHITE);
 
-        // Always have Close
         ButtonPill btnClose = new ButtonPill("Đóng", new Color(240,240,240), new Color(210,210,210));
         btnClose.addActionListener(e -> dispose());
 
-        // Buttons that may be hidden when table status == CO_KHACH
         ButtonPill btnEdit = new ButtonPill("Chỉnh sửa", new Color(0, 123, 255), new Color(0, 100, 210));
         btnEdit.addActionListener(e -> {
             JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
-            try {
-                DatBan_Dialog editDialog = new DatBan_Dialog(parent, phieu.getBan(), phieu, onRefresh);
+            if (this.phieu != null) {
+                DatBan_Dialog editDialog = new DatBan_Dialog(parent, this.phieu, onRefresh);
                 editDialog.setVisible(true);
                 dispose();
-            } catch (Exception ex) {
-                DatBan_Dialog d = new DatBan_Dialog((JFrame) SwingUtilities.getWindowAncestor(this), phieu.getBan(), onRefresh);
-                d.setVisible(true);
-                dispose();
+            } else {
+                JOptionPane.showMessageDialog(this, "Lỗi: Không có thông tin phiếu để chỉnh sửa.", "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -108,25 +134,29 @@ public class ChiTietPhieu_Dialog extends JDialog {
         btnCancel.addActionListener(e -> onCancelBooking());
         btnCancel.setEnabled(phieu != null && phieu.getMaPhieu() != null);
 
-        // Determine whether the associated table is currently CO_KHACH
+        // Nút "Khách đã đến" - chuyển sang trạng thái CO_KHACH
+        ButtonPill btnCustomerArrived = new ButtonPill("✓ Khách đã đến", new Color(40, 167, 69), new Color(30, 140, 55));
+        btnCustomerArrived.addActionListener(e -> onCustomerArrived());
+        btnCustomerArrived.setEnabled(phieu != null && phieu.getMaPhieu() != null);
+
         boolean isTableHasCustomer = false;
         if (phieu != null && phieu.getBan() != null) {
             Ban b = phieu.getBan();
             isTableHasCustomer = b.getTrangThai() == TrangThaiBan.CO_KHACH;
         }
 
-        // If table has customers (CO_KHACH), only show Close button per request
         if (isTableHasCustomer) {
             footer.add(btnClose);
         } else {
-            // Otherwise show Close + Edit (if phieu exists) + Cancel
             footer.add(btnClose);
-            if (phieu != null) footer.add(btnEdit);
+            if (phieu != null) {
+                footer.add(btnEdit);
+                footer.add(btnCustomerArrived); // Thêm nút "Khách đã đến"
+            }
             footer.add(btnCancel);
         }
 
         root.add(footer, BorderLayout.SOUTH);
-
         setContentPane(root);
     }
 
@@ -135,14 +165,137 @@ public class ChiTietPhieu_Dialog extends JDialog {
         p.setBackground(Color.WHITE);
         JLabel l = new JLabel(label);
         l.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        l.setForeground(new Color(50, 50, 50));
         l.setPreferredSize(new Dimension(120, 20));
-        JLabel v = new JLabel(value != null ? value : "");
+
+        JTextArea v = new JTextArea(value != null ? value : "");
         v.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        v.setForeground(new Color(50, 50, 50));
+        v.setForeground(new Color(30, 30, 30));
+        v.setEditable(false);
+        v.setLineWrap(true);
+        v.setWrapStyleWord(true);
+        v.setOpaque(false);
+        v.setBorder(null);
+
         p.add(l, BorderLayout.WEST);
         p.add(v, BorderLayout.CENTER);
         parent.add(p);
-        parent.add(Box.createVerticalStrut(6));
+        parent.add(Box.createVerticalStrut(8));
+    }
+
+    private void onCustomerArrived() {
+        if (phieu == null || phieu.getMaPhieu() == null || phieu.getBan() == null) {
+            JOptionPane.showMessageDialog(this, "Không có thông tin phiếu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Xác nhận khách đã đến và chuyển bàn sang trạng thái 'Có khách'?",
+                "Xác nhận",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        try {
+            Ban ban = phieu.getBan();
+            
+            // Cập nhật trạng thái bàn sang CO_KHACH
+            ban.setTrangThai(TrangThaiBan.CO_KHACH);
+            boolean updateBanSuccess = banDAO.capNhatBan(ban);
+            
+            if (!updateBanSuccess) {
+                JOptionPane.showMessageDialog(this, "Không thể cập nhật trạng thái bàn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Tạo hóa đơn mới cho bàn này
+            String maHD = generateMaHoaDon();
+            LocalDate ngayLap = LocalDate.now();
+            LocalDateTime gioVao = LocalDateTime.now();
+            
+            HoaDon hoaDon = new HoaDon(
+                maHD,
+                phieu.getKhachHang(),
+                phieu.getNhanVien(),
+                ban,
+                phieu, // Liên kết với phiếu đặt bàn
+                null, // Không có khuyến mãi
+                new Thue("T001"), // Mã thuế mặc định, bạn có thể thay đổi
+                ngayLap,
+                gioVao,
+                null, // Giờ ra chưa có
+                "Tiền mặt", // Phương thức thanh toán mặc định
+                false // Chưa thanh toán
+            );
+            
+            boolean createHoaDonSuccess = hoaDonDAO.addHoaDon(hoaDon);
+            
+            if (createHoaDonSuccess) {
+                JOptionPane.showMessageDialog(this, 
+                    "Khách đã đến! Bàn chuyển sang trạng thái 'Có khách'.\nHóa đơn đã được tạo.", 
+                    "Thành công", 
+                    JOptionPane.INFORMATION_MESSAGE);
+                
+                dispose();
+                if (onRefresh != null) {
+                    onRefresh.run();
+                }
+                
+                // Mở dialog gọi món
+                moDialogGoiMon(ban);
+                
+            } else {
+                // Rollback trạng thái bàn
+                ban.setTrangThai(TrangThaiBan.DA_DAT);
+                banDAO.capNhatBan(ban);
+                JOptionPane.showMessageDialog(this, "Không thể tạo hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+            
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private String generateMaHoaDon() {
+        String newID = "HD00001";
+        try (java.sql.Connection conn = connectDB.ConnectDB.getConnection();
+             java.sql.Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery("SELECT TOP 1 maHoaDon FROM HOADON ORDER BY maHoaDon DESC")) {
+            
+            if (rs.next()) {
+                String lastID = rs.getString("maHoaDon");
+                if (lastID != null && lastID.matches("HD\\d{5}")) {
+                    int num = Integer.parseInt(lastID.substring(2)) + 1;
+                    newID = String.format("HD%05d", num);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return newID;
+    }
+
+    private void moDialogGoiMon(Ban ban) {
+        // Mở trang gọi món - bạn cần implement trang này
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        if (parentFrame != null) {
+            // Giả sử bạn có view.GoiMon_View
+            // view.GoiMon_View goiMonView = new view.GoiMon_View(ban);
+            // JDialog goiMonDialog = new JDialog(parentFrame, "Gọi món - " + ban.getMaBan(), true);
+            // goiMonDialog.setContentPane(goiMonView);
+            // goiMonDialog.setSize(900, 700);
+            // goiMonDialog.setLocationRelativeTo(parentFrame);
+            // goiMonDialog.setVisible(true);
+            
+            JOptionPane.showMessageDialog(this, 
+                "Tính năng gọi món đang được phát triển.\nBạn có thể gọi món từ màn hình chính.", 
+                "Thông báo", 
+                JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private void onCancelBooking() {
@@ -153,7 +306,7 @@ public class ChiTietPhieu_Dialog extends JDialog {
 
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Bạn có chắc muốn hủy đặt bàn này? Hành động sẽ xóa phiếu và trả bàn về trạng thái 'Trống'.",
+                "Bạn có chắc muốn hủy đặt bàn này?",
                 "Xác nhận hủy",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE
@@ -163,19 +316,15 @@ public class ChiTietPhieu_Dialog extends JDialog {
 
         boolean ok = datBanDAO.deletePhieuDatBan(phieu.getMaPhieu());
         if (!ok) {
-            JOptionPane.showMessageDialog(this, "Hủy đặt bàn thất bại. Vui lòng thử lại hoặc kiểm tra CSDL.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Hủy đặt bàn thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Cập nhật trạng thái bàn về TRONG (nếu có)
-        try {
+        // Cập nhật trạng thái bàn về TRỐNG
+        if (phieu.getBan() != null) {
             Ban ban = phieu.getBan();
-            if (ban != null) {
-                ban.setTrangThai(TrangThaiBan.TRONG);
-                banDAO.capNhatBan(ban);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
+            ban.setTrangThai(TrangThaiBan.TRONG);
+            banDAO.capNhatBan(ban);
         }
 
         if (onRefresh != null) {
@@ -186,7 +335,6 @@ public class ChiTietPhieu_Dialog extends JDialog {
         dispose();
     }
 
-    // --- simple rounded button that paints itself to avoid LAF overrides ---
     private static class ButtonPill extends JButton {
         private final Color base;
         private final Color hover;
@@ -202,6 +350,8 @@ public class ChiTietPhieu_Dialog extends JDialog {
             setForeground(contrastColor(base));
             setFont(new Font("Segoe UI", Font.PLAIN, 13));
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            setBorder(new EmptyBorder(5, 15, 5, 15));
+
             addMouseListener(new java.awt.event.MouseAdapter() {
                 public void mouseEntered(java.awt.event.MouseEvent evt) { over = true; repaint(); }
                 public void mouseExited(java.awt.event.MouseEvent evt) { over = false; repaint(); }
@@ -214,15 +364,12 @@ public class ChiTietPhieu_Dialog extends JDialog {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             int w = getWidth(), h = getHeight(), arc = 8;
             Color fill;
-            if (!isEnabled()) fill = new Color(240,240,240);
+            if (!isEnabled()) fill = new Color(220, 220, 220);
             else fill = over ? hover : base;
             g2.setColor(fill);
             g2.fillRoundRect(0, 0, w, h, arc, arc);
-            g2.setColor(fill.darker().darker());
-            g2.setStroke(new BasicStroke(1.5f));
-            g2.drawRoundRect(1, 1, w-3, h-3, arc, arc);
-            // text
-            g2.setColor(isEnabled() ? getForeground() : new Color(120,120,120));
+
+            g2.setColor(isEnabled() ? getForeground() : new Color(150, 150, 150));
             FontMetrics fm = g2.getFontMetrics(getFont());
             String s = getText();
             int tx = (w - fm.stringWidth(s)) / 2;
@@ -233,14 +380,15 @@ public class ChiTietPhieu_Dialog extends JDialog {
 
         @Override public Dimension getPreferredSize() {
             Dimension d = super.getPreferredSize();
-            d.width += 24;
+            d.width = Math.max(d.width + 24, 80);
             d.height = Math.max(d.height, 36);
             return d;
         }
 
         private static Color contrastColor(Color bg) {
+            if (bg == null) return Color.BLACK;
             double luminance = (0.299*bg.getRed() + 0.587*bg.getGreen() + 0.114*bg.getBlue())/255;
-            return luminance > 0.6 ? new Color(34,34,34) : Color.WHITE;
+            return luminance > 0.5 ? Color.BLACK : Color.WHITE;
         }
     }
 }

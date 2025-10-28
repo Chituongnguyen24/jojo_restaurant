@@ -492,4 +492,83 @@ public class HoaDon_DAO {
         }
         return data;
     }
+
+
+    public HoaDon getHoaDonByBan(String maBan) {
+        // SỬA LẠI CÁCH NỐI CHUỖI VÀ THÊM ĐỦ CÁC CỘT
+        String sql = "SELECT maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan " +
+                     "FROM HOADON " +
+                     "WHERE maBan = ? AND daThanhToan = 0"; 
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, maBan);
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) { // Nếu tìm thấy
+                    return createHoaDonFromResultSet(rs);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi tìm hóa đơn theo mã bàn " + maBan + ": " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return null; // Không tìm thấy hoặc có lỗi
+    }
+    public String generateNewID() {
+        String newID = "HD00001";
+        String sql = "SELECT TOP 1 maHoaDon FROM HOADON ORDER BY maHoaDon DESC";
+
+        try (Connection con = ConnectDB.getInstance().getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+                String lastID = rs.getString("maHoaDon").trim();
+                if (lastID.startsWith("HD")) {
+                    try {
+                        String numberPart = lastID.substring(2);
+                        int num = Integer.parseInt(numberPart) + 1;
+                        newID = String.format("HD%05d", num);
+                    } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
+                        // Bỏ qua lỗi parsing, sẽ dùng newID mặc định
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return newID;
+    }
+
+    /**
+     * Sao chép tất cả món ăn từ ChiTietPhieuDatBan sang ChiTietHoaDon
+     * khi khách đến nhận bàn.
+     * @param maPhieu Mã phiếu đặt (nguồn)
+     * @param maHoaDon Mã hóa đơn (đích)
+     * @return true nếu sao chép thành công
+     */
+    public boolean copyChiTietPhieuDatToHoaDon(String maPhieu, String maHoaDon) {
+        // Lấy đơn giá từ bảng MonAn tại thời điểm sao chép
+        String sql = "INSERT INTO CHITIETHOADON (maHoaDon, maMonAn, soLuong, donGia, ghiChu) " +
+                     "SELECT ?, ct.maMonAn, ct.soLuongMonAn, ma.donGia, ct.ghiChu " +
+                     "FROM CHITIETPHIEUDATBAN ct " +
+                     "JOIN MONAN ma ON ct.maMonAn = ma.maMonAn " +
+                     "WHERE ct.maPhieu = ?";
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, maHoaDon);
+            pstmt.setString(2, maPhieu);
+
+            return pstmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi sao chép chi tiết phiếu đặt sang hóa đơn: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

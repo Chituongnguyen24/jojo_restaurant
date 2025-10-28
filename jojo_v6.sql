@@ -479,7 +479,7 @@ GO
 /*
 -- =================================================================================
 -- PHẦN 5: CHÈN DỮ LIỆU GIAO DỊCH (TỰ ĐỘNG 100 HÓA ĐƠN)
--- =H- =================================================================================
+-- =================================================================================
 */
 SET NOCOUNT ON;
 GO
@@ -517,8 +517,8 @@ DECLARE @SoMonDat INT;
 DECLARE @MonDatCounter INT;
 DECLARE @MaMonAnDat NCHAR(10);
 DECLARE @SoLuongMonDat INT;
-DECLARE @GhiChuMonDat NVARCHAR(MAX); -- Biến mới cho ghi chú món đặt
-DECLARE @DaThanhToan BIT; -- Biến mới cho trạng thái thanh toán
+DECLARE @GhiChuMonDat NVARCHAR(MAX); 
+DECLARE @DaThanhToan BIT; 
 -- ==================================
 
 WHILE @Counter <= @TotalInvoices
@@ -599,15 +599,15 @@ BEGIN
         VALUES
             (@MaPhieu, DATEADD(HOUR, -2, @GioVao), @MaKhachHang, @MaNhanVien, @MaBan, 2 + CAST(RAND()*6 AS INT), @TienCoc, @GhiChuPhieu);
 
-		SET @SoMonDat = CAST((RAND() * 2) + 1 AS INT); 
-        SET @MonDatCounter = 0;
+		SET @SoMonDat = CAST((RAND() * 2) + 1 AS INT); 
+        SET @MonDatCounter = 0;
 
-        WHILE @MonDatCounter < @SoMonDat
-        BEGIN
-            SELECT TOP 1 @MaMonAnDat = maMonAn 
-            FROM [dbo].[MONAN] WHERE trangThai = 1 ORDER BY NEWID();
-                    
-            SET @SoLuongMonDat = CAST((RAND() * 1) + 1 AS INT);
+        WHILE @MonDatCounter < @SoMonDat
+        BEGIN
+            SELECT TOP 1 @MaMonAnDat = maMonAn 
+            FROM [dbo].[MONAN] WHERE trangThai = 1 ORDER BY NEWID();
+                    
+            SET @SoLuongMonDat = CAST((RAND() * 1) + 1 AS INT);
 
 			-- ==== CẬP NHẬT: RANDOM GHI CHÚ CHO MÓN ĐẶT ====
 			SET @GhiChuMonDat = NULL;
@@ -625,29 +625,29 @@ BEGIN
 			-- 70% còn lại sẽ là NULL (không có ghi chú)
 			-- ============================================
 
-            IF NOT EXISTS (SELECT 1 FROM [dbo].[CHITIETPHIEUDATBAN] WHERE maPhieu = @MaPhieu AND maMonAn = @MaMonAnDat)
-            BEGIN
-                INSERT INTO [dbo].[CHITIETPHIEUDATBAN]
-                    ([maPhieu], [maMonAn], [soLuongMonAn], [ghiChu])
-                VALUES
-                    (@MaPhieu, @MaMonAnDat, @SoLuongMonDat, @GhiChuMonDat); -- Sử dụng biến @GhiChuMonDat
-                        
-                SET @MonDatCounter = @MonDatCounter + 1;
-            END;
-        END;
+            IF NOT EXISTS (SELECT 1 FROM [dbo].[CHITIETPHIEUDATBAN] WHERE maPhieu = @MaPhieu AND maMonAn = @MaMonAnDat)
+            BEGIN
+                INSERT INTO [dbo].[CHITIETPHIEUDATBAN]
+                    ([maPhieu], [maMonAn], [soLuongMonAn], [ghiChu])
+                VALUES
+                    (@MaPhieu, @MaMonAnDat, @SoLuongMonDat, @GhiChuMonDat); 
+                        
+                SET @MonDatCounter = @MonDatCounter + 1;
+            END;
+        END;
     END;
     
 	-- ==== CẬP NHẬT: RANDOM TRẠNG THÁI THANH TOÁN ====
-	IF RAND() < 0.8 
+	IF RAND() < 0.8 
 		SET @DaThanhToan = 1; -- 80% đã thanh toán
-	ELSE 
+	ELSE 
 		SET @DaThanhToan = 0; -- 20% chưa thanh toán
 	-- ============================================
 
     INSERT INTO [dbo].[HOADON]
         ([maHoaDon], [maKhachHang], [maBan], [ngayLap], [phuongThuc], [maKhuyenMai], [maThue], [gioVao], [gioRa], [maNhanVien], [maPhieu], [daThanhToan])
     VALUES
-        (@MaHoaDon, @MaKhachHang, @MaBan, CONVERT(DATE, @CurrentDate), @PhuongThuc, @MaKhuyenMai, 'VAT10', @GioVao, @GioRa, @MaNhanVien, @MaPhieu, @DaThanhToan); -- Sử dụng biến @DaThanhToan
+        (@MaHoaDon, @MaKhachHang, @MaBan, CONVERT(DATE, @CurrentDate), @PhuongThuc, @MaKhuyenMai, 'VAT10', @GioVao, @GioRa, @MaNhanVien, @MaPhieu, @DaThanhToan); 
 
     SET @SoMon = CAST((RAND() * 4) + 1 AS INT);
     SET @MonCounter = 0;
@@ -675,3 +675,223 @@ GO
 
 SET NOCOUNT OFF;
 GO
+
+/*
+-- =================================================================================
+-- PHẦN 6: CHÈN DỮ LIỆU GIAO DỊCH BỔ SUNG (THEO YÊU CẦU 28, 29, 30, 31/10)
+-- ĐÃ CẬP NHẬT: Sử dụng trạng thái 'Có khách' và mô phỏng thực tế.
+-- =================================================================================
+*/
+SET NOCOUNT ON;
+GO
+
+-- 1. Khai báo các biến cần thiết (sử dụng lại các biến từ Phần 5)
+DECLARE @NewCounter INT = 101; -- Bắt đầu từ 101
+DECLARE @NewPhieuCounter INT = 81; -- Bắt đầu từ 81
+    
+DECLARE @InvoicesPerDay INT = 15; 
+DECLARE @DayLoop INT;
+DECLARE @InvoiceLoop INT;
+
+-- Bảng tạm chứa các ngày mục tiêu
+DECLARE @TargetDates TABLE (ID INT PRIMARY KEY, Ngay DATE);
+INSERT INTO @TargetDates (ID, Ngay) VALUES
+(1, '2025-10-28'),
+(2, '2025-10-29'),
+(3, '2025-10-30'),
+(4, '2025-10-31');
+
+DECLARE @CurrentTargetDate DATE;
+
+-- Các biến cho Hóa đơn và Phiếu đặt (tái sử dụng từ trên)
+-- @CurrentDate, @GioVao, @GioRa, @MaHoaDon, @MaPhieu, @MaKhachHang, @MaNhanVien, @MaBan, @MaKhuyenMai, @PhuongThuc, @DaThanhToan, etc.
+
+-- 2. Vòng lặp chính qua các ngày mục tiêu
+SET @DayLoop = 1;
+WHILE @DayLoop <= 4
+BEGIN
+    -- Lấy ngày mục tiêu hiện tại
+    SELECT @CurrentTargetDate = Ngay FROM @TargetDates WHERE ID = @DayLoop;
+
+    -- 3. Vòng lặp con để tạo N hóa đơn cho ngày này
+    SET @InvoiceLoop = 1;
+    WHILE @InvoiceLoop <= @InvoicesPerDay
+    BEGIN
+        -- A. Thiết lập Mã và Ngày/Giờ
+        SET @MaHoaDon = 'HD' + RIGHT('000' + CAST(@NewCounter AS VARCHAR(3)), 3);
+        SET @CurrentDate = @CurrentTargetDate; 
+            
+        SET @GioVao = DATEADD(HOUR, 11 + CAST((RAND() * 9) AS INT), @CurrentDate);
+        SET @GioVao = DATEADD(MINUTE, CAST((RAND() * 59) AS INT), @GioVao);
+        SET @GioRa = DATEADD(MINUTE, 45 + CAST((RAND() * 120) AS INT), @GioVao);
+            
+        -- B. Chọn Khách hàng, Nhân viên, Bàn (random)
+        SELECT TOP 1 @MaKhachHang = maKhachHang, @CustomerPoints = diemTichLuy, 
+                     @CustomerBirthDay = DAY(ngaySinh), @CustomerBirthMonth = MONTH(ngaySinh)
+        FROM [dbo].[KHACHHANG] ORDER BY NEWID();
+
+        SELECT TOP 1 @MaNhanVien = maNV FROM [dbo].[NHANVIEN] ORDER BY NEWID();
+		-- **QUAN TRỌNG: CHỈ CHỌN BÀN ĐANG TRỐNG ĐỂ TẠO CÁC GIAO DỊCH MỚI CÓ THỂ CẬP NHẬT TRẠNG THÁI**
+        SELECT TOP 1 @MaBan = maBan FROM [dbo].[BAN] WHERE [trangThai] = N'Trống' ORDER BY NEWID();
+
+        -- Nếu không còn bàn trống, bỏ qua vòng lặp này (tránh lỗi)
+        IF @MaBan IS NULL 
+		BEGIN
+			SET @InvoiceLoop = @InvoiceLoop + 1;
+			CONTINUE;
+		END
+
+        -- C. Logic Khuyến mãi (giữ nguyên)
+        IF @CustomerPoints >= 450 SET @CustomerTier = N'Vàng';
+        ELSE IF @CustomerPoints >= 200 SET @CustomerTier = N'Bạc';
+        ELSE SET @CustomerTier = N'Đồng';
+            
+        SET @MaKhuyenMai = NULL;
+        IF @CustomerBirthDay IS NOT NULL AND @CustomerBirthDay = DAY(@CurrentDate) AND @CustomerBirthMonth = MONTH(@CurrentDate)
+        BEGIN
+            IF @CustomerTier = N'Vàng' SET @MaKhuyenMai = 'KM_SN_V';
+            ELSE IF @CustomerTier = N'Bạc' SET @MaKhuyenMai = 'KM_SN_B';
+            ELSE IF @CustomerPoints > 0 SET @MaKhuyenMai = 'KM_SN_D';
+        END
+        ELSE IF @CustomerPoints > 0 
+        BEGIN
+            IF @CustomerTier = N'Vàng' SET @MaKhuyenMai = 'KM_VANG';
+            ELSE IF @CustomerTier = N'Bạc' SET @MaKhuyenMai = 'KM_BAC';
+            ELSE SET @MaKhuyenMai = 'KM_DONG';
+        END;
+
+        -- D. Phương thức thanh toán (giữ nguyên)
+        IF RAND() < 0.5 SET @PhuongThuc = N'Tiền mặt';
+        ELSE IF RAND() < 0.8 SET @PhuongThuc = N'Thẻ';
+        ELSE SET @PhuongThuc = N'Chuyển khoản';
+           
+		-- E. Logic tạo Phiếu Đặt Bàn (30% có phiếu đặt)
+        SET @MaPhieu = NULL;
+        IF RAND() < 0.3 
+        BEGIN
+            SET @MaPhieu = 'PD' + RIGHT('000' + CAST(@NewPhieuCounter AS VARCHAR(3)), 3);
+
+            SET @TienCoc = 0;
+            SET @GhiChuPhieu = NULL;
+                
+            IF RAND() < 0.3 SET @TienCoc = 100000; 
+            IF RAND() < 0.2 
+            BEGIN
+                IF RAND() < 0.5 SET @GhiChuPhieu = N'Khách yêu cầu bàn gần cửa sổ';
+                ELSE SET @GhiChuPhieu = N'Trang trí sinh nhật đơn giản';
+            END
+                
+            INSERT INTO [dbo].[PHIEUDATBAN] 
+                ([maPhieu], [thoiGianDat], [maKhachHang], [maNV], [maBan], [soNguoi], [tienCoc], [ghiChu])
+            VALUES
+                (@MaPhieu, DATEADD(HOUR, -2, @GioVao), @MaKhachHang, @MaNhanVien, @MaBan, 2 + CAST(RAND()*6 AS INT), @TienCoc, @GhiChuPhieu);
+
+            -- Chi tiết Phiếu Đặt Bàn (giữ nguyên logic)
+            SET @SoMonDat = CAST((RAND() * 2) + 1 AS INT); 
+            SET @MonDatCounter = 0;
+            WHILE @MonDatCounter < @SoMonDat
+            BEGIN
+                SELECT TOP 1 @MaMonAnDat = maMonAn 
+                FROM [dbo].[MONAN] WHERE trangThai = 1 ORDER BY NEWID();
+                    
+                SET @SoLuongMonDat = CAST((RAND() * 1) + 1 AS INT);
+                SET @GhiChuMonDat = NULL;
+                DECLARE @RandNote FLOAT = RAND();
+                IF @RandNote < 0.1 SET @GhiChuMonDat = N'Không hành';
+                ELSE IF @RandNote < 0.15 SET @GhiChuMonDat = N'Ít cay';
+                ELSE IF @RandNote < 0.2 SET @GhiChuMonDat = N'Không rau thơm';
+                    
+                IF NOT EXISTS (SELECT 1 FROM [dbo].[CHITIETPHIEUDATBAN] WHERE maPhieu = @MaPhieu AND maMonAn = @MaMonAnDat)
+                BEGIN
+                    INSERT INTO [dbo].[CHITIETPHIEUDATBAN]
+                        ([maPhieu], [maMonAn], [soLuongMonAn], [ghiChu])
+                    VALUES
+                        (@MaPhieu, @MaMonAnDat, @SoLuongMonDat, @GhiChuMonDat); 
+                    SET @MonDatCounter = @MonDatCounter + 1;
+                END;
+            END;
+                
+            SET @NewPhieuCounter = @NewPhieuCounter + 1;
+        END; -- Kết thúc IF tạo phiếu
+
+		-- F. Logic cập nhật BÀN cho ngày hiện tại (2025-10-28)
+		SET @DaThanhToan = 1; 
+		
+		IF CONVERT(DATE, @CurrentDate) = '2025-10-28'
+		BEGIN
+			DECLARE @RandStatus FLOAT = RAND();
+			
+			-- 20% là khách vãng lai chưa thanh toán (Bàn 'Có khách')
+			-- Hoặc 20% là bàn đã ĐẶT nhưng khách đã đến và chưa thanh toán (Bàn 'Có khách')
+			IF @RandStatus < 0.4 -- 40% có khách tại bàn
+			BEGIN
+				SET @DaThanhToan = 0; 
+				
+				-- Cập nhật trạng thái bàn cho bàn VÃNG LAI/ĐÃ ĐẶT (KHÁCH ĐÃ ĐẾN)
+				UPDATE [dbo].[BAN] 
+				SET [trangThai] = N'Có khách' -- ĐÃ SỬ DỤNG 'Có khách'
+				WHERE [maBan] = @MaBan;
+			END
+			-- 20% là bàn đã ĐẶT và khách chưa đến/đã cọc (Bàn 'Đã đặt')
+			ELSE IF @RandStatus >= 0.4 AND @RandStatus < 0.6 AND @MaPhieu IS NOT NULL 
+			BEGIN
+				SET @DaThanhToan = 0; -- Vẫn để DaThanhToan = 0 vì hóa đơn này chưa được lập hoàn chỉnh, nhưng ta cần PhieuDatBan để lấy MaBan.
+				
+				-- Cập nhật trạng thái bàn cho bàn ĐÃ ĐẶT
+				UPDATE [dbo].[BAN] 
+				SET [trangThai] = N'Đã đặt' 
+				WHERE [maBan] = @MaBan;
+			END
+			-- 40% còn lại là đã thanh toán
+			ELSE 
+			BEGIN
+				SET @DaThanhToan = 1;
+			END
+		END
+		ELSE
+		BEGIN
+			-- Tất cả giao dịch của các ngày khác đều đã hoàn tất
+			SET @DaThanhToan = 1;
+		END
+
+
+        -- G. TẠO HÓA ĐƠN
+        INSERT INTO [dbo].[HOADON]
+            ([maHoaDon], [maKhachHang], [maBan], [ngayLap], [phuongThuc], [maKhuyenMai], [maThue], [gioVao], [gioRa], [maNhanVien], [maPhieu], [daThanhToan])
+        VALUES
+            (@MaHoaDon, @MaKhachHang, @MaBan, CONVERT(DATE, @CurrentDate), @PhuongThuc, @MaKhuyenMai, 'VAT10', @GioVao, @GioRa, @MaNhanVien, @MaPhieu, @DaThanhToan);
+
+        -- H. TẠO CHI TIẾT HÓA ĐƠN (giữ nguyên)
+        SET @SoMon = CAST((RAND() * 4) + 1 AS INT);
+        SET @MonCounter = 0;
+        WHILE @MonCounter < @SoMon
+        BEGIN
+            SELECT TOP 1 @MaMonAn = maMonAn, @DonGiaMon = donGia 
+            FROM [dbo].[MONAN] WHERE trangThai = 1 ORDER BY NEWID();
+                
+            SET @SoLuongMon = CAST((RAND() * 2) + 1 AS INT);
+
+            IF NOT EXISTS (SELECT 1 FROM [dbo].[CHITIETHOADON] WHERE maHoaDon = @MaHoaDon AND maMonAn = @MaMonAn)
+            BEGIN
+                INSERT INTO [dbo].[CHITIETHOADON] 
+                    ([maHoaDon], [maMonAn], [soLuong], [donGia])
+                VALUES
+                    (@MaHoaDon, @MaMonAn, @SoLuongMon, @DonGiaMon);
+                    
+                SET @MonCounter = @MonCounter + 1;
+            END;
+        END; 
+            
+        SET @InvoiceLoop = @InvoiceLoop + 1;
+        SET @NewCounter = @NewCounter + 1;
+    END; -- Kết thúc vòng lặp @InvoiceLoop
+
+    SET @DayLoop = @DayLoop + 1;
+END; -- Kết thúc vòng lặp @DayLoop
+
+GO
+SET NOCOUNT OFF;
+GO
+
+-- Sau khi chạy xong script này, bạn có thể kiểm tra trạng thái bàn:
+-- SELECT DISTINCT maBan, trangThai FROM BAN WHERE trangThai <> N'Trống';

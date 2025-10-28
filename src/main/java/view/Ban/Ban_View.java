@@ -40,7 +40,7 @@ public class Ban_View extends JPanel {
         put("Tầng trệt", "images/icon/thongthuong.png");
         put("Phòng VIP", "images/icon/vip.png");
     }};
-    private static final String DEFAULT_TABLE_IMAGE = "images/icon/bansanthuong.png";
+    private static final String DEFAULT_TABLE_IMAGE = "images/icon/thongthuong.png";
     private Map<String, ImageIcon> areaIcons;
 
     private static final Color MAU_NEN = new Color(254, 252, 247);
@@ -48,9 +48,9 @@ public class Ban_View extends JPanel {
     private static final Color MAU_CHU_CHINH = new Color(52, 58, 64);
     private static final Color MAU_CHU_PHU = new Color(108, 117, 125);
     private static final Color MAU_VIEN = new Color(233, 236, 239);
-
+    
     private static final Color MAU_CAM_CHINH = new Color(242, 118, 29);
-    private static final Color MAU_CAM_DAM = new Color(166, 70, 16);
+    private static final Color MAU_CAM_DAM = new Color(242, 118, 29).darker();
     private static final Color MAU_SIDEBAR_KHONGCHON_NEN = new Color(248, 249, 250);
     private static final Color MAU_SIDEBAR_KHONGCHON_NHAN_NEN = new Color(222, 226, 230);
 
@@ -79,71 +79,62 @@ public class Ban_View extends JPanel {
         taiLaiDuLieuVaLamMoiUI();
     }
 
-    private void taiLaiDuLieuVaLamMoiUI() {
-        taiDuLieuTuDB();
+    private void taiLaiDuLieuVaLamMoiUI() { 
+        taiDuLieuTuDB(); 
         capNhatNoiDungSidebar();
         capNhatLuaChonSidebar();
         capNhatHienThiLuoiBan();
         capNhatTieuDeSoDo();
     }
-
-    private void taiTatCaIconKhuVuc() {
-        for (Map.Entry<String, String> entry : areaImagePaths.entrySet()) {
-            ImageIcon icon = taiImageIcon(entry.getValue());
-            if (icon != null) {
-                areaIcons.put(entry.getKey(), icon);
-            }
-        }
-        ImageIcon defaultIcon = taiImageIcon(DEFAULT_TABLE_IMAGE);
-        if (defaultIcon != null) {
+    
+    private void taiTatCaIconKhuVuc() { 
+        for (Map.Entry<String, String> entry : areaImagePaths.entrySet()) { 
+            ImageIcon icon = taiImageIcon(entry.getValue()); 
+            if (icon != null) { 
+                areaIcons.put(entry.getKey(), icon); 
+            } 	
+        } 
+        ImageIcon defaultIcon = taiImageIcon(DEFAULT_TABLE_IMAGE); 
+        if (defaultIcon != null) { 
             areaIcons.put("DEFAULT", defaultIcon);
-        }
+        } 
     }
-
-    private ImageIcon taiImageIcon(String imagePath) {
-        try {
-            ImageIcon o = new ImageIcon(imagePath);
-            if (o.getIconWidth() <= 0) return null;
-            Image s = o.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH);
-            return new ImageIcon(s);
-        } catch (Exception e) {
-            return null;
-        }
+    
+    private ImageIcon taiImageIcon(String imagePath) { 
+        try { 
+            ImageIcon o = new ImageIcon(imagePath); 
+            if (o.getIconWidth() <= 0) return null; 
+            Image s = o.getImage().getScaledInstance(90, 90, Image.SCALE_SMOOTH); 
+            return new ImageIcon(s); 
+        } catch (Exception e) { 
+            return null; 
+        } 
     }
-
+    
     private ImageIcon layIconChoKhuVucHienTai() {
         ImageIcon icon = areaIcons.get(khuVucHienTai);
         return icon != null ? icon : areaIcons.get("DEFAULT");
     }
 
-    /**
-     * Load dữ liệu: đảm bảo lấy danh sách khu vực trước (để giữ thứ tự),
-     * sau đó lấy số lượng bàn (map) và danh sách bàn theo maKhuVuc.
-     */
     private void taiDuLieuTuDB() {
-        // Lấy map mã->tên khu vực (giữ thứ tự maKhuVuc)
-        Map<String, String> kvMap = banDAO.getDanhSachKhuVuc();
-
-        // Tạo danh sách tên khu vực theo thứ tự DB (đảm bảo hiển thị tất cả khu vực)
-        tenKhuVuc = new ArrayList<>(kvMap.values());
-
-        // Lấy số lượng bàn (có thể trả về số 0 cho khu vực không có bàn)
         soLuongBanTheoKhuVuc = banDAO.getSoBanTheoKhuVuc();
-
-        // Thiết lập khuVucHienTai nếu chưa có
+        tenKhuVuc = new ArrayList<>(soLuongBanTheoKhuVuc.keySet());
         if (khuVucHienTai == null && !tenKhuVuc.isEmpty()) {
             khuVucHienTai = tenKhuVuc.get(0);
         } else if (tenKhuVuc.isEmpty()) {
             khuVucHienTai = "Không có dữ liệu";
         }
-
-        // Lấy danh sách bàn cho từng khu vực dựa trên maKhuVuc
         danhSachBanTheoKhuVuc.clear();
-        for (Map.Entry<String, String> entry : kvMap.entrySet()) {
-            String maKV = entry.getKey();
-            String tenKV = entry.getValue();
-            List<Ban> ds = banDAO.getBanTheoKhuVuc(maKV);
-            danhSachBanTheoKhuVuc.put(tenKV, ds);
+        Map<String, String> kvMap = banDAO.getDanhSachKhuVuc();
+        for (String tenKV : tenKhuVuc) {
+            String maKV = kvMap.entrySet().stream()
+                    .filter(entry -> entry.getValue().equals(tenKV))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(null);
+            if (maKV != null) {
+                danhSachBanTheoKhuVuc.put(tenKV, banDAO.getBanTheoKhuVuc(maKV));
+            }
         }
     }
 
@@ -216,8 +207,6 @@ public class Ban_View extends JPanel {
     private void capNhatNoiDungSidebar() {
         pnlChuaNutKhuVuc.removeAll();
         cacNutChonKhuVuc.clear();
-
-        // tenKhuVuc được lấy từ danhSach khu vực (giữ thứ tự DB)
         for (String tenKV : tenKhuVuc) {
             int count = soLuongBanTheoKhuVuc.getOrDefault(tenKV, 0);
             JButton nutKV = taoNutChonKhuVuc(tenKV, count + " bàn");
@@ -290,15 +279,12 @@ public class Ban_View extends JPanel {
             countLabel.setForeground(Color.WHITE);
             countWrapper.setBackground(MAU_CAM_DAM);
             button.setBorder(BorderFactory.createLineBorder(MAU_CAM_CHINH, 1));
-            // emphasize selected
-            nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
         } else {
             button.setBackground(MAU_SIDEBAR_KHONGCHON_NEN);
             nameLabel.setForeground(MAU_CHU_CHINH);
             countLabel.setForeground(MAU_CHU_CHINH);
             countWrapper.setBackground(MAU_SIDEBAR_KHONGCHON_NHAN_NEN);
             button.setBorder(BorderFactory.createLineBorder(MAU_VIEN, 1));
-            nameLabel.setFont(nameLabel.getFont().deriveFont(Font.PLAIN));
         }
     }
 
@@ -318,7 +304,7 @@ public class Ban_View extends JPanel {
         lblTieuDeSoDo.setForeground(MAU_CHU_CHINH);
         lblTieuDeSoDo.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        JLabel mapSubtitle = new JLabel("Nhấn vào bàn để chỉnh sửa thông tin hoặc xóa.");
+        JLabel mapSubtitle = new JLabel("Nhấn vào bàn để chỉnh sửa thông tin hoặc xóa."); 
         mapSubtitle.setFont(FONT_CHU);
         mapSubtitle.setForeground(MAU_CHU_PHU);
         mapSubtitle.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -335,12 +321,12 @@ public class Ban_View extends JPanel {
         btnThemBan.setPreferredSize(new Dimension(180, 45));
         btnThemBan.addActionListener(e -> moDialogThemBan());
         btnThemBan.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
+            @Override 
+            public void mouseEntered(MouseEvent e) { 
                 btnThemBan.setBackground(MAU_NUT_THEM_HOVER);
             }
-            @Override
-            public void mouseExited(MouseEvent e) {
+            @Override 
+            public void mouseExited(MouseEvent e) { 
                 btnThemBan.setBackground(MAU_NUT_THEM);
             }
         });
@@ -380,30 +366,31 @@ public class Ban_View extends JPanel {
     }
 
     private void capNhatTieuDeSoDo() {
-        if (lblTieuDeSoDo != null) {
-            lblTieuDeSoDo.setText("Sơ đồ bàn - " + khuVucHienTai);
+        if (lblTieuDeSoDo != null) { 
+            lblTieuDeSoDo.setText("Sơ đồ bàn - " + khuVucHienTai); 
         }
     }
 
     private void capNhatHienThiLuoiBan() {
-        pnlLuoiBan.removeAll();
+        pnlLuoiBan.removeAll(); 
         pnlLuoiBan.setLayout(new GridLayout(0, 4, 20, 20));
         List<Ban> tables = danhSachBanTheoKhuVuc.get(khuVucHienTai);
         if (tables != null && !tables.isEmpty()) {
-            for (Ban b : tables) {
-                pnlLuoiBan.add(taoTheBan(b));
+            for (Ban b : tables) { 
+                pnlLuoiBan.add(taoTheBan(b)); 
             }
         } else {
             JLabel nTL = new JLabel("Không có bàn nào trong khu vực này.");
-            nTL.setFont(FONT_CHU);
-            nTL.setForeground(MAU_CHU_PHU);
+            nTL.setFont(FONT_CHU); 
+            nTL.setForeground(MAU_CHU_PHU); 
             nTL.setHorizontalAlignment(SwingConstants.CENTER);
-            pnlLuoiBan.setLayout(new FlowLayout());
+            pnlLuoiBan.setLayout(new FlowLayout()); 
             pnlLuoiBan.add(nTL);
         }
-        pnlLuoiBan.revalidate();
+        pnlLuoiBan.revalidate(); 
         pnlLuoiBan.repaint();
     }
+
 
     private JPanel taoTheBan(Ban ban) {
         TheBoTron card = new TheBoTron(null, 18);
@@ -460,21 +447,21 @@ public class Ban_View extends JPanel {
     }
 
     private class TheBoTron extends JPanel {
-        private int doBoGoc;
+        private int doBoGoc; 
         private Color mauVien;
-
-        public TheBoTron(LayoutManager layout, int doBoGoc) {
-            super(layout);
-            this.doBoGoc = doBoGoc;
-            setOpaque(false);
-            this.mauVien = MAU_VIEN;
+        
+        public TheBoTron(LayoutManager layout, int doBoGoc) { 
+            super(layout); 
+            this.doBoGoc = doBoGoc; 
+            setOpaque(false); 
+            this.mauVien = MAU_VIEN; 
         }
-
+        
         public void datMauVien(Color color) {
-            this.mauVien = color;
+            this.mauVien = color; 
             repaint();
         }
-
+        
         @Override
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -484,7 +471,7 @@ public class Ban_View extends JPanel {
             g2.dispose();
             super.paintComponent(g);
         }
-
+        
         @Override
         protected void paintBorder(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
@@ -495,11 +482,11 @@ public class Ban_View extends JPanel {
             g2.dispose();
         }
     }
-
-    private class VienDoBong implements Border {
+    
+    private class VienDoBong implements Border { 
         private int shadowSize = 4;
-
-        @Override
+        
+        @Override 
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -507,24 +494,24 @@ public class Ban_View extends JPanel {
                 int alpha = (int) (15 - (i * 3.5));
                 g2.setColor(new Color(0, 0, 0, alpha));
                 g2.drawRoundRect(x + i, y + i, width - 1 - (i * 2), height - 1 - (i * 2), 20, 20);
-            }
+            } 
             g2.dispose();
         }
-
+        
         @Override
         public Insets getBorderInsets(Component c) {
             return new Insets(shadowSize, shadowSize, shadowSize, shadowSize);
         }
-
-        @Override
+        
+        @Override 
         public boolean isBorderOpaque() {
-            return false;
+            return false; 
         }
     }
-
+    
     private class NutBoTron extends JButton {
         private int doBoGoc;
-
+        
         public NutBoTron(String text, int doBoGoc) {
             super(text);
             this.doBoGoc = doBoGoc;
@@ -534,22 +521,22 @@ public class Ban_View extends JPanel {
             setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
             setOpaque(false);
         }
-
-        @Override
+        
+        @Override 
         protected void paintComponent(Graphics g) {
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             Color bg = getBackground();
-            if (getModel().isPressed()) {
+            if (getModel().isPressed()) { 
                 g2.setColor(bg.darker());
             } else if (getModel().isRollover()) {
-                g2.setColor(bg.brighter());
-            } else {
+                g2.setColor(bg.brighter()); 
+            } else { 
                 g2.setColor(bg);
-            }
+            } 
             g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), doBoGoc, doBoGoc));
             super.paintComponent(g);
-            g2.dispose();
+            g2.dispose(); 
         }
     }
 }

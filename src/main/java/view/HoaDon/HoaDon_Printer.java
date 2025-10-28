@@ -26,7 +26,7 @@ public class HoaDon_Printer {
 
         // Lấy thông tin chi tiết
         NhanVien nv = nhanVienDAO.getNhanVienById(hoaDon.getNhanVien().getMaNV());
-        Ban ban = banDAO.getBanById(hoaDon.getBan().getMaBan());
+        Ban ban = banDAO.getBanTheoMa(hoaDon.getBan().getMaBan());
         Thue thue = thueDAO.getThueById(hoaDon.getThue().getMaThue());
         KhuyenMai km = null;
         if (hoaDon.getKhuyenMai() != null && !hoaDon.getKhuyenMai().getMaKM().equals("KM00000000")) {
