@@ -23,7 +23,6 @@ public class TrangChu_View extends JPanel {
     private JMenuItem currentMenuItem = null;
     private JFrame mainFrame;
 
-    // Define card names as constants
     private static final String CARD_HOME = "HE_THONG";
     private static final String CARD_QUAN_LY_BAN = "QUAN_LY_BAN";
     private static final String CARD_QUAN_LY_DAT_BAN = "QUAN_LY_DAT_BAN";
@@ -37,7 +36,7 @@ public class TrangChu_View extends JPanel {
     private static final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
     private static final String CARD_THONGKE = "THONG_KE";
     private static final String CARD_MON_AN = "MON_AN";
-    private static final String CARD_DAT_MON = "DAT_MON"; // New card for ordering
+    private static final String CARD_DAT_MON = "DAT_MON";
 
     public TrangChu_View(JFrame frame, TaiKhoan tk, String vaiTro) {
         this.mainFrame = frame;
@@ -108,7 +107,6 @@ public class TrangChu_View extends JPanel {
         boolean isManager = "Quản lý".equalsIgnoreCase(vaiTro) || "NVQL".equalsIgnoreCase(tk.getVaiTro());
         boolean isReceptionist = "Tiếp tân".equalsIgnoreCase(vaiTro) || "TT".equalsIgnoreCase(tk.getVaiTro());
 
-        // --- Hệ thống Menu (Common) ---
         JMenu menuHeThong = new JMenu("Hệ thống");
         menuHeThong.setFont(menuFont);
         JMenuItem mDangXuat = new JMenuItem("Đăng xuất");
@@ -125,7 +123,6 @@ public class TrangChu_View extends JPanel {
         menuHeThong.add(mThoat);
         menuBar.add(menuHeThong);
 
-        // --- Bàn Menu ---
         if (isManager || isReceptionist) {
             JMenu menuBan = new JMenu("Bàn");
             menuBan.setFont(menuFont);
@@ -143,7 +140,6 @@ public class TrangChu_View extends JPanel {
             menuBar.add(menuBan);
         }
 
-        // --- Thực đơn Menu ---
         if (isManager) {
             JMenu menuThucDon = new JMenu("Thực đơn");
             menuThucDon.setFont(menuFont);
@@ -174,7 +170,6 @@ public class TrangChu_View extends JPanel {
             allMenuItems.add(mTraCuuMonAn);
         }
 
-        // --- Hóa đơn Menu ---
         if (isManager || isReceptionist) {
             JMenu menuHoaDon = new JMenu("Hóa đơn");
             menuHoaDon.setFont(menuFont);
@@ -189,7 +184,6 @@ public class TrangChu_View extends JPanel {
             allMenuItems.add(mTraCuuHoaDon);
         }
 
-        // --- Khách hàng Menu ---
         if (isManager || isReceptionist) {
             JMenu menuKH = new JMenu("Khách hàng");
             menuKH.setFont(menuFont);
@@ -208,30 +202,31 @@ public class TrangChu_View extends JPanel {
             allMenuItems.add(mTCKH);
         }
 
-        // --- Nhân viên & Thống kê Menu (Manager Only) ---
         if (isManager) {
             JMenu menuNV = new JMenu("Nhân viên");
             menuNV.setFont(menuFont);
+            
             JMenuItem mQLNV = new JMenuItem("Nhân viên");
             mQLNV.setFont(menuItemFont);
+            menuNV.add(mQLNV);
+
             JMenuItem mTCNV = new JMenuItem("Tra cứu nhân viên");
             mTCNV.setFont(menuItemFont);
-            menuNV.add(mQLNV);
             menuNV.add(mTCNV);
-            menuBar.add(menuNV);
-            allMenuItems.add(mQLNV);
-            allMenuItems.add(mTCNV);
 
-            JMenu menuThongKe = new JMenu("Thống kê");
-            menuThongKe.setFont(menuFont);
+            menuNV.addSeparator();
+
             JMenuItem mTKNV = new JMenuItem("Thống kê");
             mTKNV.setFont(menuItemFont);
-            menuThongKe.add(mTKNV);
-            menuBar.add(menuThongKe);
+            menuNV.add(mTKNV);
+            
+            menuBar.add(menuNV);
+
+            allMenuItems.add(mQLNV);
+            allMenuItems.add(mTCNV);
             allMenuItems.add(mTKNV);
         }
 
-        // --- Add ActionListener to all menu items ---
         ActionListener switchPanelAction = createSwitchPanelAction();
         for (JMenuItem item : allMenuItems) {
             item.addActionListener(switchPanelAction);
@@ -247,23 +242,19 @@ public class TrangChu_View extends JPanel {
         boolean isManager = "Quản lý".equalsIgnoreCase(vaiTro) || "NVQL".equalsIgnoreCase(tk.getVaiTro());
         boolean isReceptionist = "Tiếp tân".equalsIgnoreCase(vaiTro) || "TT".equalsIgnoreCase(tk.getVaiTro());
 
-        // Add panels common to all or most roles
         contentPanel.add(new HeThong_View(), CARD_HOME);
         contentPanel.add(new DatBan_View(), CARD_QUAN_LY_DAT_BAN);
         contentPanel.add(new HoaDon_TraCuu_View(), CARD_TRA_CUU_HOADON);
         contentPanel.add(new KhachHang_TraCuu_View(), CARD_TRA_CUU_KH);
         contentPanel.add(new ThucDon_View(), CARD_THUC_DON);
 
-        // Add panels for Manager and Receptionist
         if (isManager || isReceptionist) {
             contentPanel.add(new HoaDon_View(), CARD_QUAN_LY_HOADON);
             contentPanel.add(new KhachHang_View(), CARD_QUAN_LY_KH);
             contentPanel.add(new KhachHang_DiemTichLuy_View(), CARD_DIEM_KH);
-            // Add ordering panel - you may need to create DatMon_View if it doesn't exist
-            // contentPanel.add(new DatMon_View(), CARD_DAT_MON);
+            //contentPanel.add(new DatMon_View(), CARD_DAT_MON);
         }
 
-        // Add panels specific to Manager only
         if (isManager) {
             contentPanel.add(new Ban_View(), CARD_QUAN_LY_BAN);
             contentPanel.add(new MonAn_View(), CARD_MON_AN);
@@ -302,8 +293,8 @@ public class TrangChu_View extends JPanel {
     private ActionListener createLogoutAction() {
         return e -> {
             int confirm = JOptionPane.showConfirmDialog(this,
-                "Bạn có chắc muốn đăng xuất?", "Xác nhận",
-                JOptionPane.YES_NO_OPTION);
+                    "Bạn có chắc muốn đăng xuất?", "Xác nhận",
+                    JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.YES_OPTION) {
                 mainFrame.dispose();
                 Login_View login = new Login_View();

@@ -43,7 +43,7 @@ public class KhachHang_DiemTichLuy_View extends JPanel {
         btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 14));
         btnAdd.setPreferredSize(new Dimension(200, 45));
 
-        // Fix: Thay vì AddDialog, sử dụng EditDialog hoặc dialog cập nhật điểm (giả sử dùng Edit cho đơn giản)
+      
         btnAdd.addActionListener(e -> {
             // Ví dụ: Mở dialog chọn KH để cập nhật điểm, tạm dùng AddDialog như code gốc
             KhachHang_AddDialog dialog = new KhachHang_AddDialog(null, khachHangDAO);
@@ -140,16 +140,14 @@ public class KhachHang_DiemTichLuy_View extends JPanel {
         loadThongKe();
     }
 
-    // ===== Load dữ liệu điểm tích lũy =====
     private void loadDiemTichLuyData() {
-        System.out.println("[VIEW] Bắt đầu load dữ liệu điểm tích lũy");  // Log debug
+     
         model.setRowCount(0);
         List<KhachHang> dsKH = khachHangDAO.getAllKhachHang();
 
-        System.out.println("[VIEW] Nhận dsKH size: " + dsKH.size());  // Log debug
-
+        
         for (KhachHang kh : dsKH) {
-            String hang = getHang(kh.getDiemTichLuy());  // Đồng bộ với DAO
+            String hang = getHang(kh.getDiemTichLuy()); 
             String trangThai = kh.isLaThanhVien() ? "Thành viên" : "Khách thường";
             model.addRow(new Object[]{
                     kh.getMaKhachHang(),
