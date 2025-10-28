@@ -2,9 +2,14 @@ package view.Ban;
 
 import dao.DatBan_DAO;
 import dao.HoaDon_DAO;
+import dao.HoaDon_KhuyenMai_DAO;
+import dao.HoaDon_Thue_DAO;
 import entity.Ban;
+import entity.ChiTietHoaDon;
 import entity.KhachHang;
+import entity.KhuyenMai;
 import entity.PhieuDatBan;
+import entity.Thue;
 import view.HoaDon.HoaDon_ThanhToan_Dialog;
 import entity.ChiTietPhieuDatBan;
 import entity.MonAn;
@@ -17,6 +22,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ChiTietPhieuDatBan_View extends JPanel {
@@ -402,24 +408,69 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         };
 
         try {
-           HoaDon_ThanhToan_Dialog thanhToanPanel = new HoaDon_ThanhToan_Dialog(mainFrame, null, daoHoaDon, ABORT);
+        	HoaDon hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
+        	
+        	if (hoaDonHienTai == null) {
+                JOptionPane.showMessageDialog(this,
+                   "Không tìm thấy hóa đơn chưa thanh toán cho bàn " + ban.getMaBan(),
+                   "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return; // Dừng lại nếu không có hóa đơn
+           }List<ChiTietHoaDon> chiTietList = daoHoaDon.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHoaDon());
+           if (chiTietList == null) chiTietList = new ArrayList<>(); 
 
-            Container parentContainer = this.getParent();
-            if (parentContainer instanceof JComponent && parentContainer.getLayout() instanceof CardLayout) {
-                parentContainer.add(thanhToanPanel, "THANH_TOAN_VIEW");
-                CardLayout cl = (CardLayout)(parentContainer.getLayout());
-                cl.show(parentContainer, "THANH_TOAN_VIEW");
-            } else if (mainFrame != null) {
-                mainFrame.getContentPane().removeAll();
-                mainFrame.getContentPane().add(thanhToanPanel, BorderLayout.CENTER);
-                mainFrame.revalidate();
-                mainFrame.repaint();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this,
-                "Không thể chuyển sang màn hình thanh toán: " + e.getMessage(),
-                "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
+           //Tính toán chi tiết tiền 
+           double tongTienMonAn = 0;
+           for (ChiTietHoaDon ct : chiTietList) {
+               tongTienMonAn += ct.tinhThanhTien(); 
+           }
+
+           // Lấy thông tin Thuế và KM đầy đủ
+           HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO();
+           HoaDon_KhuyenMai_DAO kmDAO = new HoaDon_KhuyenMai_DAO(); 
+
+           Thue thue = (hoaDonHienTai.getThue() != null && hoaDonHienTai.getThue().getMaThue() != null)
+                       ? thueDAO.getThueById(hoaDonHienTai.getThue().getMaThue()) : null;
+           KhuyenMai km = (hoaDonHienTai.getKhuyenMai() != null && hoaDonHienTai.getKhuyenMai().getMaKM() != null)
+                       ? kmDAO.getKhuyenMaiById(hoaDonHienTai.getKhuyenMai().getMaKM()) : null;
+
+           double tienGiam = 0, tienThue = 0, tongTienSauGiam = tongTienMonAn;
+
+           // Tính tiền giảm
+           if (km != null && !"KM00000000".equals(km.getMaKM().trim()) && km.getGiaTri() > 0) {
+               if (km.getGiaTri() < 1.0) tienGiam = tongTienMonAn * km.getGiaTri(); 
+               else tienGiam = km.getGiaTri();
+               tongTienSauGiam -= tienGiam;
+               if (tongTienSauGiam < 0) tongTienSauGiam = 0;
+           }
+
+           if (thue != null && thue.getTyLeThue() > 0) {
+               tienThue = tongTienSauGiam * thue.getTyLeThue();
+           }
+
+           double tongThanhToan = tongTienSauGiam + tienThue;
+
+           HoaDon_ThanhToan_Dialog thanhToanDialog = new HoaDon_ThanhToan_Dialog(
+               mainFrame, hoaDonHienTai, daoHoaDon,
+               tongTienMonAn, tienGiam, tienThue, tongThanhToan, 
+               chiTietList
+           );
+           thanhToanDialog.setVisible(true); 
+
+           HoaDon hoaDonSauKhiDongDialog = daoHoaDon.findByMaHD(hoaDonHienTai.getMaHoaDon());
+           if (hoaDonSauKhiDongDialog != null && hoaDonSauKhiDongDialog.isDaThanhToan()) {
+               System.out.println("Hóa đơn " + hoaDonHienTai.getMaHoaDon() + " đã được thanh toán.");
+               if (onCloseCallback != null) {
+                   onCloseCallback.run();
+               }
+           } else {
+                System.out.println("Hóa đơn " + hoaDonHienTai.getMaHoaDon() + " chưa được thanh toán (dialog bị hủy).");
+           }
+
+       } catch (Exception e) {
+           e.printStackTrace();
+           JOptionPane.showMessageDialog(this,
+               "Đã xảy ra lỗi khi chuẩn bị thanh toán: " + e.getMessage(),
+               "Lỗi", JOptionPane.ERROR_MESSAGE);
+       }
     }
 }

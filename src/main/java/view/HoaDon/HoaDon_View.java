@@ -1,9 +1,14 @@
 package view.HoaDon;
 
 import dao.HoaDon_DAO;
+import dao.HoaDon_KhuyenMai_DAO;
+import dao.HoaDon_Thue_DAO;
 import dao.KhachHang_DAO;
+import entity.ChiTietHoaDon;
 import entity.HoaDon;
 import entity.KhachHang;
+import entity.KhuyenMai;
+import entity.Thue;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -259,11 +264,57 @@ public class HoaDon_View extends JPanel {
                                 kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
                             }
                             hd.setKhachHang(kh); // Gán KH đầy đủ (hoặc null nếu là khách lẻ)
-                            double tongTien = hoaDonDAO.tinhTongTienHoaDon(maHD);
+                         // === TÍNH TOÁN CHI TIẾT TIỀN ===
+                            List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(maHD);
+                            double tongTienMonAn = 0;
+                            for (ChiTietHoaDon ct : chiTietList) {
+                                tongTienMonAn += ct.tinhThanhTien();
+                            }
+
+                            // Lấy thông tin Thuế và KM để tính toán
+                            // (Cần có các DAO này và hàm getById)
+                            HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO(); // Nên tạo DAO ở ngoài nếu dùng nhiều lần
+                            HoaDon_KhuyenMai_DAO kmDAO = new HoaDon_KhuyenMai_DAO(); // Nên tạo DAO ở ngoài
+
+                            Thue thue = (hd.getThue() != null) ? thueDAO.getThueById(hd.getThue().getMaThue()) : null;
+                            KhuyenMai km = (hd.getKhuyenMai() != null) ? kmDAO.getKhuyenMaiById(hd.getKhuyenMai().getMaKM()) : null;
+
+                            double tienGiam = 0;
+                            double tienThue = 0;
+                            double tongTienSauGiam = tongTienMonAn;
+
+                            // Tính tiền giảm
+                            if (km != null && !"KM00000000".equals(km.getMaKM().trim()) && km.getGiaTri() > 0) {
+                                if (km.getGiaTri() < 1.0) { // Giảm %
+                                    tienGiam = tongTienMonAn * km.getGiaTri();
+                                } else { // Giảm tiền cố định
+                                    tienGiam = km.getGiaTri();
+                                }
+                                tongTienSauGiam -= tienGiam;
+                                if (tongTienSauGiam < 0) tongTienSauGiam = 0;
+                            }
+
+                            // Tính tiền thuế (sau khi giảm)
+                            if (thue != null && thue.getTyLeThue() > 0) {
+                                tienThue = tongTienSauGiam * thue.getTyLeThue();
+                            }
+
+                            // Tính tổng thanh toán cuối cùng
+                            double tongThanhToan = tongTienSauGiam + tienThue;
+                            // === KẾT THÚC TÍNH TOÁN ===
+
+
                             Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(HoaDon_View.this);
-                            HoaDon_ThanhToan_Dialog dialog = new HoaDon_ThanhToan_Dialog(parentFrame, hd, hoaDonDAO, tongTien);
+                            // === TRUYỀN CÁC GIÁ TRỊ VÀO DIALOG ===
+                            HoaDon_ThanhToan_Dialog dialog = new HoaDon_ThanhToan_Dialog(
+                                parentFrame, hd, hoaDonDAO,
+                                tongTienMonAn, tienGiam, tienThue, tongThanhToan, // Các giá trị tiền
+                                chiTietList // Danh sách chi tiết
+                            );
                             dialog.setVisible(true);
-                            loadHoaDonData(); loadThongKe();
+
+                            loadHoaDonData();
+                            loadThongKe();
                         }
                     });
                 } else if (type.equals("Sửa")) {
@@ -277,7 +328,7 @@ public class HoaDon_View extends JPanel {
                         }
                     });
                 } else if (type.equals("Xóa")) {
-                    int confirm = JOptionPane.showConfirmDialog(table, "Bạn chắc chắn muốn xóa hóa đơn này?",
+                    int confirm = JOptionPane.showConfirmDialog(null, "Bạn chắc chắn muốn xóa hóa đơn này?",
                             "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                     if (confirm == JOptionPane.YES_OPTION) {
                         if (hoaDonDAO.deleteHoaDon(maHD)) {
