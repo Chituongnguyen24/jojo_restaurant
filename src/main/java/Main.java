@@ -1,7 +1,6 @@
 
-
 import javax.swing.*;
-import dao.Login_DAO;
+import dao.TaiKhoan_DAO;
 import entity.TaiKhoan;
 import view.Login.Login_View;
 import view.QuanLy_View;
@@ -34,8 +33,8 @@ public class Main {
                     return;
                 }
 
-                Login_DAO loginDAO = new Login_DAO();
-                TaiKhoan tk = loginDAO.login(username, password);
+                TaiKhoan_DAO taiKhoanDAO = new TaiKhoan_DAO();
+                TaiKhoan tk = taiKhoanDAO.login(username, password);
 
                 if (tk == null) {
                     loginView.showError("Tên đăng nhập hoặc mật khẩu không đúng!");

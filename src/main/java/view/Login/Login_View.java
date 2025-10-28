@@ -14,10 +14,9 @@ public class Login_View extends JFrame {
     private JLabel lblShowPassword;
 
     private static final String LOGO_PATH = "images/logo.png";
-    // Icon đăng nhập (ảnh trung tâm) – sẽ được bo tròn
+   
     private static final String LOGIN_ICON_PATH = "images/icon/login.png";
 
-    // Palette
     private static final Color PRIMARY_COLOR = new Color(230, 126, 34);
     private static final Color PRIMARY_HOVER = new Color(211, 110, 24);
     private static final Color PRIMARY_PRESSED = new Color(192, 96, 18);
@@ -27,7 +26,7 @@ public class Login_View extends JFrame {
     private static final Color BORDER_COLOR = new Color(229, 231, 235);
 
     // Nền/phông
-    private static final Color CANVAS_BG = new Color(248, 250, 252); // #F8FAFC
+    private static final Color CANVAS_BG = new Color(248, 250, 252); 
     private static final Color CARD_BG = CANVAS_BG;
 
     private static final boolean USE_SOFT_SHADOW = true;
@@ -84,7 +83,7 @@ public class Login_View extends JFrame {
         lblSubtitle.setForeground(TEXT_SECONDARY);
         card.add(lblSubtitle, gbc);
 
-        // 3. Ảnh trung tâm: icon đăng nhập (bo tròn)
+        // 3. Ảnh trung tâm: icon đăng nhập
         gbc.gridy++;
         gbc.insets = new Insets(0, 0, 28, 0);
         int avatarSize = 120;
@@ -95,7 +94,7 @@ public class Login_View extends JFrame {
         if (rounded != null) {
             lblCenterImage.setIcon(rounded);
         } else {
-            // Fallback nếu thiếu ảnh đăng nhập
+           
             lblCenterImage.setText("👤");
             lblCenterImage.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 72));
             lblCenterImage.setForeground(PRIMARY_COLOR);
@@ -152,6 +151,14 @@ public class Login_View extends JFrame {
         gbc.insets = new Insets(0, 0, 22, 0);
         gbc.anchor = GridBagConstraints.EAST;
         JLabel lblForgot = createLinkLabel("Quên mật khẩu?");
+        // Mở dialog quên mật khẩu khi click
+        lblForgot.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                // Mở modal dialog để xử lý quên mật khẩu
+                ForgotPassword_Dialog dlg = new ForgotPassword_Dialog(Login_View.this);
+                dlg.setVisible(true);
+            }
+        });
         card.add(lblForgot, gbc);
 
         // 11. Nút Đăng nhập
