@@ -84,56 +84,56 @@ public class HoaDon_DAO {
     /**
      * Thêm hóa đơn mới vào CSDL.
      */
-//    public boolean addHoaDon(HoaDon hd) {
-//        String sql = "INSERT INTO HOADON(maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, "+
-//                "maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)"+
-//                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-//
-//        try (
-//        	 Connection conn = ConnectDB.getInstance().getConnection();
-//             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-//
-//            pstmt.setString(1, hd.getMaHoaDon());
-//
-//            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
-//                pstmt.setString(2, hd.getKhachHang().getMaKhachHang());
-//            } else {
-//                pstmt.setString(2, "KH00000000"); // Mã khách vãng lai mặc định
-//            }
-//
-//            pstmt.setString(3, hd.getBan().getMaBan());
-//            pstmt.setDate(4, Date.valueOf(hd.getNgayLap()));
-//            pstmt.setString(5, hd.getPhuongThuc());
-//         
-//            if (hd.getKhuyenMai() != null && hd.getKhuyenMai().getMaKM() != null)
-//                pstmt.setString(6, hd.getKhuyenMai().getMaKM());
-//            else
-//                pstmt.setNull(6, Types.NCHAR);
-//
-//            pstmt.setString(7, hd.getThue().getMaThue());
-//            pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioVao()));
-//            // Xử lý null cho gioRa
-//            if (hd.getGioRa() != null) {
-//                pstmt.setTimestamp(9, Timestamp.valueOf(hd.getGioRa()));
-//            } else {
-//                pstmt.setNull(9, Types.TIMESTAMP); 
-//            }
-//            pstmt.setString(10, hd.getNhanVien().getMaNV());
-//            // Xử lý null cho PhieuDatBan
-//            if (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null)
-//                pstmt.setString(11, hd.getPhieuDatBan().getMaPhieu());
-//            else
-//                pstmt.setNull(11, Types.NCHAR);
-//
-//            pstmt.setBoolean(12, hd.isDaThanhToan());
-//
-//            return pstmt.executeUpdate() > 0;
-//        } catch (SQLException e) {
-//            System.err.println("Lỗi khi thêm hóa đơn: " + e.getMessage());
-//            e.printStackTrace();
-//        }
-//        return false;
-//    }
+    public boolean addHoaDon(HoaDon hd) {
+        String sql = "INSERT INTO HOADON(maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, "+
+                "maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)"+
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+        try (
+        	 Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, hd.getMaHoaDon());
+
+            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
+                pstmt.setString(2, hd.getKhachHang().getMaKhachHang());
+            } else {
+                pstmt.setString(2, "KH00000000"); // Mã khách vãng lai mặc định
+            }
+
+            pstmt.setString(3, hd.getBan().getMaBan());
+            pstmt.setDate(4, Date.valueOf(hd.getNgayLap()));
+            pstmt.setString(5, hd.getPhuongThuc());
+         
+            if (hd.getKhuyenMai() != null && hd.getKhuyenMai().getMaKM() != null)
+                pstmt.setString(6, hd.getKhuyenMai().getMaKM());
+            else
+                pstmt.setNull(6, Types.NCHAR);
+
+            pstmt.setString(7, hd.getThue().getMaThue());
+            pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioVao()));
+            // Xử lý null cho gioRa
+            if (hd.getGioRa() != null) {
+                pstmt.setTimestamp(9, Timestamp.valueOf(hd.getGioRa()));
+            } else {
+                pstmt.setNull(9, Types.TIMESTAMP); 
+            }
+            pstmt.setString(10, hd.getNhanVien().getMaNV());
+            // Xử lý null cho PhieuDatBan
+            if (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null)
+                pstmt.setString(11, hd.getPhieuDatBan().getMaPhieu());
+            else
+                pstmt.setNull(11, Types.NCHAR);
+
+            pstmt.setBoolean(12, hd.isDaThanhToan());
+
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi thêm hóa đơn: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
 
     
     public boolean updateHoaDon(HoaDon hd) {
@@ -581,6 +581,84 @@ public class HoaDon_DAO {
             System.err.println("Lỗi khi sao chép chi tiết phiếu đặt sang hóa đơn: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+    public boolean ensureHoaDonAndSyncFromPhieu(String maPhieu, String maBan) {
+        Connection conn = null;
+        try {
+            conn = ConnectDB.getInstance().getConnection();
+            conn.setAutoCommit(false);
+
+            // 1) Tìm hoadon chưa thanh toán cho bàn
+            HoaDon hoaDon = getHoaDonByBan(maBan); // đã có trong file
+            String maHoaDon;
+            if (hoaDon == null) {
+                // Tạo hoadon mới với giá trị mặc định an toàn (tránh NPE trong addHoaDon)
+                maHoaDon = generateNewID();
+
+                String sqlInsert = "INSERT INTO HOADON (maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan) " +
+                                   "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                try (PreparedStatement ps = conn.prepareStatement(sqlInsert)) {
+                    ps.setString(1, maHoaDon);
+                    ps.setString(2, "KH00000000"); // khách vãng lai mặc định 
+                    ps.setString(3, maBan);
+                    ps.setDate(4, java.sql.Date.valueOf(LocalDate.now()));
+                    ps.setString(5, "Tiền mặt"); // phương thức mặc định
+                    ps.setNull(6, Types.NCHAR); // maKhuyenMai
+                    ps.setNull(7, Types.NCHAR); // maThue
+                    ps.setTimestamp(8, Timestamp.valueOf(LocalDateTime.now()));
+                    ps.setNull(9, Types.TIMESTAMP); // gioRa
+                    ps.setNull(10, Types.NCHAR); // maNhanVien (nếu bạn có mã NV hiện tại, set vào đây)
+                    ps.setString(11, maPhieu);
+                    ps.setBoolean(12, false); // daThanhToan = 0
+                    ps.executeUpdate();
+                }
+            } else {
+                maHoaDon = hoaDon.getMaHoaDon();
+                // nếu hoaDon tồn tại nhưng không liên kết với maPhieu, có thể cập nhật maPhieu
+                if (hoaDon.getPhieuDatBan() == null && maPhieu != null) {
+                    String sqlUpd = "UPDATE HOADON SET maPhieu = ? WHERE maHoaDon = ?";
+                    try (PreparedStatement ps = conn.prepareStatement(sqlUpd)) {
+                        ps.setString(1, maPhieu);
+                        ps.setString(2, maHoaDon);
+                        ps.executeUpdate();
+                    }
+                }
+            }
+
+            // 2) Xóa chi tiết hoá đơn hiện có để tránh nhân đôi (nếu muốn merge thì cần logic phức tạp hơn)
+            String sqlDeleteCT = "DELETE FROM CHITIETHOADON WHERE maHoaDon = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sqlDeleteCT)) {
+                ps.setString(1, maHoaDon);
+                ps.executeUpdate();
+            }
+
+            // 3) Sao chép tất cả chi tiết từ phiếu đặt vào chi tiết hoá đơn
+            boolean copied = false;
+            String sqlCopy = "INSERT INTO CHITIETHOADON (maHoaDon, maMonAn, soLuong, donGia, ghiChu) " +
+                             "SELECT ?, ct.maMonAn, ct.soLuongMonAn, COALESCE(ct.donGia, ma.donGia), ct.ghiChu " +
+                             "FROM CHITIETPHIEUDATBAN ct " +
+                             "JOIN MONAN ma ON ct.maMonAn = ma.maMonAn " +
+                             "WHERE ct.maPhieu = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sqlCopy)) {
+                ps.setString(1, maHoaDon);
+                ps.setString(2, maPhieu);
+                int affected = ps.executeUpdate();
+                copied = affected > 0;
+            }
+
+            conn.commit();
+            return true;
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            if (conn != null) {
+                try { conn.rollback(); } catch (SQLException e) { e.printStackTrace(); }
+            }
+            return false;
+        } finally {
+            if (conn != null) {
+                try { conn.setAutoCommit(true); conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+            }
         }
     }
 }

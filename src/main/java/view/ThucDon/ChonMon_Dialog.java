@@ -10,8 +10,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableCellEditor;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -20,9 +18,7 @@ import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
 
-/**
- * Dialog chọn món ăn - đã cải thiện nút "Đặt" trong bảng: nhỏ, bo góc, căn giữa.
- */
+
 public class ChonMon_Dialog extends JDialog {
     // DAOs
     private MonAn_DAO monAnDAO;
@@ -34,9 +30,9 @@ public class ChonMon_Dialog extends JDialog {
     // Components
     private JTable tblMonAn;
     private DefaultTableModel modelMonAn;
-    private JButton btnHuy; // Đã BỎ btnDat
+    private JButton btnHuy;
     private JTextField txtSearch; // Ô tìm kiếm
-    
+
     // Data cache
     private List<MonAn> dsMonAn; // Cache danh sách món ăn
 
@@ -49,7 +45,7 @@ public class ChonMon_Dialog extends JDialog {
     private static final Color BTN_GREEN_BG = new Color(40, 167, 69);
     private static final Color BTN_GRAY_BG = new Color(108, 117, 125);
     private static final Color TEXT_COLOR = Color.WHITE;
-    
+
     private static final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 22);
     private static final Font FONT_HEADER = new Font("Segoe UI", Font.BOLD, 14);
     private static final Font FONT_TABLE = new Font("Segoe UI", Font.PLAIN, 13);
@@ -59,7 +55,7 @@ public class ChonMon_Dialog extends JDialog {
 
     public ChonMon_Dialog(Frame parent, PhieuDatBan phieuDatBan) {
         super(parent, "Chọn món ăn cho phiếu " + phieuDatBan.getMaPhieu().trim(), true);
-        
+
         // Khởi tạo
         this.phieuDatBan = phieuDatBan;
         this.monAnDAO = new MonAn_DAO();
@@ -80,7 +76,7 @@ public class ChonMon_Dialog extends JDialog {
         loadTableData();
         addEventListeners();
     }
-    
+
     private JPanel createHeaderAndFilterPanel() {
         JPanel pnlWrapper = new JPanel(new BorderLayout(10, 10));
         pnlWrapper.setOpaque(false);
@@ -90,7 +86,7 @@ public class ChonMon_Dialog extends JDialog {
         titleLabel.setForeground(TITLE_COLOR);
         titleLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 5, 0));
         pnlWrapper.add(titleLabel, BorderLayout.NORTH);
-        
+
         JPanel pnlFilter = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlFilter.setOpaque(false);
 
@@ -101,22 +97,22 @@ public class ChonMon_Dialog extends JDialog {
         txtSearch = new JTextField(20);
         txtSearch.setFont(FONT_LABEL);
         pnlFilter.add(txtSearch);
-        
+
         pnlWrapper.add(pnlFilter, BorderLayout.SOUTH);
-        
+
         return pnlWrapper;
     }
 
     private Component createTablePanel() {
         // Cập nhật model: Thêm cột "Đặt"
         modelMonAn = new DefaultTableModel(new String[]{"Mã món", "Tên món", "Đơn giá", "Trạng thái", "Đặt"}, 0) {
-            @Override 
+            @Override
             public boolean isCellEditable(int row, int column) {
                 // CHỈ cho phép sửa cột "Đặt" (cột 4)
-                return column == 4; 
+                return column == 4;
             }
         };
-        
+
         tblMonAn = createStyledTable(modelMonAn);
         tblMonAn.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
@@ -127,24 +123,24 @@ public class ChonMon_Dialog extends JDialog {
         tableWrapper.setLayout(new BorderLayout());
         tableWrapper.setBorder(new EmptyBorder(5, 5, 5, 5));
         tableWrapper.add(scroll, BorderLayout.CENTER);
-        
+
         return tableWrapper;
     }
-    
+
     private Component createButtonPanel() {
         JPanel pnlButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlButtons.setOpaque(false);
 
         btnHuy = createStyledButton("Đóng", BTN_GRAY_BG, TEXT_COLOR);
         pnlButtons.add(btnHuy);
-        
+
         return pnlButtons;
     }
 
     private void addEventListeners() {
         // Nút Hủy
         btnHuy.addActionListener(e -> dispose());
-        
+
         // Sự kiện lọc
         txtSearch.addKeyListener(new KeyAdapter() {
             @Override
@@ -156,23 +152,34 @@ public class ChonMon_Dialog extends JDialog {
 
     private void loadTableData() {
         dsMonAn = monAnDAO.getAllMonAn(); // Lấy tất cả món 1 lần
+        if (dsMonAn == null) dsMonAn = new ArrayList<>();
         filterData(); // Lọc và hiển thị
     }
-    
+
     private void filterData() {
         modelMonAn.setRowCount(0); // Xóa bảng
 
         String searchText = txtSearch.getText().trim().toLowerCase();
-        
+
         for (MonAn mon : dsMonAn) {
-            if (!mon.isTrangThai()) continue;
-            
-            boolean matchSearch = mon.getTenMonAn().toLowerCase().contains(searchText);
-            
-            if (matchSearch) { 
+            if (mon == null) continue;
+            // Nếu entity dùng isTrangThai() hoặc getTrangThai() thay đổi theo model, sửa tương ứng
+            boolean trangThai = true;
+            try {
+                trangThai = mon.isTrangThai();
+            } catch (Exception ex) {
+                // fallback assume true
+                trangThai = true;
+            }
+            if (!trangThai) continue;
+
+            String ten = mon.getTenMonAn() != null ? mon.getTenMonAn().toLowerCase() : "";
+            boolean matchSearch = ten.contains(searchText);
+
+            if (matchSearch) {
                 modelMonAn.addRow(new Object[]{
-                    mon.getMaMonAn().trim(),
-                    mon.getTenMonAn(),
+                    mon.getMaMonAn() != null ? mon.getMaMonAn().trim() : "",
+                    mon.getTenMonAn() != null ? mon.getTenMonAn() : "N/A",
                     String.format("%,.0f", mon.getDonGia()),
                     "Còn bán",
                     "+ Đặt" // Text cho nút, sẽ được render
@@ -196,12 +203,12 @@ public class ChonMon_Dialog extends JDialog {
         header.setForeground(TITLE_COLOR);
         header.setPreferredSize(new Dimension(header.getWidth(), 35));
         header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)));
-        ((DefaultTableCellRenderer)header.getDefaultRenderer()).setHorizontalAlignment(JLabel.CENTER);
+        ((DefaultTableCellRenderer) header.getDefaultRenderer()).setHorizontalAlignment(JLabel.CENTER);
 
         // Căn lề cho các cột
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        
+
         DefaultTableCellRenderer rightRenderer = new DefaultTableCellRenderer();
         rightRenderer.setHorizontalAlignment(JLabel.RIGHT);
         rightRenderer.setBorder(new EmptyBorder(0, 0, 0, 10));
@@ -211,12 +218,12 @@ public class ChonMon_Dialog extends JDialog {
         // Cột 1 (Tên) mặc định
         table.getColumnModel().getColumn(2).setCellRenderer(rightRenderer); // Đơn giá
         table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); // Trạng thái
-        
+
         // ===== Thay đổi: dùng renderer/editor mới trả về panel chứa "small button" ở giữa =====
         table.getColumnModel().getColumn(4).setCellRenderer(new SmallButtonCellRenderer());
         table.getColumnModel().getColumn(4).setCellEditor(new SmallButtonCellEditor());
         // =======================================================
-        
+
         // Set độ rộng
         table.getColumnModel().getColumn(0).setPreferredWidth(60);  // Mã
         table.getColumnModel().getColumn(1).setPreferredWidth(300); // Tên
@@ -228,6 +235,8 @@ public class ChonMon_Dialog extends JDialog {
     }
 
     private void datMon(int row) {
+        if (row < 0 || row >= modelMonAn.getRowCount()) return;
+
         String maMonAn = (String) modelMonAn.getValueAt(row, 0);
         String tenMonAn = (String) modelMonAn.getValueAt(row, 1);
 
@@ -238,15 +247,23 @@ public class ChonMon_Dialog extends JDialog {
             int soLuong = (int) ketQua[0];
             String ghiChu = (String) ketQua[1];
 
-            boolean success = datBanDAO.addOrUpdateChiTiet(
-                phieuDatBan.getMaPhieu(),
-                maMonAn,
-                soLuong,
-                ghiChu
-            );
+            boolean success = false;
+            try {
+                success = datBanDAO.addOrUpdateChiTiet(
+                    phieuDatBan.getMaPhieu(),
+                    maMonAn,
+                    soLuong,
+                    ghiChu
+                );
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                success = false;
+            }
 
             if (success) {
                 JOptionPane.showMessageDialog(this, "Đã thêm " + soLuong + " " + tenMonAn + "!");
+                // reload table or keep dialog open for thêm tiếp
+                loadTableData();
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi khi thêm món vào CSDL!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
@@ -259,14 +276,14 @@ public class ChonMon_Dialog extends JDialog {
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
+
                 Color color = bg;
                 if (getModel().isPressed()) {
                     color = bg.darker();
                 } else if (getModel().isRollover()) {
                     color = bg.brighter();
                 }
-                
+
                 g2.setColor(color);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                 g2.dispose();
@@ -299,23 +316,16 @@ public class ChonMon_Dialog extends JDialog {
             super.paintComponent(g);
             Graphics2D g2 = (Graphics2D) g.create();
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            
+
             Color color = (bgColor != null) ? bgColor : getBackground();
             g2.setColor(color);
-            
+
             g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
-            
+
             g2.dispose();
         }
     }
 
-    // =========================================================================
-    // New: Small rounded button + cell renderer/editor
-    // =========================================================================
-
-    /**
-     * Nút nhỏ bo góc dùng trong ô (vẽ custom để ổn định trên mọi LAF).
-     */
     static class SmallRoundedButton extends JButton {
         private Color bgColor;
         private Color fgColor;
@@ -361,7 +371,7 @@ public class ChonMon_Dialog extends JDialog {
     /**
      * Renderer trả về một JPanel (FlowLayout center) chứa SmallRoundedButton ở giữa.
      */
-    class SmallButtonCellRenderer implements TableCellRenderer {
+    class SmallButtonCellRenderer implements javax.swing.table.TableCellRenderer {
         private final JPanel panel;
         private final SmallRoundedButton button;
 
@@ -374,7 +384,7 @@ public class ChonMon_Dialog extends JDialog {
         }
 
         @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+        public Component getTableCellRendererComponent(javax.swing.JTable table, Object value, boolean isSelected,
                                                        boolean hasFocus, int row, int column) {
             // Cập nhật text nếu cần (value = "+ Đặt")
             String text = (value == null) ? "" : value.toString();
@@ -395,7 +405,7 @@ public class ChonMon_Dialog extends JDialog {
     /**
      * Editor: panel chứa button; khi nhấn button sẽ gọi datMon(row).
      */
-    class SmallButtonCellEditor extends AbstractCellEditor implements TableCellEditor {
+    class SmallButtonCellEditor extends AbstractCellEditor implements javax.swing.table.TableCellEditor {
         private final JPanel panel;
         private final SmallRoundedButton button;
         private int editingRow = -1;
@@ -407,9 +417,7 @@ public class ChonMon_Dialog extends JDialog {
             button.setFocusable(false);
             button.addActionListener(e -> {
                 // stop editing then perform action
-                // make sure to capture current row
                 final int row = editingRow;
-                // Stop editing first so table state is consistent
                 SwingUtilities.invokeLater(() -> {
                     fireEditingStopped();
                     if (row >= 0) {
@@ -421,7 +429,7 @@ public class ChonMon_Dialog extends JDialog {
         }
 
         @Override
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+        public Component getTableCellEditorComponent(javax.swing.JTable table, Object value, boolean isSelected, int row, int column) {
             this.editingRow = row;
             String text = (value == null) ? "" : value.toString();
             button.setText(text);
