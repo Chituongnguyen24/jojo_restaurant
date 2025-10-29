@@ -20,18 +20,26 @@ public enum TrangThaiBan {
         return this.value;
     }
 
-    // Hàm quan trọng để chuyển đổi từ String trong DB sang Enum
+
     public static TrangThaiBan fromString(String text) {
         if (text == null) {
             throw new IllegalArgumentException("Trạng thái bàn không được null");
         }
+        String trimmedText = text.trim(); 
+
+
         for (TrangThaiBan ttb : TrangThaiBan.values()) {
-            if (ttb.value.equalsIgnoreCase(text.trim())) {
+            // 1. Kiểm tra khớp với giá trị hiển thị (có dấu, ví dụ: "Trống") - không phân biệt hoa/thường
+            if (ttb.value.equalsIgnoreCase(trimmedText)) {
+                return ttb;
+            }
+            // 2. Kiểm tra khớp với tên hằng số enum (không dấu, ví dụ: "TRONG") - không phân biệt hoa/thường
+            if (ttb.name().equalsIgnoreCase(trimmedText)) {  
                 return ttb;
             }
         }
-        // Báo lỗi nếu không tìm thấy chuỗi tương ứng
-        throw new IllegalArgumentException("Không tìm thấy trạng thái bàn nào có tên: " + text);
+    
+        throw new IllegalArgumentException("Không tìm thấy trạng thái bàn nào có tên phù hợp: '" + text + "'");
     }
 
     public Color getColor() {

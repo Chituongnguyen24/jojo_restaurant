@@ -590,7 +590,7 @@ public class HoaDon_DAO {
             conn.setAutoCommit(false);
 
             // 1) Tìm hoadon chưa thanh toán cho bàn
-            HoaDon hoaDon = getHoaDonByBan(maBan); // đã có trong file
+            HoaDon hoaDon = getHoaDonByBan(maBan); 
             String maHoaDon;
             if (hoaDon == null) {
                 // Tạo hoadon mới với giá trị mặc định an toàn (tránh NPE trong addHoaDon)
