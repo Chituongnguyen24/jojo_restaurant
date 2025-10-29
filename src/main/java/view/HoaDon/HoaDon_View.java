@@ -69,7 +69,6 @@ public class HoaDon_View extends JPanel {
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                // Điều chỉnh chỉ số cột cho đúng với mảng cols (Thanh Toán = 6, Sửa = 7, Xóa = 8)
                 return column == 6 || column == 7 || column == 8;
             }
         };

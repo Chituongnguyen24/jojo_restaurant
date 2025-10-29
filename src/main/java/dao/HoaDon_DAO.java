@@ -22,7 +22,7 @@ public class HoaDon_DAO {
 	        pstmt.setString(1, maBan);
 	        try (ResultSet rs = pstmt.executeQuery()) {
 	            if (rs.next()) {
-	                hd = createHoaDonFromResultSet(rs); // Dùng hàm helper đã có
+	                hd = createHoaDonFromResultSet(rs); 
 	            }
 	        }
 	    } catch (SQLException e) {
@@ -94,7 +94,15 @@ public class HoaDon_DAO {
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, hd.getMaHoaDon());
-            pstmt.setString(2, hd.getKhachHang().getMaKhachHang());
+
+            // === SỬA LỖI TẠI ĐÂY ===
+            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
+                pstmt.setString(2, hd.getKhachHang().getMaKhachHang());
+            } else {
+                pstmt.setString(2, "KH00000000"); // Mã khách vãng lai mặc định
+            }
+            // === KẾT THÚC SỬA ===
+
             pstmt.setString(3, hd.getBan().getMaBan());
             pstmt.setDate(4, Date.valueOf(hd.getNgayLap()));
             pstmt.setString(5, hd.getPhuongThuc());
@@ -110,7 +118,7 @@ public class HoaDon_DAO {
             if (hd.getGioRa() != null) {
                 pstmt.setTimestamp(9, Timestamp.valueOf(hd.getGioRa()));
             } else {
-                pstmt.setNull(9, Types.TIMESTAMP); // Hoặc giá trị mặc định nếu CSDL yêu cầu
+                pstmt.setNull(9, Types.TIMESTAMP); 
             }
             pstmt.setString(10, hd.getNhanVien().getMaNV());
             // Xử lý null cho PhieuDatBan
@@ -140,7 +148,12 @@ public class HoaDon_DAO {
         try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, hd.getKhachHang().getMaKhachHang());
+            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
+                pstmt.setString(1, hd.getKhachHang().getMaKhachHang());
+            } else {
+                pstmt.setString(1, "KH00000000"); // Mã khách vãng lai mặc định
+            }
+
             pstmt.setString(2, hd.getBan().getMaBan());
             pstmt.setDate(3, Date.valueOf(hd.getNgayLap()));
             pstmt.setString(4, hd.getPhuongThuc());
@@ -150,14 +163,10 @@ public class HoaDon_DAO {
                 pstmt.setNull(5, Types.NCHAR);
             pstmt.setString(6, hd.getThue().getMaThue());
             pstmt.setTimestamp(7, Timestamp.valueOf(hd.getGioVao()));
-            // Cập nhật giờ ra khi thanh toán
+            
             if (hd.getGioRa() != null) {
                 pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioRa()));
             } else {
-                // Giữ nguyên giờ ra cũ nếu không có giá trị mới (hoặc set null nếu logic cho phép)
-                // Để đơn giản, nếu không có giờ ra mới, ta không cập nhật cột này
-                // Cần điều chỉnh câu SQL nếu muốn giữ nguyên giá trị cũ: bỏ gioRa = ? ra khỏi SET
-                // Tuy nhiên, logic thanh toán thường sẽ set giờ ra mới, nên tạm để setNull
                 pstmt.setNull(8, Types.TIMESTAMP);
             }
 
@@ -166,8 +175,8 @@ public class HoaDon_DAO {
                 pstmt.setString(10, hd.getPhieuDatBan().getMaPhieu());
             else
                 pstmt.setNull(10, Types.NCHAR);
-            pstmt.setBoolean(11, hd.isDaThanhToan()); // Cập nhật trạng thái thanh toán
-            pstmt.setString(12, hd.getMaHoaDon()); // Điều kiện WHERE
+            pstmt.setBoolean(11, hd.isDaThanhToan()); 
+            pstmt.setString(12, hd.getMaHoaDon()); 
 
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -516,7 +525,7 @@ public class HoaDon_DAO {
             pstmt.setString(1, maBan);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next()) { // Nếu tìm thấy
+                if (rs.next()) { 
                     return createHoaDonFromResultSet(rs);
                 }
             }
@@ -553,12 +562,8 @@ public class HoaDon_DAO {
         return newID;
     }
 
-    /**
-     * Sao chép tất cả món ăn từ ChiTietPhieuDatBan sang ChiTietHoaDon
-     * khi khách đến nhận bàn.
-     * @param maPhieu Mã phiếu đặt (nguồn)
-     * @param maHoaDon Mã hóa đơn (đích)
-     * @return true nếu sao chép thành công
+    /*
+     Sao chép tất cả món ăn từ ChiTietPhieuDatBan sang ChiTietHoaDon
      */
     public boolean copyChiTietPhieuDatToHoaDon(String maPhieu, String maHoaDon) {
         // Lấy đơn giá từ bảng MonAn tại thời điểm sao chép
