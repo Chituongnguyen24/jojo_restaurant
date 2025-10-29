@@ -13,7 +13,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.awt.geom.RoundRectangle2D; 
 
-public class ForgotPassword_Dialog extends JDialog {
+public class QuenMatKhau_Dialog extends JDialog {
     private JTextField txtTenDangNhap, txtMaNV, txtHoTen, txtSdt, txtEmail, txtNgaySinh;
     private JButton btnGetPassword, btnCancel;
     private JLabel lblStatus;
@@ -36,7 +36,7 @@ public class ForgotPassword_Dialog extends JDialog {
     private TaiKhoan_DAO taiKhoan_DAO;
     private NhanVien_DAO nhanVien_DAO;
 
-    public ForgotPassword_Dialog(Frame owner) {
+    public QuenMatKhau_Dialog(Frame owner) {
         super(owner, "Khôi phục mật khẩu", true);
         
         taiKhoan_DAO = new TaiKhoan_DAO(); 

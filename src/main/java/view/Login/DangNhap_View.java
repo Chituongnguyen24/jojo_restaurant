@@ -7,7 +7,7 @@ import java.awt.event.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 
-public class Login_View extends JFrame {
+public class DangNhap_View extends JFrame {
     private JTextField txtUsername;
     private JPasswordField txtPassword;
     private JButton btnLogin;
@@ -32,7 +32,7 @@ public class Login_View extends JFrame {
     private static final boolean USE_SOFT_SHADOW = true;
     private static final String USER_PLACEHOLDER = "Nhập tên đăng nhập";
 
-    public Login_View() {
+    public DangNhap_View() {
         setTitle("Nhà hàng JOJO - Đăng nhập");
         setSize(500, 700);
         setMinimumSize(new Dimension(480, 640));
@@ -155,7 +155,7 @@ public class Login_View extends JFrame {
         lblForgot.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 // Mở modal dialog để xử lý quên mật khẩu
-                ForgotPassword_Dialog dlg = new ForgotPassword_Dialog(Login_View.this);
+                QuenMatKhau_Dialog dlg = new QuenMatKhau_Dialog(DangNhap_View.this);
                 dlg.setVisible(true);
             }
         });
@@ -405,7 +405,7 @@ public class Login_View extends JFrame {
             try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
             catch (Exception e) { e.printStackTrace(); }
 
-            Login_View view = new Login_View();
+            DangNhap_View view = new DangNhap_View();
             view.setVisible(true);
             view.addLoginListener(e -> {
                 String username = view.getUsername();

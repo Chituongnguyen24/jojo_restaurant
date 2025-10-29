@@ -2,7 +2,7 @@
 import javax.swing.*;
 import dao.TaiKhoan_DAO;
 import entity.TaiKhoan;
-import view.Login.Login_View;
+import view.Login.DangNhap_View;
 import view.QuanLy_View;
 import view.TiepTan_View;
 
@@ -20,7 +20,7 @@ public class Main {
             }
 
             
-            Login_View loginView = new Login_View();
+            DangNhap_View loginView = new DangNhap_View();
             loginView.setVisible(true);
 
        

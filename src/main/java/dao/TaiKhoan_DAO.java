@@ -1,12 +1,12 @@
 package dao;
 
-
 import connectDB.ConnectDB;
 import entity.TaiKhoan;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+
 
 public class TaiKhoan_DAO {
 
@@ -17,7 +17,7 @@ public class TaiKhoan_DAO {
         try (Connection conn = new ConnectDB().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            
+
             while (rs.next()) {
                 TaiKhoan tk = new TaiKhoan(
                         rs.getString("maNV"),
@@ -38,7 +38,7 @@ public class TaiKhoan_DAO {
         String sql = "INSERT INTO TaiKhoan(maNV, tenDangNhap, matKhau, vaiTro) VALUES (?, ?, ?, ?)";
         try (Connection conn = new ConnectDB().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setString(1, tk.getMaNV());
             pstmt.setString(2, tk.getTenDangNhap());
             pstmt.setString(3, tk.getMatKhau());
@@ -56,7 +56,7 @@ public class TaiKhoan_DAO {
         String sql = "UPDATE TaiKhoan SET tenDangNhap=?, matKhau=?, vaiTro=? WHERE maNV=?";
         try (Connection conn = new ConnectDB().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setString(1, tk.getTenDangNhap());
             pstmt.setString(2, tk.getMatKhau());
             pstmt.setString(3, tk.getVaiTro());
@@ -74,7 +74,7 @@ public class TaiKhoan_DAO {
         String sql = "DELETE FROM TaiKhoan WHERE maNV=?";
         try (Connection conn = new ConnectDB().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setString(1, maNV);
             return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -88,7 +88,7 @@ public class TaiKhoan_DAO {
         String sql = "SELECT * FROM TaiKhoan WHERE tenDangNhap=?";
         try (Connection conn = new ConnectDB().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setString(1, tenDangNhap);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
@@ -111,7 +111,7 @@ public class TaiKhoan_DAO {
         String sql = "SELECT * FROM TaiKhoan WHERE tenDangNhap=? AND matKhau=?";
         try (Connection conn = new ConnectDB().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
+
             pstmt.setString(1, tenDangNhap);
             pstmt.setString(2, matKhau);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -129,5 +129,41 @@ public class TaiKhoan_DAO {
         }
         return null;
     }
-}
 
+    // --- MỚI: Tìm tài khoản theo mã nhân viên ---
+    public TaiKhoan findByMaNV(String maNV) {
+        String sql = "SELECT * FROM TaiKhoan WHERE maNV=?";
+        try (Connection conn = new ConnectDB().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, maNV);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return new TaiKhoan(
+                            rs.getString("maNV"),
+                            rs.getString("tenDangNhap"),
+                            rs.getString("matKhau"),
+                            rs.getString("vaiTro")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public boolean updateMatKhau(String maNV, String newHashedPassword) {
+        String sql = "UPDATE TaiKhoan SET matKhau=? WHERE maNV=?";
+        try (Connection conn = new ConnectDB().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newHashedPassword);
+            pstmt.setString(2, maNV);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+}
