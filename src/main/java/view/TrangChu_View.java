@@ -12,8 +12,6 @@ import view.Login.Login_View;
 import view.NhanVien.*;
 import view.ThucDon.*;
 import entity.TaiKhoan;
-import view.HeThong_View;
-import view.ThucDon.MonAn_View;
 
 public class TrangChu_View extends JPanel {
 
@@ -26,17 +24,17 @@ public class TrangChu_View extends JPanel {
     private static final String CARD_HOME = "HE_THONG";
     private static final String CARD_QUAN_LY_BAN = "QUAN_LY_BAN";
     private static final String CARD_QUAN_LY_DAT_BAN = "QUAN_LY_DAT_BAN";
-    private static final String CARD_THUC_DON = "THUC_DON";
+    private static final String CARD_QUAN_LY_DAT_MON = "QUAN_LY_DAT_MON";
+    private static final String CARD_QUAN_LY_THUC_DON = "QUAN_LY_THUC_DON";
+    private static final String CARD_TRA_CUU_MON_AN = "TRA_CUU_MON_AN";
     private static final String CARD_QUAN_LY_HOADON = "QUAN_LY_HOADON";
     private static final String CARD_TRA_CUU_HOADON = "TRA_CUU_HOADON";
     private static final String CARD_QUAN_LY_KH = "QUAN_LY_KH";
     private static final String CARD_DIEM_KH = "DIEM_TICHLUY";
     private static final String CARD_TRA_CUU_KH = "TRA_CUU_KH";
-    private static final String CARD_NHANVIEN = "NHAN_VIEN";
+    private static final String CARD_QUAN_LY_NHANVIEN = "QUAN_LY_NHAN_VIEN";
     private static final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
     private static final String CARD_THONGKE = "THONG_KE";
-    private static final String CARD_MON_AN = "MON_AN";
-    private static final String CARD_DAT_MON = "DAT_MON";
 
     public TrangChu_View(JFrame frame, TaiKhoan tk, String vaiTro) {
         this.mainFrame = frame;
@@ -143,25 +141,25 @@ public class TrangChu_View extends JPanel {
         if (isManager) {
             JMenu menuThucDon = new JMenu("Thực đơn");
             menuThucDon.setFont(menuFont);
-            JMenuItem mQLMon = new JMenuItem("Quản lý món ăn");
-            mQLMon.setFont(menuItemFont);
+            JMenuItem mQLDMon = new JMenuItem("Quản lý đặt món");
+            mQLDMon.setFont(menuItemFont);
             JMenuItem mXemTD = new JMenuItem("Quản lý thực đơn");
             mXemTD.setFont(menuItemFont);
-            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu");
+            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu món ăn");
             mTraCuuMonAn.setFont(menuItemFont);
-            menuThucDon.add(mQLMon);
+            menuThucDon.add(mQLDMon);
             menuThucDon.add(mXemTD);
             menuThucDon.add(mTraCuuMonAn);
             menuBar.add(menuThucDon);
-            allMenuItems.add(mQLMon);
+            allMenuItems.add(mQLDMon);
             allMenuItems.add(mXemTD);
             allMenuItems.add(mTraCuuMonAn);
         } else if (isReceptionist) {
             JMenu menuThucDon = new JMenu("Thực đơn");
             menuThucDon.setFont(menuFont);
-            JMenuItem mDatMon = new JMenuItem("Đặt món");
+            JMenuItem mDatMon = new JMenuItem("Quản lý đặt món");
             mDatMon.setFont(menuItemFont);
-            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu");
+            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu món ăn");
             mTraCuuMonAn.setFont(menuItemFont);
             menuThucDon.add(mDatMon);
             menuThucDon.add(mTraCuuMonAn);
@@ -206,7 +204,7 @@ public class TrangChu_View extends JPanel {
             JMenu menuNV = new JMenu("Nhân viên");
             menuNV.setFont(menuFont);
             
-            JMenuItem mQLNV = new JMenuItem("Nhân viên");
+            JMenuItem mQLNV = new JMenuItem("Quản lý nhân viên");
             mQLNV.setFont(menuItemFont);
             menuNV.add(mQLNV);
 
@@ -245,20 +243,17 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new HeThong_View(), CARD_HOME);
         contentPanel.add(new DatBan_View(), CARD_QUAN_LY_DAT_BAN);
         contentPanel.add(new HoaDon_TraCuu_View(), CARD_TRA_CUU_HOADON);
+        contentPanel.add(new MonAn_TraCuu_View(), CARD_TRA_CUU_MON_AN);
         contentPanel.add(new KhachHang_TraCuu_View(), CARD_TRA_CUU_KH);
-        contentPanel.add(new ThucDon_View(), CARD_THUC_DON);
-
-        if (isManager || isReceptionist) {
-            contentPanel.add(new HoaDon_View(), CARD_QUAN_LY_HOADON);
-            contentPanel.add(new KhachHang_View(), CARD_QUAN_LY_KH);
-            contentPanel.add(new KhachHang_DiemTichLuy_View(), CARD_DIEM_KH);
-            //contentPanel.add(new DatMon_View(), CARD_DAT_MON);
-        }
+        contentPanel.add(new MonAn_View(), CARD_QUAN_LY_DAT_MON);
+        contentPanel.add(new HoaDon_View(), CARD_QUAN_LY_HOADON);
+        contentPanel.add(new KhachHang_View(), CARD_QUAN_LY_KH);
+        contentPanel.add(new KhachHang_DiemTichLuy_View(), CARD_DIEM_KH);
 
         if (isManager) {
             contentPanel.add(new Ban_View(), CARD_QUAN_LY_BAN);
-            contentPanel.add(new MonAn_View(), CARD_MON_AN);
-            contentPanel.add(new NhanVien_View(), CARD_NHANVIEN);
+            contentPanel.add(new ThucDon_View(), CARD_QUAN_LY_THUC_DON);
+            contentPanel.add(new NhanVien_View(), CARD_QUAN_LY_NHANVIEN);
             contentPanel.add(new NhanVien_TraCuu_View(), CARD_TRA_CUU_NV);
             contentPanel.add(new ThongKe_View(), CARD_THONGKE);
         }
@@ -273,15 +268,15 @@ public class TrangChu_View extends JPanel {
             String cardName = switch (src.getText()) {
                 case "Quản lý bàn" -> CARD_QUAN_LY_BAN;
                 case "Quản lý đặt bàn" -> CARD_QUAN_LY_DAT_BAN;
-                case "Đặt món" -> CARD_DAT_MON;
-                case "Quản lý món ăn" -> CARD_MON_AN;
-                case "Quản lý thực đơn", "Tra cứu" -> CARD_THUC_DON;
+                case "Quản lý đặt món" -> CARD_QUAN_LY_DAT_MON;
+                case "Quản lý thực đơn" -> CARD_QUAN_LY_THUC_DON;
+                case "Tra cứu món ăn" -> CARD_TRA_CUU_MON_AN;
                 case "Quản lý hóa đơn" -> CARD_QUAN_LY_HOADON;
                 case "Tra cứu hóa đơn" -> CARD_TRA_CUU_HOADON;
                 case "Quản lý khách hàng" -> CARD_QUAN_LY_KH;
                 case "Quản lý điểm tích lũy" -> CARD_DIEM_KH;
                 case "Tra cứu khách hàng" -> CARD_TRA_CUU_KH;
-                case "Nhân viên" -> CARD_NHANVIEN;
+                case "Quản lý nhân viên" -> CARD_QUAN_LY_NHANVIEN;
                 case "Tra cứu nhân viên" -> CARD_TRA_CUU_NV;
                 case "Thống kê" -> CARD_THONGKE;
                 default -> CARD_HOME;

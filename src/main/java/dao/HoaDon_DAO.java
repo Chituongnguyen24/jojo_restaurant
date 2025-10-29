@@ -13,13 +13,24 @@ import java.util.Map;
 
 public class HoaDon_DAO {
 
-    /**
-     * Hàm nội bộ: Tạo đối tượng HoaDon từ ResultSet.
-     * Tự động tạo các đối tượng tham chiếu (KhachHang, NhanVien, Ban,...) chỉ với mã.
-     * @param rs ResultSet đang trỏ tới dòng dữ liệu hóa đơn
-     * @return Đối tượng HoaDon
-     * @throws SQLException
-     */
+	// Trong HoaDon_DAO.java
+	public HoaDon getHoaDonByBanChuaThanhToan(String maBan) {
+	    HoaDon hd = null;
+	    String sql = "SELECT * FROM HOADON WHERE maBan = ? AND daThanhToan = 0"; // Tìm HĐ của bàn và chưa thanh toán
+	    try (Connection conn = ConnectDB.getConnection(); // Dùng lớp kết nối của bạn
+	         PreparedStatement pstmt = conn.prepareStatement(sql)) {
+	        pstmt.setString(1, maBan);
+	        try (ResultSet rs = pstmt.executeQuery()) {
+	            if (rs.next()) {
+	                hd = createHoaDonFromResultSet(rs); // Dùng hàm helper đã có
+	            }
+	        }
+	    } catch (SQLException e) {
+	        System.err.println("Lỗi khi lấy hóa đơn chưa thanh toán của bàn " + maBan + ": " + e.getMessage());
+	        e.printStackTrace();
+	    }
+	    return hd;
+	}
     private HoaDon createHoaDonFromResultSet(ResultSet rs) throws SQLException {
         String maHD = rs.getString("maHoaDon");
         LocalDate ngayLap = rs.getDate("ngayLap").toLocalDate();

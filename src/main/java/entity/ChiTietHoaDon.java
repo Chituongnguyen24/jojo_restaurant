@@ -60,8 +60,7 @@ public class ChiTietHoaDon {
                '}';
     }
 
-	public Object tinhThanhTien() {
-		// TODO Auto-generated method stub
-		return null;
+	public double tinhThanhTien() {
+		return donGia*soLuong;
 	}
 }

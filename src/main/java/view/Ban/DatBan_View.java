@@ -3,9 +3,16 @@ package view.Ban;
 import dao.Ban_DAO;
 import dao.DatBan_DAO;
 import dao.HoaDon_DAO;
+import dao.HoaDon_KhuyenMai_DAO;
+import dao.HoaDon_Thue_DAO;
+import dao.KhachHang_DAO;
 import entity.Ban;
+import entity.ChiTietHoaDon;
 import entity.HoaDon;
+import entity.KhachHang;
+import entity.KhuyenMai;
 import entity.PhieuDatBan;
+import entity.Thue;
 import enums.TrangThaiBan;
 import view.HoaDon.HoaDon_ThanhToan_Dialog; // Import dialog thanh toán
 
@@ -934,7 +941,10 @@ public class DatBan_View extends JPanel {
     }
 
     private void moDialogThanhToan(Ban ban) {
-        if (ban == null || ban.getMaBan() == null) return;
+        if (ban == null || ban.getMaBan() == null) {
+            JOptionPane.showMessageDialog(this, "Thông tin bàn không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         if (parentFrame == null) {
@@ -942,36 +952,79 @@ public class DatBan_View extends JPanel {
             return;
         }
 
-        // Lấy hóa đơn của bàn
         HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
-        HoaDon hoaDon = hoaDonDAO.getHoaDonByBan(ban.getMaBan());
-        
-        if (hoaDon == null) {
+        HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO();
+        HoaDon_KhuyenMai_DAO khuyenMaiDAO = new HoaDon_KhuyenMai_DAO();
+
+        try {
+            HoaDon hoaDonHienTai = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan());
+
+            if (hoaDonHienTai == null) {
+                 JOptionPane.showMessageDialog(this,
+                    "Không tìm thấy hóa đơn chưa thanh toán cho bàn " + ban.getMaBan(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+                 return;
+            }
+
+            KhachHang_DAO khachHangDAO = new KhachHang_DAO();
+            KhachHang kh = null;
+            if (hoaDonHienTai.getKhachHang() != null && hoaDonHienTai.getKhachHang().getMaKhachHang() != null) {
+                 kh = khachHangDAO.getKhachHangById(hoaDonHienTai.getKhachHang().getMaKhachHang());
+            }
+             hoaDonHienTai.setKhachHang(kh);
+
+
+            List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHoaDon());
+            if (chiTietList == null) chiTietList = new ArrayList<>();
+
+            double tongTienMonAn = 0;
+            for (ChiTietHoaDon ct : chiTietList) {
+                tongTienMonAn += ct.tinhThanhTien();
+            }
+
+            Thue thue = (hoaDonHienTai.getThue() != null && hoaDonHienTai.getThue().getMaThue() != null)
+                        ? thueDAO.getThueById(hoaDonHienTai.getThue().getMaThue()) : null;
+            KhuyenMai km = (hoaDonHienTai.getKhuyenMai() != null && hoaDonHienTai.getKhuyenMai().getMaKM() != null)
+                        ? khuyenMaiDAO.getKhuyenMaiById(hoaDonHienTai.getKhuyenMai().getMaKM()) : null;
+
+            double tienGiam = 0, tienThue = 0, tongTienSauGiam = tongTienMonAn;
+
+            if (km != null && !"KM00000000".equals(km.getMaKM().trim()) && km.getGiaTri() > 0) {
+                if (km.getGiaTri() < 1.0) tienGiam = tongTienMonAn * km.getGiaTri();
+                else tienGiam = km.getGiaTri();
+                tongTienSauGiam -= tienGiam;
+                if (tongTienSauGiam < 0) tongTienSauGiam = 0;
+            }
+            if (thue != null && thue.getTyLeThue() > 0) {
+                tienThue = tongTienSauGiam * thue.getTyLeThue();
+            }
+            double tongThanhToan = tongTienSauGiam + tienThue;
+
+            HoaDon_ThanhToan_Dialog thanhToanDialog = new HoaDon_ThanhToan_Dialog(
+                parentFrame, hoaDonHienTai, hoaDonDAO,
+                tongTienMonAn, tienGiam, tienThue, tongThanhToan,
+                chiTietList
+            );
+            thanhToanDialog.setVisible(true);
+
+            HoaDon hoaDonSauKhiDongDialog = hoaDonDAO.findByMaHD(hoaDonHienTai.getMaHoaDon());
+            if (hoaDonSauKhiDongDialog != null && hoaDonSauKhiDongDialog.isDaThanhToan()) {
+                boolean updatedStatus = datBanDAO.updateTableStatus(ban.getMaBan(), TrangThaiBan.TRONG);
+                if(updatedStatus){
+                     System.out.println("Đã cập nhật bàn " + ban.getMaBan() + " về TRỐNG sau thanh toán.");
+                } else {
+                     System.err.println("Lỗi: Không cập nhật được trạng thái bàn " + ban.getMaBan() + " về TRỐNG.");
+                }
+                refreshData();
+            } else {
+                 System.out.println("Hóa đơn " + hoaDonHienTai.getMaHoaDon() + " chưa được thanh toán (dialog hủy).");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
             JOptionPane.showMessageDialog(this,
-                "Không tìm thấy hóa đơn cho bàn này.",
-                "Lỗi",
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // Tính tổng tiền hóa đơn
-        double tongTien = hoaDonDAO.tinhTongTienHoaDon(hoaDon.getMaHoaDon());
-
-        // Hiển thị dialog thanh toán (File thứ 2 của bạn)
-        // Đây chính là nơi liên kết đến "trang thanh toán"
-        view.HoaDon.HoaDon_ThanhToan_Dialog thanhToanDialog = 
-            new view.HoaDon.HoaDon_ThanhToan_Dialog(parentFrame, hoaDon, hoaDonDAO, tongTien);
-        
-        thanhToanDialog.setVisible(true);
-
-        // Sau khi dialog thanh toán đóng, kiểm tra xem đã thanh toán chưa
-        if (hoaDon.isDaThanhToan()) {
-            // Cập nhật trạng thái bàn về TRỐNG
-            ban.setTrangThai(TrangThaiBan.TRONG);
-            banDAO.capNhatBan(ban);
-            
-            // Refresh lại toàn bộ giao diện
-            refreshData();
+                "Không thể mở màn hình thanh toán: " + e.getMessage(),
+                "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
  

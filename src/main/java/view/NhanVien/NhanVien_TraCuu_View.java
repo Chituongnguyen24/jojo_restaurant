@@ -27,7 +27,7 @@ public class NhanVien_TraCuu_View extends JPanel {
     private static final Color SUCCESS_GREEN = new Color(46, 204, 113);
     private static final Color WARNING_ORANGE = new Color(243, 156, 18);
     private static final Color DANGER_RED = new Color(231, 76, 60);
-    private static final Color BG_COLOR = new Color(236, 240, 241);
+    private static final Color BG_COLOR = new Color(251, 248, 241);
     private static final Color CARD_BG = Color.WHITE;
     private static final Color TEXT_PRIMARY = new Color(44, 62, 80);
     private static final Color TEXT_SECONDARY = new Color(127, 140, 141);
