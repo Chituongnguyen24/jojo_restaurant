@@ -13,10 +13,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.util.*;
-import java.util.List;
 import java.util.Map;
 
-
+/**
+ * ThongKe_View - FIXED: Charts now update correctly when applying custom date filter
+ */
 public class ThongKe_View extends JPanel {
 
     private final HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
@@ -25,8 +26,6 @@ public class ThongKe_View extends JPanel {
 
     private JDateChooser dateFrom;
     private JDateChooser dateTo;
-    private JTextFieldDateEditor dateFromEditor;
-    private JTextFieldDateEditor dateToEditor;
 
     private JComboBox<String> cboLoaiThongKe;
     private JButton btnApDung;
@@ -82,9 +81,6 @@ public class ThongKe_View extends JPanel {
         dateFrom.setPreferredSize(new Dimension(130, 30));
         dateFrom.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dateFrom.setDate(null);
-        dateFrom.setEnabled(false);
-        dateFromEditor = (JTextFieldDateEditor) dateFrom.getDateEditor();
-        if (dateFromEditor != null) dateFromEditor.setEnabled(false);
         panel.add(dateFrom);
 
         JLabel lblTo = new JLabel("Đến ngày:");
@@ -96,9 +92,6 @@ public class ThongKe_View extends JPanel {
         dateTo.setPreferredSize(new Dimension(130, 30));
         dateTo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dateTo.setDate(new Date());
-        dateTo.setEnabled(false);
-        dateToEditor = (JTextFieldDateEditor) dateTo.getDateEditor();
-        if (dateToEditor != null) dateToEditor.setEnabled(false);
         panel.add(dateTo);
 
         btnApDung = new JButton("Áp dụng");
@@ -124,27 +117,66 @@ public class ThongKe_View extends JPanel {
             cboLoaiThongKe.setSelectedIndex(0);
             dateFrom.setDate(null);
             dateTo.setDate(new Date());
-            dateFrom.setEnabled(false);
-            if (dateFromEditor != null) dateFromEditor.setEnabled(false);
-            dateTo.setEnabled(false);
-            if (dateToEditor != null) dateToEditor.setEnabled(false);
+            setDateChooserEnabled(dateFrom, true);
+            setDateChooserEnabled(dateTo, true);
             loadStatistics(null, null);
         });
         panel.add(btnHienTai);
 
+        SwingUtilities.invokeLater(() -> {
+            setDateChooserEnabled(dateFrom, true);
+            setDateChooserEnabled(dateTo, true);
+        });
+
         return panel;
+    }
+
+    private void setDateChooserEnabled(JDateChooser chooser, boolean enabled) {
+        if (chooser == null) return;
+        
+        chooser.setEnabled(enabled);
+        
+        try {
+            Component editorComponent = chooser.getDateEditor().getUiComponent();
+            if (editorComponent != null) {
+                editorComponent.setEnabled(enabled);
+                editorComponent.setFocusable(enabled);
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            if (chooser.getDateEditor() instanceof JTextFieldDateEditor) {
+                JTextFieldDateEditor ed = (JTextFieldDateEditor) chooser.getDateEditor();
+                ed.setEditable(enabled);
+            }
+        } catch (Exception ignored) {
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            try {
+                Component btn = chooser.getCalendarButton();
+                if (btn != null) {
+                    btn.setEnabled(enabled);
+                }
+            } catch (Exception ignored) {
+            }
+        });
     }
 
     private void onLoaiThongKeChanged() {
         String selected = (String) cboLoaiThongKe.getSelectedItem();
         boolean isCustom = "Tùy chọn".equals(selected);
 
-        dateFrom.setEnabled(isCustom);
-        dateTo.setEnabled(isCustom);
-        if (dateFromEditor != null) dateFromEditor.setEnabled(isCustom);
-        if (dateToEditor != null) dateToEditor.setEnabled(isCustom);
-
-        if (!isCustom) {
+        if (isCustom) {
+            setDateChooserEnabled(dateFrom, true);
+            setDateChooserEnabled(dateTo, true);
+            dateFrom.setDate(null);
+            dateTo.setDate(new Date());
+        } else {
+            setDateChooserEnabled(dateFrom, true);
+            setDateChooserEnabled(dateTo, true);
+            
             Calendar endCal = Calendar.getInstance();
             endCal.set(Calendar.HOUR_OF_DAY, 23);
             endCal.set(Calendar.MINUTE, 59);
@@ -187,9 +219,6 @@ public class ThongKe_View extends JPanel {
             } else {
                 loadStatistics(null, null);
             }
-        } else {
-            dateFrom.setDate(null);
-            dateTo.setDate(new Date());
         }
     }
 
@@ -229,9 +258,16 @@ public class ThongKe_View extends JPanel {
                         JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            
+            // === FIX: Call loadStatistics with the correct dates ===
             loadStatistics(from, to);
         } else {
-            onLoaiThongKeChanged();
+            // For preset options, apply the dates from dateFrom/dateTo
+            if (from != null && to != null) {
+                loadStatistics(from, to);
+            } else {
+                onLoaiThongKeChanged();
+            }
         }
     }
 
@@ -258,6 +294,7 @@ public class ThongKe_View extends JPanel {
         chartPanel.setBackground(new Color(250, 248, 243));
         chartPanel.setBorder(new EmptyBorder(10, 20, 20, 20));
 
+        // === FIX: Pass from/to dates to charts ===
         chartPanel.add(new BarChartPanel(from, to));
         chartPanel.add(new PieChartPanel(from, to));
 
@@ -304,54 +341,77 @@ public class ThongKe_View extends JPanel {
         private final Color axisColor = new Color(150, 150, 150);
         private final Color barColor = new Color(52, 152, 219);
         private final Color gridColor = new Color(220, 220, 220);
+        private final int titleHeight = 32;
 
         BarChartPanel(Date from, Date to) {
             setBackground(Color.WHITE);
             setPreferredSize(new Dimension(700, 360));
+            
+            // === FIX: Use the provided dates directly ===
             Map<String, Double> doanhThuData;
-            if (from == null || to == null) {
-                Date endDate = getEndOfDay(new Date());
-                Date startDate = getStartOfDay(getPreviousDate(6));
-                doanhThuData = hoaDonDAO.getDoanhThuTheoKhoangThoiGian(startDate, endDate);
+            if (from == null && to == null) {
+                // Default: last 7 days
+                doanhThuData = hoaDonDAO.getDoanhThuTheoKhoangThoiGian(
+                    getStartOfDay(getPreviousDate(6)), 
+                    getEndOfDay(new Date())
+                );
             } else {
+                // Use provided dates
                 doanhThuData = hoaDonDAO.getDoanhThuTheoKhoangThoiGian(from, to);
             }
+
             if (doanhThuData == null || doanhThuData.isEmpty()) {
                 this.data = new LinkedHashMap<>();
                 this.data.put("Không có dữ liệu", 0.0);
             } else {
-                this.data = new LinkedHashMap<>(doanhThuData);
+                Map<String, Double> cleaned = new LinkedHashMap<>();
+                for (Map.Entry<String, Double> e : doanhThuData.entrySet()) {
+                    String k = e.getKey();
+                    if (k == null || k.trim().isEmpty()) k = "(Chưa có tên)";
+                    cleaned.put(k, e.getValue() == null ? 0.0 : e.getValue());
+                }
+                this.data = cleaned;
             }
 
-            // tooltip-like: show value when hover a bar
+            ToolTipManager.sharedInstance().registerComponent(this);
+
             addMouseListener(new MouseAdapter() {
                 @Override
-                public void mousePressed(MouseEvent e) {
-                    String label = getLabelAt(e.getX(), e.getY());
-                    if (label != null) {
-                        Double v = data.get(label);
-                        JOptionPane.showMessageDialog(BarChartPanel.this, label + ": " + VN_FORMAT.format(v) + " đ");
+                public void mouseExited(MouseEvent e) {
+                    setToolTipText(null);
+                }
+            });
+
+            addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+                @Override
+                public void mouseMoved(MouseEvent e) {
+                    String key = getLabelAt(e.getX(), e.getY());
+                    if (key != null) {
+                        Double v = data.get(key);
+                        setToolTipText(key + ": " + VN_FORMAT.format(v) + " đ");
+                    } else {
+                        setToolTipText(null);
                     }
                 }
             });
         }
 
-        // helper to detect bar under mouse (simple)
         private String getLabelAt(int mx, int my) {
             int width = getWidth();
             int height = getHeight();
             int n = data.size();
+            if (n == 0) return null;
             int availableWidth = width - 2 * padding - labelPadding;
-            int barWidth = (n > 0) ? Math.max(1, availableWidth / (n * 2)) : 10;
+            int barWidth = Math.max(1, availableWidth / (n * 2));
             int startX = padding + labelPadding;
             int i = 0;
             double max = Collections.max(data.values());
             if (max <= 0) max = 1;
             for (String key : data.keySet()) {
                 int x = startX + i * 2 * barWidth;
-                int barHeight = (int) ((height - 2 * padding) * (data.get(key) / max));
+                int barHeight = (int) ((height - 2 * padding - titleHeight) * (data.get(key) / max));
                 int y = height - padding - barHeight;
-                Rectangle r = new Rectangle(x, y, barWidth, barHeight);
+                Rectangle r = new Rectangle(x, y, barWidth, Math.max(barHeight, 1));
                 if (r.contains(mx, my)) return key;
                 i++;
             }
@@ -368,23 +428,28 @@ public class ThongKe_View extends JPanel {
             int width = getWidth();
             int height = getHeight();
 
-            // draw background grid lines
+            String title = "Doanh thu";
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            FontMetrics tfm = g2.getFontMetrics();
+            int tx = (width - tfm.stringWidth(title)) / 2;
+            int ty = (titleHeight + tfm.getAscent()) / 2;
+            g2.setColor(new Color(60, 60, 60));
+            g2.drawString(title, tx, ty);
+
             g2.setColor(gridColor);
             int gridLines = 5;
             for (int i = 0; i <= gridLines; i++) {
-                int y = padding + (height - 2 * padding) * i / gridLines;
+                int y = titleHeight + padding + (height - 2 * padding - titleHeight) * i / gridLines;
                 g2.drawLine(padding + labelPadding, y, width - padding, y);
             }
 
-            // axes
             g2.setColor(axisColor);
-            g2.drawLine(padding + labelPadding, height - padding, width - padding, height - padding); // x-axis
-            g2.drawLine(padding + labelPadding, padding, padding + labelPadding, height - padding); // y-axis
+            g2.drawLine(padding + labelPadding, height - padding, width - padding, height - padding);
+            g2.drawLine(padding + labelPadding, titleHeight + padding, padding + labelPadding, height - padding);
 
-            // bars
             int n = data.size();
             int availableWidth = width - 2 * padding - labelPadding;
-            int barWidth = (n > 0) ? Math.max(1, availableWidth / (n * 2)) : 10;
+            int barWidth = Math.max(1, availableWidth / (n * 2));
             int startX = padding + labelPadding;
             double max = Collections.max(data.values());
             if (max <= 0) max = 1;
@@ -393,26 +458,23 @@ public class ThongKe_View extends JPanel {
             g2.setFont(new Font("Segoe UI", Font.PLAIN, 11));
             for (Map.Entry<String, Double> entry : data.entrySet()) {
                 String label = entry.getKey();
+                if (label == null || label.trim().isEmpty()) label = "(Chưa có tên)";
                 double value = entry.getValue() != null ? entry.getValue() : 0.0;
                 int x = startX + i * 2 * barWidth;
-                int barHeight = (int) ((height - 2 * padding) * (value / max));
+                int barHeight = (int) ((height - 2 * padding - titleHeight) * (value / max));
                 int y = height - padding - barHeight;
 
-                // bar
                 g2.setColor(barColor);
-                g2.fillRect(x, y, barWidth, barHeight);
+                g2.fillRect(x, y, barWidth, Math.max(barHeight, 1));
 
-                // value text above bar
                 g2.setColor(new Color(60, 60, 60));
                 String vtext = VN_FORMAT.format(value) + " đ";
                 FontMetrics fm = g2.getFontMetrics();
-                int tx = x + (barWidth - fm.stringWidth(vtext)) / 2;
-                int ty = Math.max(y - 5, padding);
-                g2.drawString(vtext, tx, ty);
+                int vx = x + (barWidth - fm.stringWidth(vtext)) / 2;
+                int vy = Math.max(y - 5, titleHeight + padding + fm.getAscent());
+                g2.drawString(vtext, vx, vy);
 
-                // label below bar (rotated or wrapped)
-                String shortLabel = label;
-                if (shortLabel.length() > 10) shortLabel = shortLabel.substring(0, 10) + "...";
+                String shortLabel = label.length() > 12 ? label.substring(0, 12) + "..." : label;
                 int lx = x + (barWidth - g2.getFontMetrics().stringWidth(shortLabel)) / 2;
                 int ly = height - padding + g2.getFontMetrics().getAscent() + 5;
                 g2.drawString(shortLabel, lx, ly);
@@ -424,6 +486,9 @@ public class ThongKe_View extends JPanel {
         }
     }
 
+    // -------------------------
+    // Inner class: PieChartPanel (Java2D)
+    // -------------------------
     private class PieChartPanel extends JPanel {
         private final Map<String, Integer> data;
         private final Color[] COLORS = {
@@ -434,67 +499,35 @@ public class ThongKe_View extends JPanel {
                 new Color(231, 76, 60),
                 new Color(52, 73, 94)
         };
+        private final int titleHeight = 32;
 
         PieChartPanel(Date from, Date to) {
             setBackground(Color.WHITE);
             setPreferredSize(new Dimension(560, 360));
+            
+            // === FIX: Use the provided dates directly ===
             Map<String, Integer> raw = banDAO.getSoBanTheoKhuVuc(from, to);
+            
             if (raw == null || raw.isEmpty()) {
                 this.data = new LinkedHashMap<>();
                 this.data.put("Không có dữ liệu", 1);
             } else {
-                this.data = new LinkedHashMap<>(raw);
+                Map<String, Integer> cleaned = new LinkedHashMap<>();
                 boolean allZero = true;
-                for (Integer v : data.values()) if (v != null && v > 0) { allZero = false; break; }
+                for (Map.Entry<String, Integer> e : raw.entrySet()) {
+                    String k = e.getKey();
+                    if (k == null || k.trim().isEmpty()) k = "(Chưa có tên)";
+                    Integer v = e.getValue() == null ? 0 : e.getValue();
+                    if (v > 0) allZero = false;
+                    cleaned.put(k, v);
+                }
                 if (allZero) {
-                    this.data.clear();
+                    this.data = new LinkedHashMap<>();
                     this.data.put("Không có dữ liệu", 1);
+                } else {
+                    this.data = cleaned;
                 }
             }
-
-            addMouseListener(new MouseAdapter() {
-                @Override
-                public void mousePressed(MouseEvent e) {
-                    String label = getSliceAt(e.getX(), e.getY());
-                    if (label != null) {
-                        Integer v = data.get(label);
-                        JOptionPane.showMessageDialog(PieChartPanel.this, label + ": " + (v != null ? v : 0));
-                    }
-                }
-            });
-        }
-
-        private String getSliceAt(int mx, int my) {
-            int w = getWidth();
-            int h = getHeight();
-            int size = Math.min(w, h) - 80;
-            int cx = w / 2 - 20;
-            int cy = h / 2 - 10;
-            int rx = size / 2;
-            int ry = size / 2;
-            double total = 0;
-            for (Integer v : data.values()) total += (v != null ? v : 0);
-            if (total == 0) return null;
-            double start = 0;
-            int i = 0;
-            for (Map.Entry<String, Integer> entry : data.entrySet()) {
-                double value = entry.getValue() != null ? entry.getValue() : 0;
-                double angle = value / total * 360.0;
-                double mid = start + angle / 2.0;
-                // compute point angle from center
-                double dx = mx - cx;
-                double dy = my - cy;
-                double mouseAngle = Math.toDegrees(Math.atan2(dy, dx));
-                mouseAngle = mouseAngle < 0 ? 360 + mouseAngle : mouseAngle;
-                double startAngle = start;
-                double endAngle = start + angle;
-                if (mouseAngle >= startAngle && mouseAngle <= endAngle) {
-                    return entry.getKey();
-                }
-                start += angle;
-                i++;
-            }
-            return null;
         }
 
         @Override
@@ -506,11 +539,19 @@ public class ThongKe_View extends JPanel {
 
             int w = getWidth();
             int h = getHeight();
-            int size = Math.min(w, h) - 80;
+            int size = Math.min(w, h) - 120;
             int cx = w / 2 - 20;
-            int cy = h / 2 - 10;
+            int cy = (h + titleHeight) / 2 - 10;
             int rx = size / 2;
             int ry = size / 2;
+
+            String title = "Khu vực";
+            g2.setFont(new Font("Segoe UI", Font.BOLD, 16));
+            FontMetrics tfm = g2.getFontMetrics();
+            int tx = (w - tfm.stringWidth(title)) / 2;
+            int ty = (titleHeight + tfm.getAscent()) / 2;
+            g2.setColor(new Color(60, 60, 60));
+            g2.drawString(title, tx, ty);
 
             double total = 0;
             for (Integer v : data.values()) total += (v != null ? v : 0);
@@ -518,8 +559,7 @@ public class ThongKe_View extends JPanel {
 
             double startAngle = 0;
             int i = 0;
-            Font labelFont = new Font("Segoe UI", Font.PLAIN, 12);
-            g2.setFont(labelFont);
+            g2.setFont(new Font("Segoe UI", Font.PLAIN, 12));
             for (Map.Entry<String, Integer> entry : data.entrySet()) {
                 double value = entry.getValue() != null ? entry.getValue() : 0;
                 double angle = value / total * 360.0;
@@ -527,10 +567,9 @@ public class ThongKe_View extends JPanel {
                 g2.setColor(COLORS[i % COLORS.length]);
                 g2.fillArc(cx - rx, cy - ry, rx * 2, ry * 2, (int) Math.round(startAngle), (int) Math.round(angle));
 
-                // draw label (percentage) line
                 double mid = Math.toRadians(startAngle + angle / 2.0);
-                double lx = cx + Math.cos(mid) * (rx + 10);
-                double ly = cy + Math.sin(mid) * (ry + 10);
+                double lx = cx + Math.cos(mid) * (rx + 12);
+                double ly = cy + Math.sin(mid) * (ry + 12);
                 String pct = String.format("%.1f%%", (value / total) * 100);
                 g2.setColor(new Color(60, 60, 60));
                 g2.drawString(pct, (int) lx - 10, (int) ly);
@@ -539,7 +578,6 @@ public class ThongKe_View extends JPanel {
                 i++;
             }
 
-            // legend on right
             int legendX = cx + rx + 20;
             int legendY = cy - ry;
             int idx = 0;
