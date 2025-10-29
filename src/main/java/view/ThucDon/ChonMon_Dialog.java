@@ -1,6 +1,5 @@
 package view.ThucDon;
 
-// Import mới
 import dao.DatBan_DAO;
 import dao.MonAn_DAO;
 import entity.MonAn;
@@ -11,21 +10,18 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer; // Import mới
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableCellEditor;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener; // Import mới
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent; // Import mới
+import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.util.ArrayList;
+import java.util.EventObject;
 import java.util.List;
 
 /**
- * Dialog chọn món đã được thiết kế lại với NÚT ĐẶT MÓN TRÊN TỪNG DÒNG.
- * (Đã loại bỏ bộ lọc Loại Món Ăn theo yêu cầu).
+ * Dialog chọn món ăn - đã cải thiện nút "Đặt" trong bảng: nhỏ, bo góc, căn giữa.
  */
 public class ChonMon_Dialog extends JDialog {
     // DAOs
@@ -85,9 +81,6 @@ public class ChonMon_Dialog extends JDialog {
         addEventListeners();
     }
     
-    /**
-     * Tạo Panel chứa tiêu đề và ô tìm kiếm
-     */
     private JPanel createHeaderAndFilterPanel() {
         JPanel pnlWrapper = new JPanel(new BorderLayout(10, 10));
         pnlWrapper.setOpaque(false);
@@ -114,9 +107,6 @@ public class ChonMon_Dialog extends JDialog {
         return pnlWrapper;
     }
 
-    /**
-     * Tạo Panel chứa Bảng (Đã cập nhật số cột)
-     */
     private Component createTablePanel() {
         // Cập nhật model: Thêm cột "Đặt"
         modelMonAn = new DefaultTableModel(new String[]{"Mã món", "Tên món", "Đơn giá", "Trạng thái", "Đặt"}, 0) {
@@ -141,30 +131,19 @@ public class ChonMon_Dialog extends JDialog {
         return tableWrapper;
     }
     
-    /**
-     * Tạo Panel chứa các nút bấm (Chỉ còn nút Đóng)
-     */
     private Component createButtonPanel() {
         JPanel pnlButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlButtons.setOpaque(false);
 
         btnHuy = createStyledButton("Đóng", BTN_GRAY_BG, TEXT_COLOR);
-        
-        // Đã BỎ btnDat
-        
         pnlButtons.add(btnHuy);
         
         return pnlButtons;
     }
 
-    /**
-     * Gán sự kiện cho các components (Đã bỏ sự kiện ComboBox)
-     */
     private void addEventListeners() {
         // Nút Hủy
         btnHuy.addActionListener(e -> dispose());
-        
-        // Đã BỎ sự kiện double-click và btnDat
         
         // Sự kiện lọc
         txtSearch.addKeyListener(new KeyAdapter() {
@@ -175,17 +154,11 @@ public class ChonMon_Dialog extends JDialog {
         });
     }
 
-    /**
-     * Tải dữ liệu món ăn từ CSDL vào cache (dsMonAn)
-     */
     private void loadTableData() {
         dsMonAn = monAnDAO.getAllMonAn(); // Lấy tất cả món 1 lần
         filterData(); // Lọc và hiển thị
     }
     
-    /**
-     * Lọc và hiển thị dữ liệu lên bảng (Đã thêm data cho cột 5)
-     */
     private void filterData() {
         modelMonAn.setRowCount(0); // Xóa bảng
 
@@ -208,12 +181,9 @@ public class ChonMon_Dialog extends JDialog {
         }
     }
 
-    /**
-     * Tạo JTable với style chung (Đã cập nhật chỉ số cột)
-     */
     private JTable createStyledTable(DefaultTableModel model) {
         JTable table = new JTable(model);
-        table.setRowHeight(35);
+        table.setRowHeight(44); // hơi lớn để có khoảng cách, nhưng nút sẽ nhỏ hơn
         table.setFont(FONT_TABLE);
         table.setSelectionBackground(SELECTION_BG);
         table.setGridColor(TABLE_GRID_COLOR);
@@ -242,14 +212,14 @@ public class ChonMon_Dialog extends JDialog {
         table.getColumnModel().getColumn(2).setCellRenderer(rightRenderer); // Đơn giá
         table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); // Trạng thái
         
-        // ===== PHẦN MỚI: Thêm Button vào cột "Đặt" (cột 4) =====
-        table.getColumnModel().getColumn(4).setCellRenderer(new ButtonRenderer());
-        table.getColumnModel().getColumn(4).setCellEditor(new ButtonEditor(new JCheckBox()));
+        // ===== Thay đổi: dùng renderer/editor mới trả về panel chứa "small button" ở giữa =====
+        table.getColumnModel().getColumn(4).setCellRenderer(new SmallButtonCellRenderer());
+        table.getColumnModel().getColumn(4).setCellEditor(new SmallButtonCellEditor());
         // =======================================================
         
         // Set độ rộng
         table.getColumnModel().getColumn(0).setPreferredWidth(60);  // Mã
-        table.getColumnModel().getColumn(1).setPreferredWidth(250); // Tên
+        table.getColumnModel().getColumn(1).setPreferredWidth(300); // Tên
         table.getColumnModel().getColumn(2).setPreferredWidth(100); // Đơn giá
         table.getColumnModel().getColumn(3).setPreferredWidth(80);  // Trạng thái
         table.getColumnModel().getColumn(4).setPreferredWidth(80);  // Nút Đặt
@@ -257,24 +227,17 @@ public class ChonMon_Dialog extends JDialog {
         return table;
     }
 
-    /**
-     * Xử lý logic khi nhấn nút "+" trên dòng (thay thế cho chonVaDatMon cũ)
-     */
     private void datMon(int row) {
-        // Lấy mã món từ model
         String maMonAn = (String) modelMonAn.getValueAt(row, 0);
         String tenMonAn = (String) modelMonAn.getValueAt(row, 1);
 
-        // 1. Mở dialog Nhập số lượng
         NhapSoLuong_Dialog soLuongDialog = new NhapSoLuong_Dialog((Frame) getParent(), tenMonAn);
         Object[] ketQua = soLuongDialog.showDialog();
 
-        // 2. Nếu người dùng nhấn "Đặt" (ketQua != null)
         if (ketQua != null) {
             int soLuong = (int) ketQua[0];
             String ghiChu = (String) ketQua[1];
 
-            // 3. Gọi DAO để thêm/cập nhật CSDL
             boolean success = datBanDAO.addOrUpdateChiTiet(
                 phieuDatBan.getMaPhieu(),
                 maMonAn,
@@ -290,9 +253,6 @@ public class ChonMon_Dialog extends JDialog {
         }
     }
 
-    /**
-     * Hàm trợ giúp tạo nút bấm có bo góc và hiệu ứng
-     */
     private JButton createStyledButton(String text, Color bg, Color fg) {
         JButton btn = new JButton(text) {
             @Override
@@ -323,13 +283,7 @@ public class ChonMon_Dialog extends JDialog {
         return btn;
     }
 
-    // =========================================================================
-    // LỚP NỘI BỘ (INNER CLASS) CHO PANEL BO GÓC
-    // =========================================================================
-
-    /**
-     * Một JPanel được tùy chỉnh để có viền bo góc và màu nền.
-     */
+    // RoundedPanel như trước
     class RoundedPanel extends JPanel {
         private final int cornerRadius;
         private final Color bgColor;
@@ -354,92 +308,140 @@ public class ChonMon_Dialog extends JDialog {
             g2.dispose();
         }
     }
-    
+
     // =========================================================================
-    // LỚP NỘI BỘ (INNER CLASS) CHO BUTTON TRONG BẢNG
+    // New: Small rounded button + cell renderer/editor
     // =========================================================================
 
     /**
-     * Lớp Renderer để vẽ nút "+ Đặt" trong ô của JTable.
+     * Nút nhỏ bo góc dùng trong ô (vẽ custom để ổn định trên mọi LAF).
      */
-    class ButtonRenderer extends JButton implements TableCellRenderer {
-        public ButtonRenderer() {
-            setOpaque(true);
-            setForeground(Color.WHITE);
-            setBackground(BTN_GREEN_BG); // Màu xanh lá
-            setText("+ Đặt");
+    static class SmallRoundedButton extends JButton {
+        private Color bgColor;
+        private Color fgColor;
+        private int arc = 10;
+
+        public SmallRoundedButton(String text, Color bg, Color fg) {
+            super(text);
+            this.bgColor = bg;
+            this.fgColor = fg;
+            setOpaque(false);
+            setContentAreaFilled(false);
+            setBorderPainted(false);
+            setFocusPainted(false);
+            setForeground(fgColor);
             setFont(new Font("Segoe UI", Font.BOLD, 12));
-            // Căn lề nhỏ cho nút
-            setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+            setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            setPreferredSize(new Dimension(72, 28)); // kích thước nhỏ gọn
         }
 
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus, int row, int column) {
-            
-            // Đổi màu khi dòng được chọn (để người dùng biết đang nhấn dòng nào)
-            if (isSelected) {
-                setBackground(BTN_GREEN_BG.darker());
-            } else {
-                setBackground(BTN_GREEN_BG);
-            }
-            
-            // value chính là text ta set trong filterData ("+ Đặt")
-            setText((value == null) ? "" : value.toString());
-            return this;
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            Color fill = bgColor;
+            if (getModel().isPressed()) fill = bgColor.darker();
+            else if (getModel().isRollover()) fill = bgColor.brighter();
+
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+
+            // Draw text (center)
+            FontMetrics fm = g2.getFontMetrics();
+            int textWidth = fm.stringWidth(getText());
+            int textHeight = fm.getAscent();
+            g2.setColor(getForeground());
+            g2.drawString(getText(), (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2 - 2);
+
+            g2.dispose();
         }
     }
 
     /**
-     * Lớp Editor để xử lý sự kiện click nút "+ Đặt" trong JTable.
+     * Renderer trả về một JPanel (FlowLayout center) chứa SmallRoundedButton ở giữa.
      */
-    class ButtonEditor extends DefaultCellEditor {
-        protected JButton button;
-        private int row; // Dòng đang được click
+    class SmallButtonCellRenderer implements TableCellRenderer {
+        private final JPanel panel;
+        private final SmallRoundedButton button;
 
-        public ButtonEditor(JCheckBox checkBox) {
-            super(checkBox); // Constructor bắt buộc
-            button = new JButton();
-            button.setOpaque(true);
-            button.setForeground(Color.WHITE);
-            button.setBackground(BTN_GREEN_BG.darker()); // Màu đậm hơn khi nhấn
-            button.setText("+ Đặt");
-            button.setFont(new Font("Segoe UI", Font.BOLD, 12));
-            button.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-            
-            // Đây là hành động chính khi nút được nhấn
-            button.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    // Dừng việc chỉnh sửa ô (quan trọng)
+        public SmallButtonCellRenderer() {
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6)); // căn giữa, có padding dọc
+            panel.setOpaque(false);
+            button = new SmallRoundedButton("+ Đặt", BTN_GREEN_BG, TEXT_COLOR);
+            button.setFocusable(false);
+            panel.add(button);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            // Cập nhật text nếu cần (value = "+ Đặt")
+            String text = (value == null) ? "" : value.toString();
+            button.setText(text);
+
+            // Thay đổi màu khi hàng được chọn / focus
+            if (isSelected || hasFocus) {
+                button.bgColor = BTN_GREEN_BG.darker();
+            } else {
+                button.bgColor = BTN_GREEN_BG;
+            }
+            // đảm bảo repaint
+            button.repaint();
+            return panel;
+        }
+    }
+
+    /**
+     * Editor: panel chứa button; khi nhấn button sẽ gọi datMon(row).
+     */
+    class SmallButtonCellEditor extends AbstractCellEditor implements TableCellEditor {
+        private final JPanel panel;
+        private final SmallRoundedButton button;
+        private int editingRow = -1;
+
+        public SmallButtonCellEditor() {
+            panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 6));
+            panel.setOpaque(false);
+            button = new SmallRoundedButton("+ Đặt", BTN_GREEN_BG, TEXT_COLOR);
+            button.setFocusable(false);
+            button.addActionListener(e -> {
+                // stop editing then perform action
+                // make sure to capture current row
+                final int row = editingRow;
+                // Stop editing first so table state is consistent
+                SwingUtilities.invokeLater(() -> {
                     fireEditingStopped();
-                    // Gọi hàm đặt món cho dòng hiện tại (đã lưu ở dưới)
-                    datMon(row);
-                }
+                    if (row >= 0) {
+                        datMon(row);
+                    }
+                });
             });
+            panel.add(button);
         }
 
-        /**
-         * Phương thức này được gọi khi người dùng click vào ô
-         */
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
-            this.row = row; // Lưu lại dòng đang sửa
-            button.setText((value == null) ? "" : value.toString());
-            return button;
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            this.editingRow = row;
+            String text = (value == null) ? "" : value.toString();
+            button.setText(text);
+            button.bgColor = BTN_GREEN_BG.darker(); // đánh dấu đang edit
+            button.repaint();
+            return panel;
         }
-        
-        // Ghi đè phương thức này để trả về giá trị của ô (dù không dùng)
+
+        @Override
         public Object getCellEditorValue() {
             return "+ Đặt";
         }
 
-        // Ghi đè để ngăn chặn việc edit chỉ sau 1 click (phải click đúng nút)
+        // Khống chế chỉ kích hoạt khi click chuột
         @Override
-        public boolean isCellEditable(java.util.EventObject anEvent) {
-            if (anEvent instanceof MouseEvent) {
-                // Chỉ kích hoạt editor khi click chuột
-                return ((MouseEvent)anEvent).getClickCount() >= 1;
+        public boolean isCellEditable(EventObject e) {
+            if (e instanceof MouseEvent) {
+                return ((MouseEvent) e).getClickCount() >= 1;
             }
-            return super.isCellEditable(anEvent);
+            return false;
         }
     }
 }
