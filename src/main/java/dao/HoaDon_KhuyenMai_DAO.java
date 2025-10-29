@@ -48,4 +48,73 @@ public class HoaDon_KhuyenMai_DAO {
         } catch (SQLException e) { e.printStackTrace(); }
         return km;
     }
+
+	public boolean insertKhuyenMai(KhuyenMai km) {
+        String sql = "INSERT INTO KHUYENMAI (maKhuyenMai, tenKhuyenMai, giaTri, thoiGianBatDau, thoiGianKetThuc) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, km.getMaKM());
+            pstmt.setString(2, km.getTenKM());
+            pstmt.setDouble(3, km.getGiaTri());
+            pstmt.setDate(4, Date.valueOf(km.getNgayBatDau()));
+            pstmt.setDate(5, Date.valueOf(km.getNgayKetThuc()));
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+	}
+
+	public List<KhuyenMai> findKhuyenMai(String keyword) {
+        List<KhuyenMai> dsKhuyenMai = new ArrayList<>();
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getAllKhuyenMai();
+        }
+        String sql = "SELECT * FROM KHUYENMAI WHERE maKhuyenMai LIKE ? OR tenKhuyenMai LIKE ? ORDER BY CASE WHEN maKhuyenMai = 'KM00000000' THEN 0 ELSE 1 END, thoiGianBatDau DESC";
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            String searchPattern = "%" + keyword.trim() + "%";
+            pstmt.setString(1, searchPattern);
+            pstmt.setString(2, searchPattern);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    dsKhuyenMai.add(createKhuyenMaiFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return dsKhuyenMai;
+	}
+
+	public boolean deleteKhuyenMai(String maKM) {
+        String sql = "DELETE FROM KHUYENMAI WHERE maKhuyenMai = ?";
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, maKM);
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+	}
+
+	public boolean updateKhuyenMai(KhuyenMai khuyenMai) {
+        String sql = "UPDATE KHUYENMAI SET tenKhuyenMai = ?, giaTri = ?, thoiGianBatDau = ?, thoiGianKetThuc = ? WHERE maKhuyenMai = ?";
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, khuyenMai.getTenKM());
+            pstmt.setDouble(2, khuyenMai.getGiaTri());
+            pstmt.setDate(3, Date.valueOf(khuyenMai.getNgayBatDau()));
+            pstmt.setDate(4, Date.valueOf(khuyenMai.getNgayKetThuc()));
+            pstmt.setString(5, khuyenMai.getMaKM());
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+	}
 }

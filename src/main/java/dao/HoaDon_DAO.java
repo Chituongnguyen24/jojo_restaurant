@@ -67,7 +67,6 @@ public class HoaDon_DAO {
         String sql = "SELECT maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan " +
                 "FROM HOADON ORDER BY ngayLap DESC, gioVao DESC";
 
-        // Sử dụng try-with-resources
         try (Connection conn = ConnectDB.getInstance().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -85,61 +84,58 @@ public class HoaDon_DAO {
     /**
      * Thêm hóa đơn mới vào CSDL.
      */
-    public boolean addHoaDon(HoaDon hd) {
-        String sql = "INSERT INTO HOADON(maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, "+
-                "maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)"+
-                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+//    public boolean addHoaDon(HoaDon hd) {
+//        String sql = "INSERT INTO HOADON(maHoaDon, maKhachHang, maBan, ngayLap, phuongThuc, maKhuyenMai, "+
+//                "maThue, gioVao, gioRa, maNhanVien, maPhieu, daThanhToan)"+
+//                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+//
+//        try (
+//        	 Connection conn = ConnectDB.getInstance().getConnection();
+//             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+//
+//            pstmt.setString(1, hd.getMaHoaDon());
+//
+//            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
+//                pstmt.setString(2, hd.getKhachHang().getMaKhachHang());
+//            } else {
+//                pstmt.setString(2, "KH00000000"); // Mã khách vãng lai mặc định
+//            }
+//
+//            pstmt.setString(3, hd.getBan().getMaBan());
+//            pstmt.setDate(4, Date.valueOf(hd.getNgayLap()));
+//            pstmt.setString(5, hd.getPhuongThuc());
+//         
+//            if (hd.getKhuyenMai() != null && hd.getKhuyenMai().getMaKM() != null)
+//                pstmt.setString(6, hd.getKhuyenMai().getMaKM());
+//            else
+//                pstmt.setNull(6, Types.NCHAR);
+//
+//            pstmt.setString(7, hd.getThue().getMaThue());
+//            pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioVao()));
+//            // Xử lý null cho gioRa
+//            if (hd.getGioRa() != null) {
+//                pstmt.setTimestamp(9, Timestamp.valueOf(hd.getGioRa()));
+//            } else {
+//                pstmt.setNull(9, Types.TIMESTAMP); 
+//            }
+//            pstmt.setString(10, hd.getNhanVien().getMaNV());
+//            // Xử lý null cho PhieuDatBan
+//            if (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null)
+//                pstmt.setString(11, hd.getPhieuDatBan().getMaPhieu());
+//            else
+//                pstmt.setNull(11, Types.NCHAR);
+//
+//            pstmt.setBoolean(12, hd.isDaThanhToan());
+//
+//            return pstmt.executeUpdate() > 0;
+//        } catch (SQLException e) {
+//            System.err.println("Lỗi khi thêm hóa đơn: " + e.getMessage());
+//            e.printStackTrace();
+//        }
+//        return false;
+//    }
 
-        try (Connection conn = ConnectDB.getInstance().getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, hd.getMaHoaDon());
-
-            // === SỬA LỖI TẠI ĐÂY ===
-            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
-                pstmt.setString(2, hd.getKhachHang().getMaKhachHang());
-            } else {
-                pstmt.setString(2, "KH00000000"); // Mã khách vãng lai mặc định
-            }
-            // === KẾT THÚC SỬA ===
-
-            pstmt.setString(3, hd.getBan().getMaBan());
-            pstmt.setDate(4, Date.valueOf(hd.getNgayLap()));
-            pstmt.setString(5, hd.getPhuongThuc());
-            // Xử lý null cho KhuyenMai
-            if (hd.getKhuyenMai() != null && hd.getKhuyenMai().getMaKM() != null)
-                pstmt.setString(6, hd.getKhuyenMai().getMaKM());
-            else
-                pstmt.setNull(6, Types.NCHAR);
-
-            pstmt.setString(7, hd.getThue().getMaThue());
-            pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioVao()));
-            // Xử lý null cho gioRa
-            if (hd.getGioRa() != null) {
-                pstmt.setTimestamp(9, Timestamp.valueOf(hd.getGioRa()));
-            } else {
-                pstmt.setNull(9, Types.TIMESTAMP); 
-            }
-            pstmt.setString(10, hd.getNhanVien().getMaNV());
-            // Xử lý null cho PhieuDatBan
-            if (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null)
-                pstmt.setString(11, hd.getPhieuDatBan().getMaPhieu());
-            else
-                pstmt.setNull(11, Types.NCHAR);
-
-            pstmt.setBoolean(12, hd.isDaThanhToan());
-
-            return pstmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Lỗi khi thêm hóa đơn: " + e.getMessage());
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    /**
-     * Cập nhật thông tin hóa đơn. Bao gồm cả trạng thái thanh toán và giờ ra.
-     */
+    
     public boolean updateHoaDon(HoaDon hd) {
         String sql = "UPDATE HOADON SET maKhachHang = ?, maBan = ?, ngayLap = ?, phuongThuc = ?, maKhuyenMai = ?, "+
                 "maThue = ?, gioVao = ?, gioRa = ?, maNhanVien = ?, maPhieu = ?, daThanhToan = ? "+

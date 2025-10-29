@@ -39,21 +39,8 @@ public class KhachHang_DiemTichLuy_View extends JPanel {
         titlePanel.add(title);
         titlePanel.add(subtitle);
 
-        JButton btnAdd = createRoundedButton("+ Cập nhật điểm", new Color(76, 175, 80), Color.WHITE);
-        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnAdd.setPreferredSize(new Dimension(200, 45));
-
-      
-        btnAdd.addActionListener(e -> {
-            // Ví dụ: Mở dialog chọn KH để cập nhật điểm, tạm dùng AddDialog như code gốc
-            KhachHang_AddDialog dialog = new KhachHang_AddDialog(null, khachHangDAO);
-            dialog.setVisible(true);
-            loadDiemTichLuyData();
-            loadThongKe();
-        });
 
         header.add(titlePanel, BorderLayout.WEST);
-        header.add(btnAdd, BorderLayout.EAST);
         add(header, BorderLayout.NORTH);
 
         // ===== STATS =====
