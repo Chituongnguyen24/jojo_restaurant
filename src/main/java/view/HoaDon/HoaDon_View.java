@@ -261,7 +261,7 @@ public class HoaDon_View extends JPanel {
                             }
 
                             HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO(); 
-                            HoaDon_KhuyenMai_DAO kmDAO = new HoaDon_KhuyenMai_DAO(); 
+                            HoaDon_KhuyenMai_DAO kmDAO = new HoaDon_KhuyenMai_DAO();
 
                             Thue thue = (hd.getThue() != null) ? thueDAO.getThueById(hd.getThue().getMaThue()) : null;
                             KhuyenMai km = (hd.getKhuyenMai() != null) ? kmDAO.getKhuyenMaiById(hd.getKhuyenMai().getMaKM()) : null;
@@ -286,19 +286,13 @@ public class HoaDon_View extends JPanel {
 
                             double tongThanhToan = tongTienSauGiam + tienThue;
 
-                            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(HoaDon_View.this);
 
-                            // ======================================================
-                            // === ĐÂY LÀ DÒNG ĐÃ ĐƯỢC SỬA LỖI ===
-                            // ======================================================
+                            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(HoaDon_View.this);
                             HoaDon_ThanhToan_Dialog dialog = new HoaDon_ThanhToan_Dialog(
-                                parentFrame, 
-                                hd, 
-                                hoaDonDAO,
-                                tongThanhToan // Chỉ truyền tổng tiền thanh toán cuối cùng
+                                parentFrame, hd, hoaDonDAO,
+                                tongTienMonAn, tienGiam, tienThue, tongThanhToan, // Các giá trị tiền
+                                chiTietList // Danh sách chi tiết
                             );
-                            // ======================================================
-                            
                             dialog.setVisible(true);
 
                             loadHoaDonData();

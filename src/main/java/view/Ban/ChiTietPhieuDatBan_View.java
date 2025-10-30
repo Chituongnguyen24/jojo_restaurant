@@ -492,11 +492,18 @@ public class ChiTietPhieuDatBan_View extends JPanel {
             return;
         }
 
+        // Chuyển đến trang thanh toán
         JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         if (mainFrame == null) {
             JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy cửa sổ chính.", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+        Runnable goBackCallback = () -> {
+            if (onCloseCallback != null) {
+                onCloseCallback.run();
+            }
+        };
 
         try {
             HoaDon hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
@@ -505,12 +512,13 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                 JOptionPane.showMessageDialog(this,
                     "Không tìm thấy hóa đơn chưa thanh toán cho bàn " + ban.getMaBan(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
+                return; // Dừng lại nếu không có hóa đơn
             }
 
             List<ChiTietHoaDon> chiTietList = daoHoaDon.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHoaDon());
             if (chiTietList == null) chiTietList = new ArrayList<>();
 
+            // Tính toán chi tiết tiền
             double tongTienMonAn = 0;
             for (ChiTietHoaDon ct : chiTietList) {
                 try {
@@ -521,6 +529,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                 }
             }
 
+            // Lấy thông tin Thuế và KM đầy đủ
             HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO();
             HoaDon_KhuyenMai_DAO kmDAO = new HoaDon_KhuyenMai_DAO();
 
@@ -531,6 +540,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
 
             double tienGiam = 0, tienThue = 0, tongTienSauGiam = tongTienMonAn;
 
+            // Tính tiền giảm
             if (km != null && !"KM00000000".equals(km.getMaKM().trim()) && km.getGiaTri() > 0) {
                 if (km.getGiaTri() < 1.0) tienGiam = tongTienMonAn * km.getGiaTri();
                 else tienGiam = km.getGiaTri();
@@ -541,52 +551,21 @@ public class ChiTietPhieuDatBan_View extends JPanel {
             if (thue != null && thue.getTyLeThue() > 0) {
                 tienThue = tongTienSauGiam * thue.getTyLeThue();
             }
+double tongThanhToan = tongTienSauGiam + tienThue;
 
-            double tongThanhToan = tongTienSauGiam + tienThue;
-
-            // ======================================================
-            // === ĐÂY LÀ DÒNG ĐÃ ĐƯỢC SỬA LỖI ===
-            // ======================================================
-            // Lỗi là do bạn truyền quá nhiều tham số. Hàm khởi tạo của HoaDon_ThanhToan_Dialog
-            // chỉ nhận (Frame, HoaDon, HoaDon_DAO, double tongTienCuoiCung)
-            
             HoaDon_ThanhToan_Dialog thanhToanDialog = new HoaDon_ThanhToan_Dialog(
-                mainFrame, 
-                hoaDonHienTai, 
-                daoHoaDon,
-                tongThanhToan // Chỉ truyền tổng tiền thanh toán cuối cùng
+                mainFrame, hoaDonHienTai, daoHoaDon,
+                tongTienMonAn, tienGiam, tienThue, tongThanhToan,
+                chiTietList
             );
-            // ======================================================
-
             thanhToanDialog.setVisible(true);
 
             HoaDon hoaDonSauKhiDongDialog = daoHoaDon.findByMaHD(hoaDonHienTai.getMaHoaDon());
-            
             if (hoaDonSauKhiDongDialog != null && hoaDonSauKhiDongDialog.isDaThanhToan()) {
                 System.out.println("Hóa đơn " + hoaDonHienTai.getMaHoaDon() + " đã được thanh toán.");
-
-                try {
-                    ban.setTrangThai(enums.TrangThaiBan.TRONG);
-                    Ban_DAO banDAO = new Ban_DAO();
-                    banDAO.capNhatBan(ban);
-
-                    JOptionPane.showMessageDialog(this,
-                        "Thanh toán thành công! Bàn đã được giải phóng.",
-                        "Thành công",
-                        JOptionPane.INFORMATION_MESSAGE);
-
-                } catch (Exception ex_update) {
-                    ex_update.printStackTrace();
-                    JOptionPane.showMessageDialog(this,
-                        "Đã thanh toán, nhưng lỗi khi cập nhật trạng thái bàn: " + ex_update.getMessage(),
-                        "Lỗi cập nhật bàn",
-                        JOptionPane.ERROR_MESSAGE);
-                }
-
                 if (onCloseCallback != null) {
                     onCloseCallback.run();
                 }
-                
             } else {
                 System.out.println("Hóa đơn " + hoaDonHienTai.getMaHoaDon() + " chưa được thanh toán (dialog bị hủy).");
             }

@@ -999,7 +999,7 @@ public class DatBan_View extends JPanel {
 
         // Hiển thị dialog thanh toán
         view.HoaDon.HoaDon_ThanhToan_Dialog thanhToanDialog = 
-            new view.HoaDon.HoaDon_ThanhToan_Dialog(parentFrame, hoaDon, hoaDonDAO, tongTien);
+            new view.HoaDon.HoaDon_ThanhToan_Dialog(parentFrame, hoaDon, hoaDonDAO, tongTien, tongTien, tongTien, tongTien, null);
         
         thanhToanDialog.setVisible(true);
 
