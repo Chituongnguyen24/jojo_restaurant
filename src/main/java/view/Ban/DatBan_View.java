@@ -14,8 +14,10 @@ import entity.KhuyenMai;
 import entity.PhieuDatBan;
 import entity.Thue;
 import enums.TrangThaiBan;
-import view.HoaDon.HoaDon_ThanhToan_Dialog; // Import dialog thanh toán
-
+import view.HoaDon.HoaDon_ThanhToan_Dialog;
+import view.ThucDon.ChonMon_Dialog;
+import view.Ban.ChiTietPhieuDatBan_View; 
+import view.Ban.ChiTietPhieu_Dialog;
 import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -189,7 +191,6 @@ public class DatBan_View extends JPanel {
         lblThongKeBan.setForeground(MAU_CHU_PHU);
         lblThongKeBan.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        // Thêm đồng hồ thời gian thực
         lblDateTime = new JLabel();
         lblDateTime.setFont(FONT_CHU_NHO);
         lblDateTime.setForeground(MAU_CHU_PHU);
@@ -210,7 +211,6 @@ public class DatBan_View extends JPanel {
         JPanel pnlRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlRight.setOpaque(false);
 
-        // Nút làm mới
         JButton btnRefresh = new JButton("🔄 Làm mới");
         btnRefresh.setFont(FONT_CHU);
         btnRefresh.setBackground(MAU_CAM_NHE);
@@ -269,26 +269,49 @@ public class DatBan_View extends JPanel {
     }
 
     private void taiDuLieuKhuVuc() {
+        System.out.println("--- Bắt đầu tải dữ liệu khu vực ---"); // DEBUG
         try {
             Map<String, List<Ban>> banTheoKhuVuc = datBanDAO.getAllBanByFloor();
+
+            // === THÊM LOG KIỂM TRA ===
+            if (banTheoKhuVuc == null) {
+                System.out.println("!!! LỖI: datBanDAO.getAllBanByFloor() trả về NULL!");
+            } else {
+                System.out.println(">>> Dữ liệu từ DAO: Số khu vực = " + banTheoKhuVuc.size());
+                // In ra số bàn trong khu vực hiện tại (nếu có) để kiểm tra kỹ hơn
+                if (khuVucHienTai != null && banTheoKhuVuc.containsKey(khuVucHienTai)) {
+                     System.out.println(">>> Dữ liệu từ DAO: Số bàn trong khu vực '" + khuVucHienTai + "' = " + banTheoKhuVuc.get(khuVucHienTai).size());
+                } else if (khuVucHienTai != null) {
+                     System.out.println(">>> Dữ liệu từ DAO: Không tìm thấy khu vực '" + khuVucHienTai + "' trong dữ liệu mới.");
+                }
+            }
+            // ========================
+
             tenKhuVuc = new ArrayList<>(banTheoKhuVuc.keySet());
             danhSachBanTheoKhuVuc = banTheoKhuVuc;
 
+            // Giữ nguyên logic chọn khuVucHienTai
             if (khuVucHienTai == null || !tenKhuVuc.contains(khuVucHienTai)) {
                 if (!tenKhuVuc.isEmpty()) {
                     khuVucHienTai = tenKhuVuc.get(0);
+                    System.out.println(">>> Đặt khu vực hiện tại là: " + khuVucHienTai); // DEBUG
                 } else {
                     khuVucHienTai = "Không có dữ liệu";
+                     System.out.println("!!! Không có khu vực nào được tải."); // DEBUG
                 }
+            } else {
+                 System.out.println(">>> Giữ nguyên khu vực hiện tại: " + khuVucHienTai); // DEBUG
             }
         } catch (Exception e) {
-            System.err.println("Error loading area data: " + e.getMessage());
+            System.err.println("!!! Lỗi Exception khi tải dữ liệu khu vực: " + e.getMessage()); // DEBUG
+            e.printStackTrace(); // In chi tiết lỗi ra console
             tenKhuVuc = new ArrayList<>();
             danhSachBanTheoKhuVuc = new LinkedHashMap<>();
             khuVucHienTai = "Lỗi tải dữ liệu";
         }
+         System.out.println("--- Kết thúc tải dữ liệu khu vực ---"); // DEBUG
     }
-
+    
     private void taiDuLieuDatBan() {
         try {
             danhSachPhieuDatDangHoatDong = datBanDAO.getAllPhieuDatBan();
@@ -703,14 +726,12 @@ public class DatBan_View extends JPanel {
         card.setPreferredSize(new Dimension(180, 200));
         card.setMaximumSize(new Dimension(180, 200));
 
-        // Icon emoji nhỏ
         JLabel lblEmoji = new JLabel(iconEmoji);
         lblEmoji.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 14));
         lblEmoji.setHorizontalAlignment(SwingConstants.CENTER);
         lblEmoji.setForeground(mauChu);
         lblEmoji.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Icon bàn chính
         ImageIcon currentIcon = layIconChoKhuVucHienTai();
         JLabel lblIcon;
         if (currentIcon != null) {
@@ -758,7 +779,6 @@ public class DatBan_View extends JPanel {
         card.add(Box.createVerticalStrut(10));
         card.add(pnlStatus);
 
-        // Xóa các MouseListener cũ
         for(MouseListener ml : card.getMouseListeners()) {
             if (ml instanceof MouseAdapter && ml.getClass().isAnonymousClass()){
                 card.removeMouseListener(ml);
@@ -792,12 +812,15 @@ public class DatBan_View extends JPanel {
                         moDialogDatBan(ban);
                         break;
                     case DA_DAT:
-                        xuLyBanDaDat(ban);
+                       
+                        moDialogChiTietPhieu(ban);
+                        // === KẾT THÚC THAY ĐỔI ===
                         break;
                     case CO_KHACH:
-                        xuLyBanCoKhach(ban);
+                        xuLyBanCoKhach(ban); // Giữ nguyên xử lý cho bàn có khách
                         break;
                 }
+            
             }
         });
 
@@ -849,15 +872,12 @@ public class DatBan_View extends JPanel {
             return;
         }
 
-        // BỎ QUA BƯỚC 3: TẠO HÓA ĐƠN MỚI (THEO YÊU CẦU)
-
         try {
             // 4. Cập nhật trạng thái bàn
             ban.setTrangThai(TrangThaiBan.CO_KHACH);
             
-            // Dùng Ban_DAO để cập nhật trạng thái
-            if (!banDAO.capNhatBan(ban)) { // Giả định bạn có hàm banDAO.capNhatBan(ban)
-                 throw new Exception("Không thể cập nhật trạng thái bàn lên CSDL.");
+            if (!banDAO.capNhatBan(ban)) { 
+                throw new Exception("Không thể cập nhật trạng thái bàn lên CSDL.");
             }
 
             // 5. Làm mới giao diện
@@ -867,17 +887,26 @@ public class DatBan_View extends JPanel {
             int orderChoice = JOptionPane.showConfirmDialog(
                 this,
                 "Bàn " + ban.getMaBan().trim() + " đã chuyển sang 'Có khách'.\n" +
-                "Bạn có muốn chuyển đến trang gọi món không?", // Đã cập nhật thông báo
+                "Bạn có muốn chuyển đến trang gọi món không?", 
                 "Nhận bàn thành công",
                 JOptionPane.YES_NO_OPTION
             );
             
             if (orderChoice == JOptionPane.YES_OPTION) {
-                // Mở dialog chọn món
-                moDialogChonMon(phieu);
+            	
+                JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(DatBan_View.this);
+                if (parentFrame != null) {
+                    ChonMon_Dialog chonMonDialog = new ChonMon_Dialog(parentFrame, phieu);
+                    chonMonDialog.setVisible(true);
+                 
+                } else {
+                     JOptionPane.showMessageDialog(DatBan_View.this,
+                        "Lỗi: Không tìm thấy cửa sổ chính để mở dialog gọi món.",
+                        "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+                }
             }
             
-           
+            
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,
                 "Đã xảy ra lỗi trong quá trình nhận bàn: " + e.getMessage(),
@@ -886,6 +915,11 @@ public class DatBan_View extends JPanel {
             refreshData();
         }
     }
+    
+    // =======================================================================
+    // == CÁC PHƯƠNG THỨC ĐƯỢC CẬP NHẬT (THAY THẾ) BẮT ĐẦU TỪ ĐÂY ==
+    // =======================================================================
+
     private void xuLyBanCoKhach(Ban ban) {
         if (ban == null || ban.getMaBan() == null) return;
 
@@ -905,7 +939,6 @@ public class DatBan_View extends JPanel {
         if (choice == 0) {
             hienThiChiTietMonAn(ban);
         } else if (choice == 1) {
-            // Đây là nơi gọi đến dialog thanh toán
             moDialogThanhToan(ban);
         }
     }
@@ -941,10 +974,7 @@ public class DatBan_View extends JPanel {
     }
 
     private void moDialogThanhToan(Ban ban) {
-        if (ban == null || ban.getMaBan() == null) {
-            JOptionPane.showMessageDialog(this, "Thông tin bàn không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        if (ban == null || ban.getMaBan() == null) return;
 
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         if (parentFrame == null) {
@@ -952,82 +982,41 @@ public class DatBan_View extends JPanel {
             return;
         }
 
+        // Lấy hóa đơn của bàn
         HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
-        HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO();
-        HoaDon_KhuyenMai_DAO khuyenMaiDAO = new HoaDon_KhuyenMai_DAO();
-
-        try {
-            HoaDon hoaDonHienTai = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan());
-
-            if (hoaDonHienTai == null) {
-                 JOptionPane.showMessageDialog(this,
-                    "Không tìm thấy hóa đơn chưa thanh toán cho bàn " + ban.getMaBan(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-                 return;
-            }
-
-            KhachHang_DAO khachHangDAO = new KhachHang_DAO();
-            KhachHang kh = null;
-            if (hoaDonHienTai.getKhachHang() != null && hoaDonHienTai.getKhachHang().getMaKhachHang() != null) {
-                 kh = khachHangDAO.getKhachHangById(hoaDonHienTai.getKhachHang().getMaKhachHang());
-            }
-             hoaDonHienTai.setKhachHang(kh);
-
-
-            List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHoaDon());
-            if (chiTietList == null) chiTietList = new ArrayList<>();
-
-            double tongTienMonAn = 0;
-            for (ChiTietHoaDon ct : chiTietList) {
-                tongTienMonAn += ct.tinhThanhTien();
-            }
-
-            Thue thue = (hoaDonHienTai.getThue() != null && hoaDonHienTai.getThue().getMaThue() != null)
-                        ? thueDAO.getThueById(hoaDonHienTai.getThue().getMaThue()) : null;
-            KhuyenMai km = (hoaDonHienTai.getKhuyenMai() != null && hoaDonHienTai.getKhuyenMai().getMaKM() != null)
-                        ? khuyenMaiDAO.getKhuyenMaiById(hoaDonHienTai.getKhuyenMai().getMaKM()) : null;
-
-            double tienGiam = 0, tienThue = 0, tongTienSauGiam = tongTienMonAn;
-
-            if (km != null && !"KM00000000".equals(km.getMaKM().trim()) && km.getGiaTri() > 0) {
-                if (km.getGiaTri() < 1.0) tienGiam = tongTienMonAn * km.getGiaTri();
-                else tienGiam = km.getGiaTri();
-                tongTienSauGiam -= tienGiam;
-                if (tongTienSauGiam < 0) tongTienSauGiam = 0;
-            }
-            if (thue != null && thue.getTyLeThue() > 0) {
-                tienThue = tongTienSauGiam * thue.getTyLeThue();
-            }
-            double tongThanhToan = tongTienSauGiam + tienThue;
-
-            HoaDon_ThanhToan_Dialog thanhToanDialog = new HoaDon_ThanhToan_Dialog(
-                parentFrame, hoaDonHienTai, hoaDonDAO,
-                tongTienMonAn, tienGiam, tienThue, tongThanhToan,
-                chiTietList
-            );
-            thanhToanDialog.setVisible(true);
-
-            HoaDon hoaDonSauKhiDongDialog = hoaDonDAO.findByMaHD(hoaDonHienTai.getMaHoaDon());
-            if (hoaDonSauKhiDongDialog != null && hoaDonSauKhiDongDialog.isDaThanhToan()) {
-                boolean updatedStatus = datBanDAO.updateTableStatus(ban.getMaBan(), TrangThaiBan.TRONG);
-                if(updatedStatus){
-                     System.out.println("Đã cập nhật bàn " + ban.getMaBan() + " về TRỐNG sau thanh toán.");
-                } else {
-                     System.err.println("Lỗi: Không cập nhật được trạng thái bàn " + ban.getMaBan() + " về TRỐNG.");
-                }
-                refreshData();
-            } else {
-                 System.out.println("Hóa đơn " + hoaDonHienTai.getMaHoaDon() + " chưa được thanh toán (dialog hủy).");
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
+        HoaDon hoaDon = hoaDonDAO.getHoaDonByBan(ban.getMaBan());
+        
+        if (hoaDon == null) {
             JOptionPane.showMessageDialog(this,
-                "Không thể mở màn hình thanh toán: " + e.getMessage(),
-                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                "Không tìm thấy hóa đơn cho bàn này.",
+                "Lỗi",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Tính tổng tiền hóa đơn
+        double tongTien = hoaDonDAO.tinhTongTienHoaDon(hoaDon.getMaHoaDon());
+
+        // Hiển thị dialog thanh toán
+        view.HoaDon.HoaDon_ThanhToan_Dialog thanhToanDialog = 
+            new view.HoaDon.HoaDon_ThanhToan_Dialog(parentFrame, hoaDon, hoaDonDAO, tongTien, tongTien, tongTien, tongTien, null);
+        
+        thanhToanDialog.setVisible(true);
+
+        // Sau khi thanh toán xong, cập nhật trạng thái bàn về TRỐNG
+        if (hoaDon.isDaThanhToan()) {
+            ban.setTrangThai(TrangThaiBan.TRONG);
+            banDAO.capNhatBan(ban);
+            
+            // Refresh lại dữ liệu
+            refreshData();
         }
     }
- 
+  
+    // =======================================================================
+    // == KẾT THÚC KHỐI PHƯƠNG THỨC ĐƯỢC CẬP NHẬT ==
+    // =======================================================================
+
 
     private void moDialogDatBan(Ban ban) {
         if (ban == null) return;
@@ -1132,17 +1121,41 @@ public class DatBan_View extends JPanel {
             return false;
         }
     }
-    private void moDialogChonMon(PhieuDatBan phieuDatBan) {
-        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        if (parentFrame == null) return;
+    /**
+     * Mở dialog hiển thị chi tiết phiếu đặt bàn khi click vào bàn DA_DAT.
+     * @param ban Bàn được click.
+     */
+    private void moDialogChiTietPhieu(Ban ban) {
+        if (ban == null || ban.getMaBan() == null) {
+            System.err.println("moDialogChiTietPhieu: Thông tin bàn không hợp lệ.");
+            return;
+        }
 
-        // Tạo và hiển thị dialog chọn món
-        view.ThucDon.ChonMon_Dialog chonMonDialog = 
-            new view.ThucDon.ChonMon_Dialog(parentFrame, phieuDatBan);
-        
-        chonMonDialog.setVisible(true);
-        
-        // Sau khi dialog chọn món đóng, không cần làm gì
-        // (Dialog đó tự xử lý việc thêm món)
+        // Tìm phiếu đặt bàn tương ứng với bàn này
+        PhieuDatBan phieu = datBanDAO.getPhieuByBan(ban.getMaBan().trim());
+
+        // Kiểm tra xem có tìm thấy phiếu không
+        if (phieu == null) {
+            JOptionPane.showMessageDialog(this,
+                "Lỗi: Không tìm thấy phiếu đặt bàn tương ứng cho bàn " + ban.getMaBan().trim() + ".\n" +
+                "Có thể phiếu đã bị hủy hoặc có lỗi dữ liệu. Đang làm mới...",
+                "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+            // (Nếu không có phiếu, bàn DA_DAT này lẽ ra phải là TRONG)
+            refreshData();
+            return;
+        }
+
+        // Lấy cửa sổ cha (JFrame)
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        if (parentFrame == null) {
+             JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy cửa sổ chính.", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+             return;
+        }
+
+        // Tạo và hiển thị dialog ChiTietPhieu_Dialog
+        // Truyền `this::refreshData` để dialog có thể gọi lại khi cần làm mới DatBan_View
+        ChiTietPhieu_Dialog chiTietDialog = new ChiTietPhieu_Dialog(parentFrame, phieu, this::refreshData);
+        chiTietDialog.setVisible(true);
     }
+    
 }

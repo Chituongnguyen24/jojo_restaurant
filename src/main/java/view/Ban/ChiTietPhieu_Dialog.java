@@ -17,6 +17,10 @@ import java.awt.geom.RoundRectangle2D;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 public class ChiTietPhieu_Dialog extends JDialog {
 
@@ -134,8 +138,7 @@ public class ChiTietPhieu_Dialog extends JDialog {
         btnCancel.addActionListener(e -> onCancelBooking());
         btnCancel.setEnabled(phieu != null && phieu.getMaPhieu() != null);
 
-        // Nút "Khách đã đến" - chuyển sang trạng thái CO_KHACH
-        ButtonPill btnCustomerArrived = new ButtonPill("✓ Khách đã đến", new Color(40, 167, 69), new Color(30, 140, 55));
+        ButtonPill btnCustomerArrived = new ButtonPill("Khách đã đến", new Color(40, 167, 69), new Color(30, 140, 55));
         btnCustomerArrived.addActionListener(e -> onCustomerArrived());
         btnCustomerArrived.setEnabled(phieu != null && phieu.getMaPhieu() != null);
 
@@ -151,7 +154,7 @@ public class ChiTietPhieu_Dialog extends JDialog {
             footer.add(btnClose);
             if (phieu != null) {
                 footer.add(btnEdit);
-                footer.add(btnCustomerArrived); // Thêm nút "Khách đã đến"
+                footer.add(btnCustomerArrived);
             }
             footer.add(btnCancel);
         }
@@ -183,6 +186,7 @@ public class ChiTietPhieu_Dialog extends JDialog {
         parent.add(Box.createVerticalStrut(8));
     }
 
+    // === PHƯƠNG THỨC ĐƯỢC THAY THẾ ===
     private void onCustomerArrived() {
         if (phieu == null || phieu.getMaPhieu() == null || phieu.getBan() == null) {
             JOptionPane.showMessageDialog(this, "Không có thông tin phiếu.", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -211,47 +215,53 @@ public class ChiTietPhieu_Dialog extends JDialog {
                 return;
             }
 
-            // Tạo hóa đơn mới cho bàn này
-            String maHD = generateMaHoaDon();
-            LocalDate ngayLap = LocalDate.now();
-            LocalDateTime gioVao = LocalDateTime.now();
+            // Kiểm tra xem đã có hóa đơn cho bàn này chưa
+            HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
+            HoaDon hoaDonExist = hoaDonDAO.getHoaDonByBan(ban.getMaBan());
             
-            HoaDon hoaDon = new HoaDon(
-                maHD,
-                phieu.getKhachHang(),
-                phieu.getNhanVien(),
-                ban,
-                phieu, 
-                null, 
-                new Thue("T001"), 
-                ngayLap,
-                gioVao,
-                null, 
-                "Tiền mặt", 
-                false 
-            );
-            
-            boolean createHoaDonSuccess = hoaDonDAO.copyChiTietPhieuDatToHoaDon(maHD, maHD);
-            
-            if (createHoaDonSuccess) {
-                JOptionPane.showMessageDialog(this, 
-                    "Khách đã đến! Bàn chuyển sang trạng thái 'Có khách'.\nHóa đơn đã được tạo.", 
-                    "Thành công", 
-                    JOptionPane.INFORMATION_MESSAGE);
+            if (hoaDonExist == null) {
+                // Tạo hóa đơn mới
+                String maHD = generateMaHoaDon();
+                LocalDate ngayLap = LocalDate.now();
+                LocalDateTime gioVao = LocalDateTime.now();
                 
-                dispose();
-                if (onRefresh != null) {
-                    onRefresh.run();
+                HoaDon hoaDon = new HoaDon(
+                    maHD,
+                    phieu.getKhachHang(),
+                    phieu.getNhanVien(),
+                    ban,
+                    phieu,
+                    null, // Không có khuyến mãi
+                    new Thue("T001"), // Mã thuế mặc định
+                    ngayLap,
+                    gioVao,
+                    null, // Giờ ra chưa có
+                    "Tiền mặt",
+                    false // Chưa thanh toán
+                );
+                
+                boolean createHoaDonSuccess = hoaDonDAO.addHoaDon(hoaDon);
+                
+                if (!createHoaDonSuccess) {
+                    // Rollback trạng thái bàn
+                    ban.setTrangThai(TrangThaiBan.DA_DAT);
+                    banDAO.capNhatBan(ban);
+                    JOptionPane.showMessageDialog(this, "Không thể tạo hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
                 }
-                
-                // Mở dialog gọi món
-                moDialogGoiMon(ban);
-                
-            } else {
-                // Rollback trạng thái bàn
-                ban.setTrangThai(TrangThaiBan.DA_DAT);
-                banDAO.capNhatBan(ban);
-                JOptionPane.showMessageDialog(this, "Không thể tạo hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+
+                // Copy món ăn từ ChiTietPhieuDatBan sang ChiTietHoaDon
+                copyMonAnToHoaDon(phieu.getMaPhieu(), maHD);
+            }
+            
+            JOptionPane.showMessageDialog(this, 
+                "Khách đã đến! Bàn chuyển sang trạng thái 'Có khách'.", 
+                "Thành công", 
+                JOptionPane.INFORMATION_MESSAGE);
+            
+            dispose();
+            if (onRefresh != null) {
+                onRefresh.run();
             }
             
         } catch (Exception ex) {
@@ -260,6 +270,35 @@ public class ChiTietPhieu_Dialog extends JDialog {
         }
     }
 
+    // === PHƯƠNG THỨC MỚI ĐƯỢC THÊM ===
+    private void copyMonAnToHoaDon(String maPhieu, String maHoaDon) {
+        String sqlSelect = "SELECT maMonAn, soLuong, donGia FROM ChiTietPhieuDatBan WHERE maPhieu = ?";
+        String sqlInsert = "INSERT INTO ChiTietHoaDon(maHoaDon, maMonAn, soLuong, donGia) VALUES (?, ?, ?, ?)";
+        
+        try (Connection conn = connectDB.ConnectDB.getConnection();
+             PreparedStatement psSelect = conn.prepareStatement(sqlSelect);
+             PreparedStatement psInsert = conn.prepareStatement(sqlInsert)) {
+            
+            psSelect.setString(1, maPhieu);
+            ResultSet rs = psSelect.executeQuery();
+            
+            while (rs.next()) {
+                psInsert.setString(1, maHoaDon);
+                psInsert.setString(2, rs.getString("maMonAn"));
+                psInsert.setInt(3, rs.getInt("soLuong"));
+                psInsert.setDouble(4, rs.getDouble("donGia"));
+                psInsert.executeUpdate();
+            }
+            
+            rs.close();
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Lỗi khi copy món ăn sang hóa đơn: " + e.getMessage());
+        }
+    }
+
+    // === PHƯƠNG THỨC GIỮ NGUYÊN (VÌ GIỐNG HỆT BẢN CUNG CẤP) ===
     private String generateMaHoaDon() {
         String newID = "HD00001";
         try (java.sql.Connection conn = connectDB.ConnectDB.getConnection();
@@ -280,17 +319,8 @@ public class ChiTietPhieu_Dialog extends JDialog {
     }
 
     private void moDialogGoiMon(Ban ban) {
-        // Mở trang gọi món - bạn cần implement trang này
         JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         if (parentFrame != null) {
-            // Giả sử bạn có view.GoiMon_View
-            // view.GoiMon_View goiMonView = new view.GoiMon_View(ban);
-            // JDialog goiMonDialog = new JDialog(parentFrame, "Gọi món - " + ban.getMaBan(), true);
-            // goiMonDialog.setContentPane(goiMonView);
-            // goiMonDialog.setSize(900, 700);
-            // goiMonDialog.setLocationRelativeTo(parentFrame);
-            // goiMonDialog.setVisible(true);
-            
             JOptionPane.showMessageDialog(this, 
                 "Tính năng gọi món đang được phát triển.\nBạn có thể gọi món từ màn hình chính.", 
                 "Thông báo", 
@@ -314,25 +344,48 @@ public class ChiTietPhieu_Dialog extends JDialog {
 
         if (confirm != JOptionPane.YES_OPTION) return;
 
-        boolean ok = datBanDAO.deletePhieuDatBan(phieu.getMaPhieu());
-        if (!ok) {
-            JOptionPane.showMessageDialog(this, "Hủy đặt bàn thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        // Bước 1: Hủy phiếu đặt bàn
+        boolean deletePhieuSuccess = datBanDAO.deletePhieuDatBan(phieu.getMaPhieu());
+        if (!deletePhieuSuccess) {
+            JOptionPane.showMessageDialog(this, "Hủy đặt bàn thất bại (không thể xóa phiếu).", "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // Cập nhật trạng thái bàn về TRỐNG
-        if (phieu.getBan() != null) {
-            Ban ban = phieu.getBan();
-            ban.setTrangThai(TrangThaiBan.TRONG);
-            banDAO.capNhatBan(ban);
+        // Bước 2: Cập nhật trạng thái bàn về TRỐNG (nếu có thông tin bàn)
+        boolean updateBanSuccess = true; // Mặc định là thành công nếu không có bàn để cập nhật
+        if (phieu.getBan() != null && phieu.getBan().getMaBan() != null) {
+            String maBanCanCapNhat = phieu.getBan().getMaBan();
+            
+            // === GỌI PHƯƠNG THỨC MỚI CỦA DAO ===
+            updateBanSuccess = banDAO.capNhatTrangThaiBan(maBanCanCapNhat, TrangThaiBan.TRONG);
+            // ===================================
+            
+            if (!updateBanSuccess) {
+                 System.err.println("Lỗi: Không thể cập nhật trạng thái bàn " + maBanCanCapNhat + " về TRỐNG.");
+            }
+        } else {
+             System.out.println("Phiếu đặt không liên kết với bàn nào, chỉ xóa phiếu.");
         }
 
-        if (onRefresh != null) {
-            try { onRefresh.run(); } catch (Exception ignored) {}
-        }
 
-        JOptionPane.showMessageDialog(this, "Hủy đặt bàn thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        dispose();
+        // Bước 3: Thông báo và làm mới giao diện
+        if (updateBanSuccess) {
+            JOptionPane.showMessageDialog(this, "Hủy đặt bàn thành công.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            if (onRefresh != null) {
+                try { onRefresh.run(); } catch (Exception ignored) {}
+            }
+            dispose(); // Đóng dialog
+        } else {
+            // Thông báo lỗi nếu cập nhật bàn thất bại (nhưng phiếu đã bị xóa)
+            JOptionPane.showMessageDialog(this,
+                "Đã hủy phiếu đặt, nhưng xảy ra lỗi khi cập nhật trạng thái bàn về 'Trống'.\n" +
+                "Vui lòng làm mới danh sách bàn hoặc kiểm tra lại.",
+                "Lỗi Cập Nhật Bàn", JOptionPane.ERROR_MESSAGE);
+             if (onRefresh != null) { // Vẫn refresh để ít nhất phiếu biến mất
+                try { onRefresh.run(); } catch (Exception ignored) {}
+            }
+             dispose(); // Đóng dialog
+        }
     }
 
     private static class ButtonPill extends JButton {

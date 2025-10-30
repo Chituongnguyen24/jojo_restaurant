@@ -266,4 +266,50 @@ public class Ban_DAO {
         }
         return map;
     }
+
+    public boolean capNhatTrangThaiBan(String maBan, TrangThaiBan trangThaiMoi) {
+        String sql = "UPDATE Ban SET trangThai = ? WHERE maBan = ?";
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try {
+            conn = ConnectDB.getInstance().getConnection();
+            stmt = conn.prepareStatement(sql);
+
+            String trangThaiValue = trangThaiMoi.toString();
+
+            // === DEBUGGING ===
+            System.out.println("Ban_DAO.capNhatTrangThaiBan: Cập nhật bàn '" + maBan + "' về trạng thái '" + trangThaiValue + "'"); // Log giá trị CÓ DẤU
+            // ===============
+
+         
+            stmt.setString(1, trangThaiValue);
+            stmt.setString(2, maBan);
+
+            int rowsAffected = stmt.executeUpdate();
+
+            // === DEBUGGING ===
+            System.out.println("Ban_DAO.capNhatTrangThaiBan: Số dòng bị ảnh hưởng = " + rowsAffected);
+            // ===============
+
+            return rowsAffected > 0; // Trả về true nếu cập nhật thành công
+
+        } catch (SQLException e) {
+            // === DEBUGGING ===
+            System.err.println("Ban_DAO.capNhatTrangThaiBan: Lỗi SQL khi cập nhật trạng thái bàn!");
+            e.printStackTrace();
+            // ===============
+            return false;
+        } catch (Exception e) {
+             // === DEBUGGING ===
+            System.err.println("Ban_DAO.capNhatTrangThaiBan: Lỗi không xác định!");
+            e.printStackTrace();
+            // ===============
+            return false;
+        }
+        finally {
+            // Đóng tài nguyên
+            try { if (stmt != null) stmt.close(); } catch (SQLException ignored) {}
+            try { if (conn != null) conn.close(); } catch (SQLException ignored) {}
+        }
+    }
 }

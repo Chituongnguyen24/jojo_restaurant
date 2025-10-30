@@ -4,6 +4,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -234,29 +235,70 @@ public class DatBan_DAO {
         return false;
     }
 
-    public Map<String, List<Ban>> getAllBanByFloor() {
-        Map<String, List<Ban>> banTheoTang = new HashMap<>();
-        String truyVan = "SELECT b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai, k.TenKhuVuc " +
-                         "FROM Ban b JOIN KHUVUC k ON b.MaKhuVuc = k.MaKhuVuc";
+ // Trong file DatBan_DAO.java
 
-        try (Connection ketNoi = ConnectDB.getConnection();
-             Statement lenh = ketNoi.createStatement();
-             ResultSet ketQua = lenh.executeQuery(truyVan)) {
+    public Map<String, List<Ban>> getAllBanByFloor() {
+        Map<String, List<Ban>> banTheoTang = new LinkedHashMap<>(); // Dùng LinkedHashMap để giữ thứ tự khu vực
+        String truyVan = "SELECT b.MaBan, b.SoCho, b.LoaiBan, b.MaKhuVuc, b.TrangThai, k.TenKhuVuc " +
+                         "FROM Ban b JOIN KHUVUC k ON b.MaKhuVuc = k.MaKhuVuc " +
+                         "ORDER BY k.MaKhuVuc, b.MaBan"; // Giữ ORDER BY để kết quả nhất quán
+
+        Connection ketNoi = null;
+        Statement lenh = null;
+        ResultSet ketQua = null;
+
+        try {
+            ketNoi = ConnectDB.getConnection(); // Sử dụng ConnectDB của bạn
+            lenh = ketNoi.createStatement();
+            ketQua = lenh.executeQuery(truyVan);
 
             while (ketQua.next()) {
+                String maBan = ketQua.getString("MaBan");
+                String trangThaiStr = ketQua.getString("TrangThai"); // Đọc chuỗi trạng thái từ DB
+
+                // Bỏ qua nếu trạng thái là null trong DB
+                if (trangThaiStr == null) {
+                     System.err.println("CẢNH BÁO: Trạng thái NULL cho bàn '" + maBan + "' trong CSDL."); // Giữ lại cảnh báo quan trọng
+                     continue;
+                }
+
+                TrangThaiBan trangThaiEnum = null;
+                try {
+                    // Chuyển đổi chuỗi trạng thái sang Enum
+                    trangThaiEnum = TrangThaiBan.fromString(trangThaiStr);
+
+                } catch (IllegalArgumentException e) {
+                     // Ghi log lỗi nếu không chuyển đổi được trạng thái và bỏ qua bàn này
+                     System.err.println("LỖI: Không thể chuyển đổi trạng thái '" + trangThaiStr + "' cho bàn '" + maBan + "'. Bỏ qua bàn này. Lỗi: " + e.getMessage());
+                     continue; // Bỏ qua bàn bị lỗi trạng thái
+                }
+
+                // Tạo đối tượng Ban chỉ khi chuyển đổi trạng thái thành công
+                // (Đã loại bỏ trường hợp null ở trên)
                 Ban ban = new Ban(
-                    ketQua.getString("MaBan"),
+                    maBan,
                     ketQua.getInt("SoCho"),
-                    LoaiBan.fromTenHienThi(ketQua.getString("LoaiBan")),
+                    LoaiBan.fromTenHienThi(ketQua.getString("LoaiBan")), // Đảm bảo LoaiBan.fromTenHienThi xử lý tốt null/sai
                     ketQua.getString("MaKhuVuc"),
-                    TrangThaiBan.fromString(ketQua.getString("TrangThai"))
+                    trangThaiEnum // Sử dụng enum đã chuyển đổi
                 );
                 String tenTang = ketQua.getString("TenKhuVuc");
+                // Thêm bàn vào danh sách của khu vực tương ứng trong Map
                 banTheoTang.computeIfAbsent(tenTang, k -> new ArrayList<>()).add(ban);
             }
-        } catch (SQLException loi) {
-            loi.printStackTrace();
+        } catch (SQLException loiSQL) {
+            System.err.println("Lỗi SQLException trong getAllBanByFloor: " + loiSQL.getMessage());
+            loiSQL.printStackTrace(); // In chi tiết lỗi SQL
+        } catch (Exception e) { // Bắt các lỗi khác (ví dụ: lỗi LoaiBan.fromTenHienThi)
+            System.err.println("Lỗi Exception không xác định trong getAllBanByFloor: " + e.getMessage());
+            e.printStackTrace(); // In chi tiết lỗi khác
+        } finally {
+            // Đóng tài nguyên ResultSet, Statement, Connection
+            try { if (ketQua != null) ketQua.close(); } catch (SQLException ignored) {}
+            try { if (lenh != null) lenh.close(); } catch (SQLException ignored) {}
+            try { if (ketNoi != null) ketNoi.close(); } catch (SQLException ignored) {}
         }
+        // Trả về Map chứa danh sách bàn theo khu vực
         return banTheoTang;
     }
 
@@ -286,11 +328,7 @@ public class DatBan_DAO {
        return null;
    }
 
-    /**
-     * Lấy chi tiết món ăn theo mã phiếu.
-     * Phương thức này được lấy từ file thứ 2 và điều chỉnh để phù hợp với
-     * schema của file 1 (ví dụ: soLuongMonAn, ghiChu).
-     */
+
     public List<ChiTietPhieuDatBan> getChiTietByPhieuId(String maPhieu) {
         List<ChiTietPhieuDatBan> list = new ArrayList<>();
         String sql = "SELECT ct.*, ma.tenMonAn, ma.donGia as giaGoc " +

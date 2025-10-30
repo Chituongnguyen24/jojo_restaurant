@@ -124,9 +124,8 @@ public class HoaDon_ThanhToan_Dialog extends JDialog {
         }
         // Thêm tiêu đề cột cho JList
         vector.add(String.format("%-4s %-25s %8s %15s", "STT", "Tên món", "SL", "Đơn giá"));
-        vector.add("-------------------------------------------------------"); 
-
-        DecimalFormat itemPriceFormatter = new DecimalFormat("###,###"); 
+        vector.add("-------------------------------------------------------");
+DecimalFormat itemPriceFormatter = new DecimalFormat("###,###"); 
 
         for (int i = 0; i < chiTietList.size(); i++) {
             ChiTietHoaDon cthd = chiTietList.get(i);
@@ -191,7 +190,7 @@ public class HoaDon_ThanhToan_Dialog extends JDialog {
         previewDialog.setSize(450, 600);
         previewDialog.setLocationRelativeTo(this);
         JTextArea textArea = new JTextArea(invoiceText);
-        textArea.setEditable(false);
+textArea.setEditable(false);
         textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         JScrollPane scrollPane = new JScrollPane(textArea);
         JButton btnOk = new JButton("Đóng");
