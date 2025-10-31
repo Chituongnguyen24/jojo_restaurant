@@ -1,7 +1,7 @@
 package view.Ban;
 
 import dao.Ban_DAO;
-import dao.DatBan_DAO;
+import dao.PhieuDatBan_DAO;
 import entity.Ban;
 import entity.KhachHang;
 import entity.NhanVien;
@@ -18,18 +18,16 @@ import java.util.Calendar;
 import java.util.Date;
 import java.text.NumberFormat;
 import java.util.Locale;
-import java.time.ZoneId;
 
 public class DatBan_Dialog extends JDialog {
     private JTextField txtTenKhach, txtSDT, txtGhiChu;
     private JSpinner spnNgay, spnGio, spnSoNguoi;
-    private JFormattedTextField txtTienCoc;
     private JButton btnXacNhan, btnHuy;
 
     private Ban ban;
     private PhieuDatBan phieuDatCanSua;
     private Ban_DAO banDAO;
-    private DatBan_DAO datBanDAO;
+    private PhieuDatBan_DAO phieuDatBanDAO; 
     private Runnable onSuccess;
 
     private static final Color MAU_NEN_DIALOG = Color.WHITE;
@@ -47,7 +45,7 @@ public class DatBan_Dialog extends JDialog {
         this.phieuDatCanSua = null;
         this.onSuccess = onSuccess;
         this.banDAO = new Ban_DAO();
-        this.datBanDAO = new DatBan_DAO();
+        this.phieuDatBanDAO = new PhieuDatBan_DAO(); 
         initComponents();
         setupDialogProperties(parent);
     }
@@ -58,7 +56,7 @@ public class DatBan_Dialog extends JDialog {
         this.ban = phieuToEdit.getBan();
         this.onSuccess = onSuccess;
         this.banDAO = new Ban_DAO();
-        this.datBanDAO = new DatBan_DAO();
+        this.phieuDatBanDAO = new PhieuDatBan_DAO(); 
         initComponents();
         loadPhieuDatBanData();
         setupDialogProperties(parent);
@@ -117,10 +115,6 @@ public class DatBan_Dialog extends JDialog {
         spnGio.setEditor(timeEditor); styleSpinner(spnGio);
 
         spnSoNguoi = new JSpinner(new SpinnerNumberModel(2, 1, ban.getSoCho() + 10, 1)); styleSpinner(spnSoNguoi);
-        NumberFormat currencyFormat = NumberFormat.getNumberInstance(new Locale("vi", "VN"));
-        currencyFormat.setGroupingUsed(true);
-        txtTienCoc = new JFormattedTextField(currencyFormat);
-        txtTienCoc.setValue(0.0); styleTextField(txtTienCoc);
         txtGhiChu = new JTextField(); styleTextField(txtGhiChu);
 
         content.add(createInputLine("Tên khách hàng:", txtTenKhach));
@@ -132,8 +126,6 @@ public class DatBan_Dialog extends JDialog {
         content.add(createInputLine("Giờ đến:", spnGio));
         content.add(Box.createVerticalStrut(10));
         content.add(createInputLine("Số người:", spnSoNguoi));
-        content.add(Box.createVerticalStrut(10));
-        content.add(createInputLine("Tiền cọc:", txtTienCoc));
         content.add(Box.createVerticalStrut(10));
         content.add(createInputLine("Ghi chú:", txtGhiChu));
         content.add(Box.createVerticalStrut(15));
@@ -161,9 +153,11 @@ public class DatBan_Dialog extends JDialog {
         if (phieuDatCanSua == null) return;
 
         KhachHang kh = phieuDatCanSua.getKhachHang();
-        if (kh != null && !"KH00000000".equals(kh.getMaKhachHang().trim())) {
-             txtTenKhach.setText(kh.getTenKhachHang() != null ? kh.getTenKhachHang() : "");
-             txtSDT.setText(kh.getSdt() != null ? kh.getSdt() : "");
+        
+        // --- TẢI DỮ LIỆU TÊN/SĐT KHÁCH ---
+        if (kh != null && !"KH00000000".equals(kh.getMaKH().trim())) { // SỬA: getMaKH
+             txtTenKhach.setText(kh.getTenKH() != null ? kh.getTenKH() : ""); // SỬA: getTenKH
+             txtSDT.setText(kh.getSoDienThoai() != null ? kh.getSoDienThoai() : ""); // SỬA: getSoDienThoai
         } else {
              txtTenKhach.setText("");
              txtSDT.setText("");
@@ -186,16 +180,17 @@ public class DatBan_Dialog extends JDialog {
              }
         }
 
-        if (phieuDatCanSua.getThoiGianDat() != null) {
-            LocalDateTime thoiGian = phieuDatCanSua.getThoiGianDat();
+        // --- TẢI DỮ LIỆU THỜI GIAN ---
+        if (phieuDatCanSua.getThoiGianDenHen() != null) {
+            LocalDateTime thoiGian = phieuDatCanSua.getThoiGianDenHen();
             Date date = Date.from(thoiGian.atZone(ZoneId.systemDefault()).toInstant());
             spnNgay.setValue(date);
             spnGio.setValue(date);
         }
 
         spnSoNguoi.setValue(phieuDatCanSua.getSoNguoi());
-        txtTienCoc.setValue(phieuDatCanSua.getTienCoc());
 
+        // --- TẢI DỮ LIỆU GHI CHÚ (PHẦN FORM) ---
         String ghiChuDisplay = "";
          if (phieuDatCanSua.getGhiChu() != null) {
              int noteIndex = phieuDatCanSua.getGhiChu().indexOf(". Ghi chú: ");
@@ -260,16 +255,15 @@ public class DatBan_Dialog extends JDialog {
                  JOptionPane.showMessageDialog(this, "Vui lòng nhập Tên và SĐT!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
                  return;
             }
+            
+            // --- XỬ LÝ THỜI GIAN (Date + Time -> LocalDateTime) ---
             Date datePart = (Date) spnNgay.getValue();
             Date timePart = (Date) spnGio.getValue();
             LocalDateTime gioDen = LocalDateTime.ofInstant(datePart.toInstant(), ZoneId.systemDefault()).with(LocalTime.from(timePart.toInstant().atZone(ZoneId.systemDefault())));
+            
             int soNguoi = (int) spnSoNguoi.getValue();
             String ghiChu_form = txtGhiChu.getText().trim();
-            double tienCoc = ((Number)txtTienCoc.getValue()).doubleValue();
-            if (tienCoc < 0) {
-                 JOptionPane.showMessageDialog(this, "Tiền cọc không âm!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                 return;
-            }
+            
             if (gioDen.isBefore(LocalDateTime.now().plusMinutes(10))) {
                 JOptionPane.showMessageDialog(this, "Giờ đến phải sau hiện tại ít nhất 10 phút!", "Lỗi thời gian", JOptionPane.ERROR_MESSAGE);
                  return;
@@ -279,28 +273,31 @@ public class DatBan_Dialog extends JDialog {
                 if (confirm == JOptionPane.NO_OPTION) return;
             }
 
-            NhanVien nv = new NhanVien("NV00001");
+            NhanVien nv = new NhanVien("NVTT001");
             KhachHang kh_db = new KhachHang("KH00000000");
+
             String ghiChu_final = String.format("Khách: %s - SĐT: %s", ten, sdt);
             if (!ghiChu_form.isEmpty()) { ghiChu_final += ". Ghi chú: " + ghiChu_form; }
-            String maPhieu = datBanDAO.generateNewID();
-            PhieuDatBan phieu_moi = new PhieuDatBan(maPhieu, gioDen, kh_db, nv, ban, soNguoi, tienCoc, ghiChu_final);
+            
+            String maPhieu = phieuDatBanDAO.generateNewID();
+            
+            // Dùng constructor 10 tham số (Entity mới)
+            PhieuDatBan phieu_moi = new PhieuDatBan(maPhieu, gioDen, null, null, kh_db, nv, ban, soNguoi, ghiChu_final, "Chưa đến");
 
-            ban.setTrangThai(TrangThaiBan.DA_DAT);
-            boolean updateBanSuccess = banDAO.capNhatBan(ban);
+            boolean updateBanSuccess = banDAO.capNhatTrangThaiBan(ban.getMaBan().trim(), TrangThaiBan.DA_DAT);
+            
             if (updateBanSuccess) {
-                boolean createPhieuSuccess = datBanDAO.insertPhieuDatBan(phieu_moi);
+                boolean createPhieuSuccess = phieuDatBanDAO.insertPhieuDatBan(phieu_moi);
                 if (createPhieuSuccess) {
                     JOptionPane.showMessageDialog(this, "Đặt bàn thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                     dispose();
                     if (onSuccess != null) { onSuccess.run(); }
                 } else {
-                    ban.setTrangThai(TrangThaiBan.TRONG); banDAO.capNhatBan(ban);
+                    banDAO.capNhatTrangThaiBan(ban.getMaBan().trim(), TrangThaiBan.TRONG);
                     JOptionPane.showMessageDialog(this, "Không thể tạo phiếu!", "Lỗi DB", JOptionPane.ERROR_MESSAGE);
                 }
             } else {
-                ban.setTrangThai(TrangThaiBan.TRONG);
-                JOptionPane.showMessageDialog(this, "Không thể cập nhật bàn!", "Lỗi DB", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Không thể cập nhật trạng thái bàn!", "Lỗi DB", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -316,38 +313,41 @@ public class DatBan_Dialog extends JDialog {
                  JOptionPane.showMessageDialog(this, "Vui lòng nhập Tên và SĐT!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
                  return;
             }
+            
+            // --- XỬ LÝ THỜI GIAN (Date + Time -> LocalDateTime) ---
             Date datePart = (Date) spnNgay.getValue();
             Date timePart = (Date) spnGio.getValue();
             LocalDateTime gioDen = LocalDateTime.ofInstant(datePart.toInstant(), ZoneId.systemDefault()).with(LocalTime.from(timePart.toInstant().atZone(ZoneId.systemDefault())));
+            
             int soNguoi = (int) spnSoNguoi.getValue();
             String ghiChu_form = txtGhiChu.getText().trim();
-            double tienCoc = ((Number)txtTienCoc.getValue()).doubleValue();
-             if (tienCoc < 0) {
-                 JOptionPane.showMessageDialog(this, "Tiền cọc không âm!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                 return;
-             }
+            
             if (soNguoi > ban.getSoCho()) {
                  int confirm = JOptionPane.showConfirmDialog(this, "Bàn chỉ có " + ban.getSoCho() + " chỗ. Vẫn đặt " + soNguoi + " người?", "Cảnh báo", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                 if (confirm == JOptionPane.NO_OPTION) return;
              }
 
-            NhanVien nv = new NhanVien("NV00001");
+            NhanVien nv = new NhanVien("NVTT001");
             KhachHang kh_db = new KhachHang("KH00000000");
+
             String ghiChu_final = String.format("Khách: %s - SĐT: %s", ten, sdt);
             if (!ghiChu_form.isEmpty()) { ghiChu_final += ". Ghi chú: " + ghiChu_form; }
-
+            
+            // Dùng constructor 10 tham số (Entity mới)
             PhieuDatBan phieu_cap_nhat = new PhieuDatBan(
                 phieuDatCanSua.getMaPhieu(),
                 gioDen,
+                phieuDatCanSua.getThoiGianNhanBan(),
+                phieuDatCanSua.getThoiGianTraBan(),
                 kh_db,
-                nv,
+                phieuDatCanSua.getNhanVien(),
                 ban,
                 soNguoi,
-                tienCoc,
-                ghiChu_final
+                ghiChu_final,
+                phieuDatCanSua.getTrangThaiPhieu()
             );
 
-            boolean success = datBanDAO.updatePhieuDatBan(phieu_cap_nhat);
+            boolean success = phieuDatBanDAO.updatePhieuDatBan(phieu_cap_nhat);
 
             if (success) {
                 JOptionPane.showMessageDialog(this, "Cập nhật phiếu đặt thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);

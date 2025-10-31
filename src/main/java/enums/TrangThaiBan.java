@@ -29,12 +29,10 @@ public enum TrangThaiBan {
 
 
         for (TrangThaiBan ttb : TrangThaiBan.values()) {
-            // 1. Kiểm tra khớp với giá trị hiển thị (có dấu, ví dụ: "Trống") - không phân biệt hoa/thường
-            if (ttb.value.equalsIgnoreCase(trimmedText)) {
+           if (ttb.value.equalsIgnoreCase(trimmedText)) {
                 return ttb;
             }
-            // 2. Kiểm tra khớp với tên hằng số enum (không dấu, ví dụ: "TRONG") - không phân biệt hoa/thường
-            if (ttb.name().equalsIgnoreCase(trimmedText)) {  
+             if (ttb.name().equalsIgnoreCase(trimmedText)) {  
                 return ttb;
             }
         }

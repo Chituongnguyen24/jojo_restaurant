@@ -3,11 +3,12 @@ package view.HoaDon;
 import dao.HoaDon_DAO;
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
+import entity.KhachHang; // Thêm KhachHang
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.text.DecimalFormat; // Import DecimalFormat
+import java.text.DecimalFormat; 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Vector;
@@ -21,17 +22,17 @@ public class HoaDon_ThanhToan_Dialog extends JDialog {
 
     // Định dạng tiền tệ
     private static final DecimalFormat moneyFormatter = new DecimalFormat("###,### VNĐ");
+    private static final DecimalFormat itemPriceFormatter = new DecimalFormat("###,###"); // Dùng cho JList
 
-    // === CẬP NHẬT CONSTRUCTOR ===
     public HoaDon_ThanhToan_Dialog(Frame owner, HoaDon hoaDon, HoaDon_DAO hoaDonDAO,
-                                   double tongTienMonAn, double tienGiam, double tienThue, double tongThanhToan, // Các giá trị tiền
+                                   double tongTienMonAn, double tienGiam, double tienThue, double tongThanhToan, 
                                    List<ChiTietHoaDon> chiTietList) {
         super(owner, "Xác nhận thanh toán", true);
         this.hoaDon = hoaDon;
         this.hoaDonDAO = hoaDonDAO;
-        this.chiTietHoaDonList = chiTietList; // Lưu lại danh sách chi tiết
+        this.chiTietHoaDonList = chiTietList; 
 
-        setSize(500, 600); // Tăng chiều cao để chứa thêm thông tin
+        setSize(500, 600); 
         setLocationRelativeTo(owner);
         setResizable(false);
         setLayout(new BorderLayout());
@@ -46,50 +47,48 @@ public class HoaDon_ThanhToan_Dialog extends JDialog {
         mainPanel.setBorder(new EmptyBorder(10, 20, 10, 20));
         mainPanel.setOpaque(false);
 
-        // === CẬP NHẬT PANEL THÔNG TIN ===
-        // Tăng số hàng của GridLayout
-        JPanel infoPanel = new JPanel(new GridLayout(7, 2, 10, 8)); // Tăng lên 7 hàng, giảm khoảng cách dọc
+        JPanel infoPanel = new JPanel(new GridLayout(7, 2, 10, 8)); 
         infoPanel.setOpaque(false);
 
         infoPanel.add(new JLabel("Mã Hóa Đơn:"));
-        infoPanel.add(new JLabel(hoaDon.getMaHoaDon()));
+        infoPanel.add(new JLabel(hoaDon.getMaHD())); // SỬA: getMaHD
 
         infoPanel.add(new JLabel("Khách hàng:"));
         String tenKH = "Khách lẻ";
-        if (hoaDon.getKhachHang() != null && hoaDon.getKhachHang().getTenKhachHang() != null) {
-            tenKH = hoaDon.getKhachHang().getTenKhachHang();
+        if (hoaDon.getKhachHang() != null && hoaDon.getKhachHang().getTenKH() != null) { // SỬA: getTenKH
+            tenKH = hoaDon.getKhachHang().getTenKH(); // SỬA: getTenKH
         }
         infoPanel.add(new JLabel(tenKH));
 
-        // --- Thêm các dòng tiền ---
+        // --- Các dòng tiền ---
         infoPanel.add(new JLabel("Tổng tiền (món ăn):"));
         infoPanel.add(new JLabel(moneyFormatter.format(tongTienMonAn)));
 
         infoPanel.add(new JLabel("Khuyến mãi:"));
         JLabel lblGiamGia = new JLabel("-" + moneyFormatter.format(tienGiam));
-        lblGiamGia.setForeground(Color.BLUE); // Màu xanh cho giảm giá
+        lblGiamGia.setForeground(Color.BLUE); 
         infoPanel.add(lblGiamGia);
 
-        infoPanel.add(new JLabel("Thuế VAT:")); // Hoặc tên thuế cụ thể
+        infoPanel.add(new JLabel("Thuế VAT:")); 
         JLabel lblThue = new JLabel(moneyFormatter.format(tienThue));
         infoPanel.add(lblThue);
 
         infoPanel.add(new JLabel("Tổng thanh toán:"));
         JLabel lblTongThanhToan = new JLabel(moneyFormatter.format(tongThanhToan));
         lblTongThanhToan.setFont(new Font("Arial", Font.BOLD, 16));
-        lblTongThanhToan.setForeground(new Color(200, 80, 70)); // Màu đỏ cho tổng cuối
+        lblTongThanhToan.setForeground(new Color(200, 80, 70)); 
         infoPanel.add(lblTongThanhToan);
         // --- Kết thúc thêm dòng tiền ---
 
         infoPanel.add(new JLabel("Phương thức (*):"));
         cbxPhuongThuc = new JComboBox<>(new String[]{"Tiền mặt", "Thẻ tín dụng", "Chuyển khoản"});
-        cbxPhuongThuc.setSelectedItem(hoaDon.getPhuongThuc() != null ? hoaDon.getPhuongThuc() : "Tiền mặt");
+        cbxPhuongThuc.setSelectedItem(hoaDon.getPhuongThucThanhToan() != null ? hoaDon.getPhuongThucThanhToan() : "Tiền mặt"); // SỬA: getPhuongThucThanhToan
         infoPanel.add(cbxPhuongThuc);
 
         mainPanel.add(infoPanel, BorderLayout.NORTH);
 
         // Danh sách món ăn (JList)
-        JList<String> listMonAn = new JList<>(createMonAnVector(chiTietList)); // Dùng chiTietList truyền vào
+        JList<String> listMonAn = new JList<>(createMonAnVector(chiTietList)); 
         listMonAn.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         listMonAn.setLayoutOrientation(JList.VERTICAL);
         listMonAn.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
@@ -107,15 +106,17 @@ public class HoaDon_ThanhToan_Dialog extends JDialog {
         btnPanel.setOpaque(false);
         btnSave = new JButton("Xác nhận & In Hóa Đơn");
         btnSave.setBackground(new Color(30, 150, 80));
+        btnSave.setForeground(Color.WHITE);
         btnSave.setFont(new Font("Arial", Font.BOLD, 13)); btnSave.addActionListener(this::savePayment);
         btnCancel = new JButton("Hủy");
         btnCancel.setBackground(new Color(200, 80, 70)); 
+        btnCancel.setForeground(Color.WHITE);
         btnCancel.setFont(new Font("Arial", Font.BOLD, 13)); btnCancel.addActionListener(e -> dispose());
         btnPanel.add(btnSave); btnPanel.add(btnCancel);
         add(btnPanel, BorderLayout.SOUTH);
     }
 
-    // Hàm tạo Vector cho JList (giữ nguyên)
+    // Hàm tạo Vector cho JList (cập nhật hiển thị)
     private Vector<String> createMonAnVector(List<ChiTietHoaDon> chiTietList) {
         Vector<String> vector = new Vector<>();
         if (chiTietList == null || chiTietList.isEmpty()) {
@@ -123,17 +124,16 @@ public class HoaDon_ThanhToan_Dialog extends JDialog {
             return vector;
         }
         // Thêm tiêu đề cột cho JList
-        vector.add(String.format("%-4s %-25s %8s %15s", "STT", "Tên món", "SL", "Đơn giá"));
+        vector.add(String.format("%-4s %-25s %8s %15s", "STT", "Tên món", "SL", "Giá/SL"));
         vector.add("-------------------------------------------------------");
-DecimalFormat itemPriceFormatter = new DecimalFormat("###,###"); 
 
         for (int i = 0; i < chiTietList.size(); i++) {
             ChiTietHoaDon cthd = chiTietList.get(i);
             String tenMon = "N/A";
-            double donGia = 0;
+            double donGiaBan = 0;
             if(cthd.getMonAn() != null) {
                 tenMon = cthd.getMonAn().getTenMonAn() != null ? cthd.getMonAn().getTenMonAn() : "Lỗi tên món";
-                donGia = cthd.tinhThanhTien();
+                donGiaBan = cthd.getDonGiaBan(); // SỬA: getDonGiaBan
             }
 
             // Cắt bớt tên món nếu quá dài
@@ -145,7 +145,7 @@ DecimalFormat itemPriceFormatter = new DecimalFormat("###,###");
                                      i + 1,
                                      tenMon,
                                      cthd.getSoLuong(),
-                                     itemPriceFormatter.format(donGia))); // Format đơn giá
+                                     itemPriceFormatter.format(donGiaBan))); // Format đơn giá bán
         }
         return vector;
     }
@@ -158,9 +158,12 @@ DecimalFormat itemPriceFormatter = new DecimalFormat("###,###");
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn phương thức thanh toán!");
                 return;
             }
-            hoaDon.setPhuongThuc(phuongThuc);
+            hoaDon.setPhuongThucThanhToan(phuongThuc); // SỬA: setPhuongThucThanhToan
             hoaDon.setDaThanhToan(true);
             hoaDon.setGioRa(LocalDateTime.now());
+            // LƯU Ý: updateHoaDon cần TongTienTruocThue và TongGiamGia
+            hoaDon.setTongTienTruocThue(0.0);
+            hoaDon.setTongGiamGia(0.0);
             boolean updated = hoaDonDAO.updateHoaDon(hoaDon);
 
             if (updated) {
@@ -190,7 +193,7 @@ DecimalFormat itemPriceFormatter = new DecimalFormat("###,###");
         previewDialog.setSize(450, 600);
         previewDialog.setLocationRelativeTo(this);
         JTextArea textArea = new JTextArea(invoiceText);
-textArea.setEditable(false);
+        textArea.setEditable(false);
         textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         JScrollPane scrollPane = new JScrollPane(textArea);
         JButton btnOk = new JButton("Đóng");

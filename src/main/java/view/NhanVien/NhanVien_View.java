@@ -50,6 +50,7 @@ public class NhanVien_View extends JPanel {
 
         btnAdd.addActionListener(e -> {
             Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+            // SỬA: Thay đổi constructor của AddDialog để sử dụng các trường mới
             NhanVien_AddDialog dialog = new NhanVien_AddDialog(parentFrame, nhanVienDAO);
             dialog.setVisible(true);
             loadNhanVienData();
@@ -72,11 +73,12 @@ public class NhanVien_View extends JPanel {
         statsPanel.add(createStatBox(lblQuanLy, "Quản lý", new Color(76, 175, 80)));
         statsPanel.add(createStatBox(lblTiepTan, "Tiếp tân", new Color(255, 152, 0)));
 
-        String[] cols = {"Mã NV", "Tên nhân viên", "Giới tính", "Ngày sinh", "SĐT", "Email", "Tài khoản", "Vai trò", "Sửa", "Xóa"};
+        // SỬA: Thêm các cột mới
+        String[] cols = {"Mã NV", "Tên NV", "Giới tính", "Ngày sinh", "SĐT", "CCCD", "Chức vụ", "Trạng thái", "Tài khoản", "Vai trò TK", "Sửa", "Xóa"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 8 || column == 9;
+                return column >= 10;
             }
         };
 
@@ -106,7 +108,8 @@ public class NhanVien_View extends JPanel {
                  }
                  setBorder(new EmptyBorder(5, 10, 5, 10)); 
                
-                 if (column == 0 || column == 2 || column == 3) { 
+                 // Cột căn giữa
+                 if (column == 0 || column == 2 || column == 3 || column == 7) { 
                      setHorizontalAlignment(CENTER);
                  } else {
                      setHorizontalAlignment(LEFT);
@@ -128,18 +131,21 @@ public class NhanVien_View extends JPanel {
         table.getColumn("Xóa").setCellRenderer(new ButtonRenderer("Xóa", new Color(244, 67, 54), Color.WHITE));
         table.getColumn("Xóa").setCellEditor(new ButtonEditor(new JCheckBox(), "Xóa"));
 
-        table.getColumnModel().getColumn(0).setPreferredWidth(80);
-        table.getColumnModel().getColumn(1).setPreferredWidth(180);
-        table.getColumnModel().getColumn(2).setPreferredWidth(60);
-        table.getColumnModel().getColumn(3).setPreferredWidth(90);
-        table.getColumnModel().getColumn(4).setPreferredWidth(100);
-        table.getColumnModel().getColumn(5).setPreferredWidth(180);
-        table.getColumnModel().getColumn(6).setPreferredWidth(100);
-        table.getColumnModel().getColumn(7).setPreferredWidth(80);
-        table.getColumnModel().getColumn(8).setPreferredWidth(80);
-        table.getColumnModel().getColumn(8).setMaxWidth(80);
-        table.getColumnModel().getColumn(9).setPreferredWidth(80);
-        table.getColumnModel().getColumn(9).setMaxWidth(80);
+        // SỬA: Điều chỉnh độ rộng cột
+        table.getColumnModel().getColumn(0).setPreferredWidth(70); // Mã NV
+        table.getColumnModel().getColumn(1).setPreferredWidth(150); // Tên NV
+        table.getColumnModel().getColumn(2).setPreferredWidth(60); // Giới tính
+        table.getColumnModel().getColumn(3).setPreferredWidth(80); // Ngày sinh
+        table.getColumnModel().getColumn(4).setPreferredWidth(90); // SĐT
+        table.getColumnModel().getColumn(5).setPreferredWidth(100); // CCCD (MỚI)
+        table.getColumnModel().getColumn(6).setPreferredWidth(100); // Chức vụ (MỚI)
+        table.getColumnModel().getColumn(7).setPreferredWidth(70); // Trạng thái (MỚI)
+        table.getColumnModel().getColumn(8).setPreferredWidth(80); // Tài khoản
+        table.getColumnModel().getColumn(9).setPreferredWidth(70); // Vai trò TK
+        table.getColumnModel().getColumn(10).setPreferredWidth(60); // Sửa
+        table.getColumnModel().getColumn(10).setMaxWidth(60);
+        table.getColumnModel().getColumn(11).setPreferredWidth(60); // Xóa
+        table.getColumnModel().getColumn(11).setMaxWidth(60);
 
         JScrollPane scroll = new JScrollPane(table);
         scroll.setBorder(null);
@@ -179,25 +185,20 @@ public class NhanVien_View extends JPanel {
 
         for (NhanVien nv : dsNV) {
             TaiKhoan tk = nv.getTaiKhoan();
-            String role = "-";
-            if (tk != null && tk.getVaiTro() != null) {
-                switch (tk.getVaiTro().toUpperCase()) {
-                    case "NVQL": role = "Quản lý"; break;
-                    case "NVTT": role = "Tiếp tân"; break;
-                    default: role = "Nhân viên"; break;
-                }
-            }
+            String vaiTroTK = tk != null && tk.getVaiTro() != null ? tk.getVaiTro() : "-";
             String ngaySinhStr = (nv.getNgaySinh() != null) ? nv.getNgaySinh().format(DATE_FORMATTER) : "-";
 
             model.addRow(new Object[]{
-                    nv.getMaNV(),
-                    nv.getTenNhanVien(),
-                    !nv.isGioiTinh() ? "Nam" : "Nữ",
+                    nv.getMaNhanVien(),
+                    nv.getHoTen(),
+                    !nv.getGioiTinh() ? "Nam" : "Nữ", // SỬA: Dùng getGioiTinh()
                     ngaySinhStr,
-                    nv.getSdt(),
-                    nv.getEmail(),
+                    nv.getSoDienThoai(), // SỬA: Dùng getSoDienThoai()
+                    nv.getSoCCCD() != null ? nv.getSoCCCD() : "-", // MỚI
+                    nv.getChucVu() != null ? nv.getChucVu() : "-", // MỚI
+                    nv.getTrangThai() != null ? nv.getTrangThai() : "-", // MỚI
                     tk != null ? tk.getTenDangNhap() : "Chưa có",
-                    role,
+                    vaiTroTK,
                     "Sửa",
                     "Xóa"
             });
@@ -207,15 +208,16 @@ public class NhanVien_View extends JPanel {
     private void loadThongKe() {
         List<NhanVien> dsNV = nhanVienDAO.getAllNhanVien();
 
-        int tong = dsNV.size();
+        int tong = 0;
         int quanLy = 0, tiepTan = 0;
 
         for (NhanVien nv : dsNV) {
-            TaiKhoan tk = nv.getTaiKhoan();
-            if (tk != null && tk.getVaiTro() != null) {
-                String v = tk.getVaiTro().toUpperCase();
-                if (v.equals("NVQL")) quanLy++;
-                else if (v.equals("NVTT")) tiepTan++;
+            if (nv.getTrangThai() != null && nv.getTrangThai().equals("Đang làm")) {
+                 tong++;
+                 if (nv.getChucVu() != null) {
+                     if (nv.getChucVu().contains("quản lý")) quanLy++;
+                     else if (nv.getChucVu().contains("tiếp tân")) tiepTan++;
+                 }
             }
         }
 

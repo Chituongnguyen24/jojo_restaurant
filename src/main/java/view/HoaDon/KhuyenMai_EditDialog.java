@@ -4,7 +4,7 @@ import entity.KhuyenMai;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
-import dao.HoaDon_KhuyenMai_DAO;
+import dao.KhuyenMai_DAO;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -12,14 +12,16 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class KhuyenMai_EditDialog extends JDialog {
     private JTextField txtTenKM, txtGiaTri, txtNgayBD, txtNgayKT;
+    private JComboBox<String> cmbLoaiKM; // THÊM
     private JButton btnSave, btnCancel;
-    private HoaDon_KhuyenMai_DAO khuyenMaiDAO;
+    private KhuyenMai_DAO khuyenMaiDAO;
     private KhuyenMai khuyenMai;
 
-    public KhuyenMai_EditDialog(Frame owner, KhuyenMai khuyenMai, HoaDon_KhuyenMai_DAO khuyenMaiDAO) {
+    public KhuyenMai_EditDialog(Frame owner, KhuyenMai khuyenMai, KhuyenMai_DAO khuyenMaiDAO) {
         super(owner, "Chỉnh sửa khuyến mãi", true);
         this.khuyenMaiDAO = khuyenMaiDAO;
         this.khuyenMai = khuyenMai;
@@ -68,23 +70,28 @@ public class KhuyenMai_EditDialog extends JDialog {
         ));
 
         // Tên khuyến mãi
-        formCard.add(createFieldPanel("Tên khuyến mãi *", 
-            txtTenKM = createStyledTextField("Nhập tên khuyến mãi", khuyenMai.getTenKM())));
+        formCard.add(createFieldPanel("Mô tả/Tên chương trình *", 
+            txtTenKM = createStyledTextField("Nhập mô tả chương trình", khuyenMai.getMoTa())));
         formCard.add(Box.createVerticalStrut(18));
 
         // Giá trị
-        formCard.add(createFieldPanel("Giá trị *", 
-            txtGiaTri = createStyledTextField("Nhập giá trị (số)", String.valueOf(khuyenMai.getGiaTri()))));
+        formCard.add(createFieldPanel("Mức khuyến mãi (%) *", 
+            txtGiaTri = createStyledTextField("Nhập giá trị (0.05 hoặc 100000)", String.valueOf(khuyenMai.getMucKM()))));
+        formCard.add(Box.createVerticalStrut(18));
+        
+        // Loại khuyến mãi (THÊM)
+        cmbLoaiKM = new JComboBox<>();
+        formCard.add(createComboBoxPanel("Loại khuyến mãi *", cmbLoaiKM));
         formCard.add(Box.createVerticalStrut(18));
 
         // Ngày bắt đầu
-        formCard.add(createFieldPanel("Ngày bắt đầu *", 
-            txtNgayBD = createStyledTextField("yyyy-MM-dd", khuyenMai.getNgayBatDau().toString())));
+        formCard.add(createFieldPanel("Ngày bắt đầu (yyyy-MM-dd) *", 
+            txtNgayBD = createStyledTextField(khuyenMai.getNgayApDung().toString(), khuyenMai.getNgayApDung().toString())));
         formCard.add(Box.createVerticalStrut(18));
 
         // Ngày kết thúc
-        formCard.add(createFieldPanel("Ngày kết thúc *", 
-            txtNgayKT = createStyledTextField("yyyy-MM-dd", khuyenMai.getNgayKetThuc().toString())));
+        formCard.add(createFieldPanel("Ngày kết thúc (yyyy-MM-dd) *", 
+            txtNgayKT = createStyledTextField(khuyenMai.getNgayHetHan().toString(), khuyenMai.getNgayHetHan().toString())));
         formCard.add(Box.createVerticalStrut(18));
 
         mainPanel.add(formCard, BorderLayout.CENTER);
@@ -105,8 +112,25 @@ public class KhuyenMai_EditDialog extends JDialog {
         btnPanel.add(btnSave);
 
         add(btnPanel, BorderLayout.SOUTH);
+        
+        loadLoaiKhuyenMai(); // Tải dữ liệu vào ComboBox
+        cmbLoaiKM.setSelectedItem(khuyenMai.getLoaiKM()); // Set giá trị
     }
 
+    private void loadLoaiKhuyenMai() {
+        List<String> loaiKMList = khuyenMaiDAO.getUniqueLoaiKhuyenMai();
+        cmbLoaiKM.removeAllItems();
+        if (loaiKMList.isEmpty()) {
+             cmbLoaiKM.addItem("Voucher");
+             cmbLoaiKM.addItem("Thành viên");
+             cmbLoaiKM.addItem("Sinh nhật");
+        } else {
+             for (String loai : loaiKMList) {
+                cmbLoaiKM.addItem(loai);
+            }
+        }
+    }
+    
     private JPanel createFieldPanel(String label, JTextField textField) {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
@@ -125,6 +149,33 @@ public class KhuyenMai_EditDialog extends JDialog {
 
         return panel;
     }
+    
+    private JPanel createComboBoxPanel(String label, JComboBox<String> cmb) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setForeground(new Color(50, 50, 60));
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+        
+        cmb.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cmb.setBackground(Color.WHITE);
+        cmb.setAlignmentX(Component.LEFT_ALIGNMENT);
+        cmb.setPreferredSize(new Dimension(400, 45));
+        cmb.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        
+        cmb.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(8, new Color(220, 220, 230)),
+            BorderFactory.createEmptyBorder(12, 16, 12, 16)
+        ));
+
+        panel.add(lbl);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(cmb);
+        return panel;
+    }
 
     private JTextField createStyledTextField(String placeholder, String initialValue) {
         JTextField field = new JTextField() {
@@ -138,7 +189,7 @@ public class KhuyenMai_EditDialog extends JDialog {
                 addFocusListener(new FocusAdapter() {
                     @Override
                     public void focusGained(FocusEvent e) {
-                        if (showingPlaceholder) {
+                        if (getText().equals(placeholderText)) {
                             setText("");
                             setForeground(new Color(40, 40, 50));
                             showingPlaceholder = false;
@@ -225,9 +276,10 @@ public class KhuyenMai_EditDialog extends JDialog {
             String giaTriStr = txtGiaTri.getText().trim();
             String ngayBDStr = txtNgayBD.getText().trim();
             String ngayKTStr = txtNgayKT.getText().trim();
+            String loaiKM = (String) cmbLoaiKM.getSelectedItem(); // LẤY LOẠI KM
 
             // Validation
-            if (tenKM.isEmpty() || giaTriStr.isEmpty() || ngayBDStr.isEmpty() || ngayKTStr.isEmpty()) {
+            if (tenKM.isEmpty() || giaTriStr.isEmpty() || ngayBDStr.isEmpty() || ngayKTStr.isEmpty() || loaiKM == null) {
                 showErrorDialog("Vui lòng điền đầy đủ thông tin bắt buộc!");
                 return;
             }
@@ -260,21 +312,15 @@ public class KhuyenMai_EditDialog extends JDialog {
             }
 
             LocalDate now = LocalDate.now();
-            String trangThai;
-            if (now.isBefore(ngayBD)) {
-                trangThai = "Sắp bắt đầu";
-            } else if (now.isAfter(ngayKT)) {
-                trangThai = "Hết hạn";
-            } else {
-                trangThai = "Hoạt động";
-            }
+            Boolean trangThaiKM = now.isBefore(ngayKT) || now.isEqual(ngayKT); 
 
             // Cập nhật thông tin
-            khuyenMai.setTenKM(tenKM);
-            khuyenMai.setGiaTri(giaTri);
-            khuyenMai.setNgayBatDau(ngayBD);
-            khuyenMai.setNgayKetThuc(ngayKT);
-            khuyenMai.setTrangThai(trangThai);
+            khuyenMai.setMoTa(tenKM);
+            khuyenMai.setMucKM(giaTri);
+            khuyenMai.setNgayApDung(ngayBD);
+            khuyenMai.setNgayHetHan(ngayKT);
+            khuyenMai.setTrangThaiKM(trangThaiKM);
+            khuyenMai.setLoaiKM(loaiKM);
 
             boolean updated = khuyenMaiDAO.updateKhuyenMai(khuyenMai);
             if (updated) {

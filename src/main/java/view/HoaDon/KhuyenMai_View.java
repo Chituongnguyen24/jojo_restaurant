@@ -6,7 +6,7 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 
-import dao.HoaDon_KhuyenMai_DAO;
+import dao.KhuyenMai_DAO;
 
 import java.awt.*;
 import java.time.LocalDate;
@@ -15,7 +15,7 @@ import java.util.List;
 public class KhuyenMai_View extends JPanel {
     private JTable table;
     private DefaultTableModel model;
-    private HoaDon_KhuyenMai_DAO khuyenMaiDAO = new HoaDon_KhuyenMai_DAO();
+    private KhuyenMai_DAO khuyenMaiDAO = new KhuyenMai_DAO();
 
     private JLabel lblTongKM, lblHoatDong, lblSapBatDau, lblHetHan;
 
@@ -79,11 +79,11 @@ public class KhuyenMai_View extends JPanel {
         statsPanel.add(createStatBox(lblHetHan, "Hết hạn", new Color(156, 39, 176)));
 
         // ===== TABLE =====
-        String[] cols = {"Mã KM", "Tên KM", "Giá trị", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái", "Sửa", "Xóa"};
+        String[] cols = {"Mã KM", "Mô tả KM", "Giá trị", "Loại KM", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái", "Sửa", "Xóa"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 6 || column == 7;  // Chỉnh đúng index (Sửa=6, Xóa=7)
+                return column >= 7;  // Sửa=7, Xóa=8
             }
         };
 
@@ -109,10 +109,10 @@ public class KhuyenMai_View extends JPanel {
         table.getColumn("Xóa").setCellEditor(new ButtonEditor(new JCheckBox(), "Xóa"));
 
         // Set độ rộng cột
-        table.getColumnModel().getColumn(6).setPreferredWidth(80);
-        table.getColumnModel().getColumn(6).setMaxWidth(80);
         table.getColumnModel().getColumn(7).setPreferredWidth(80);
         table.getColumnModel().getColumn(7).setMaxWidth(80);
+        table.getColumnModel().getColumn(8).setPreferredWidth(80);
+        table.getColumnModel().getColumn(8).setMaxWidth(80);
 
         // ===== ScrollPane bo góc =====
         JScrollPane scroll = new JScrollPane(table);
@@ -150,10 +150,12 @@ public class KhuyenMai_View extends JPanel {
     }
 
     private String getCurrentTrangThai(KhuyenMai km) {
+        if (km.getMaKM().equals("KM00000000")) return "Luôn áp dụng";
+        
         LocalDate now = LocalDate.now();
-        if (now.isBefore(km.getNgayBatDau())) {
+        if (now.isBefore(km.getNgayApDung())) { // SỬA: Dùng NgayApDung
             return "Sắp bắt đầu";
-        } else if (now.isAfter(km.getNgayKetThuc())) {
+        } else if (now.isAfter(km.getNgayHetHan())) { // SỬA: Dùng NgayHetHan
             return "Hết hạn";
         } else {
             return "Hoạt động";
@@ -176,12 +178,20 @@ public class KhuyenMai_View extends JPanel {
 
         for (KhuyenMai km : dsKM) {
             String trangThai = getCurrentTrangThai(km);
+            String giaTriHienThi;
+            if (km.getMucKM() < 1.0) {
+                 giaTriHienThi = String.format("%.0f%%", km.getMucKM() * 100);
+            } else {
+                 giaTriHienThi = String.format("%,.0f VNĐ", km.getMucKM());
+            }
+            
             model.addRow(new Object[]{
                     km.getMaKM(),
-                    km.getTenKM(),
-                    km.getGiaTri(),
-                    km.getNgayBatDau().toString(),
-                    km.getNgayKetThuc().toString(),
+                    km.getMoTa(), // SỬA: Dùng MoTa
+                    giaTriHienThi, // SỬA: Dùng giá trị hiển thị
+                    km.getLoaiKM(), // MỚI
+                    km.getNgayApDung().toString(), // SỬA: Dùng NgayApDung
+                    km.getNgayHetHan().toString(), // SỬA: Dùng NgayHetHan
                     trangThai,
                     "Sửa",
                     "Xóa"
@@ -198,7 +208,7 @@ public class KhuyenMai_View extends JPanel {
 
         for (KhuyenMai km : dsKM) {
             String tt = getCurrentTrangThai(km);
-            if ("Hoạt động".equals(tt)) hoatDong++;
+            if ("Hoạt động".equals(tt) || "Luôn áp dụng".equals(tt)) hoatDong++;
             else if ("Sắp bắt đầu".equals(tt)) sapBatDau++;
             else if ("Hết hạn".equals(tt)) hetHan++;
         }
@@ -349,7 +359,7 @@ public class KhuyenMai_View extends JPanel {
         public Object getCellEditorValue() {
             if (isPushed) {
                 int selectedRow = table.getSelectedRow();
-                String maKM = table.getValueAt(selectedRow, 0).toString();
+                String maKM = model.getValueAt(selectedRow, 0).toString();
 
                 if (type.equals("Sửa")) {
                     SwingUtilities.invokeLater(() -> {

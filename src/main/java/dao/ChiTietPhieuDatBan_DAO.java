@@ -11,14 +11,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
-public class PhieuDatBan_DAO {
+public class ChiTietPhieuDatBan_DAO {
 
     private final KhachHang_DAO khachHangDAO = new KhachHang_DAO();
     private final NhanVien_DAO nhanVienDAO = new NhanVien_DAO();
     private final Ban_DAO banDAO = new Ban_DAO();
     private final MonAn_DAO monAnDAO = new MonAn_DAO();
-    
-    // SỬA: Map ResultSet KHÔNG CÓ TIENCOC
+
     private PhieuDatBan mapResultSetToPhieuDatBan(ResultSet rs) throws SQLException {
         String maPhieu = rs.getString("maPhieu");
         LocalDateTime thoiGianDenHen = rs.getTimestamp("thoiGianDenHen").toLocalDateTime();
@@ -37,13 +36,14 @@ public class PhieuDatBan_DAO {
         String ghiChu = rs.getString("ghiChu");
         String trangThaiPhieu = rs.getString("trangThaiPhieu");
         
-        // Dùng constructor 10 tham số (Entity mới)
+        // Dùng constructor 10 tham số (Entity PhieuDatBan mới)
         PhieuDatBan phieu = new PhieuDatBan(maPhieu, thoiGianDenHen, thoiGianNhanBan, thoiGianTraBan, 
-                                             kh, nv, ban, soNguoi, ghiChu, trangThaiPhieu); 
+                                             kh, nv, ban, soNguoi, ghiChu, trangThaiPhieu);
         return phieu;
     }
 
     public List<PhieuDatBan> getAllPhieuDatBan() {
+        // ... (Giữ nguyên)
         List<PhieuDatBan> dsPDB = new ArrayList<>();
         String sql = "SELECT * FROM PHIEUDATBAN ORDER BY thoiGianDenHen DESC";
         
@@ -61,6 +61,7 @@ public class PhieuDatBan_DAO {
     }
 
     public PhieuDatBan getPhieuDatBanById(String maPhieu) {
+        // ... (Giữ nguyên)
         String sql = "SELECT * FROM PHIEUDATBAN WHERE maPhieu = ?";
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -78,6 +79,7 @@ public class PhieuDatBan_DAO {
     }
     
     public PhieuDatBan getPhieuByBan(String maBan) {
+        // ... (Giữ nguyên)
         String sql = "SELECT TOP 1 * FROM PHIEUDATBAN WHERE maBan = ? AND trangThaiPhieu = N'Chưa đến' ORDER BY thoiGianDenHen ASC";
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -95,7 +97,7 @@ public class PhieuDatBan_DAO {
     }
 
     public boolean insertPhieuDatBan(PhieuDatBan phieu) {
-        // SỬA SQL: Chỉ còn 8 cột (loại bỏ tienCoc)
+        // ... (Giữ nguyên)
         String sql = "INSERT INTO PHIEUDATBAN (maPhieu, thoiGianDenHen, maKhachHang, maNV, maBan, soNguoi, ghiChu, trangThaiPhieu) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
         try (Connection conn = ConnectDB.getConnection();
@@ -103,8 +105,8 @@ public class PhieuDatBan_DAO {
             
             pstmt.setString(1, phieu.getMaPhieu());
             pstmt.setTimestamp(2, Timestamp.valueOf(phieu.getThoiGianDenHen()));
-            pstmt.setString(3, phieu.getKhachHang().getMaKH()); // SỬA: getMaKH
-            pstmt.setString(4, phieu.getNhanVien().getMaNhanVien()); // SỬA: getMaNhanVien
+            pstmt.setString(3, phieu.getKhachHang().getMaKH());
+            pstmt.setString(4, phieu.getNhanVien().getMaNhanVien());
             pstmt.setString(5, phieu.getBan().getMaBan());
             pstmt.setInt(6, phieu.getSoNguoi());
             pstmt.setString(7, phieu.getGhiChu());
@@ -119,7 +121,7 @@ public class PhieuDatBan_DAO {
     }
 
     public boolean updatePhieuDatBan(PhieuDatBan phieu) {
-        // SQL không có tienCoc
+        // ... (Giữ nguyên)
         String sql = "UPDATE PHIEUDATBAN SET thoiGianDenHen = ?, thoiGianNhanBan = ?, thoiGianTraBan = ?, maKhachHang = ?, maNV = ?, maBan = ?, soNguoi = ?, ghiChu = ?, trangThaiPhieu = ? WHERE maPhieu = ?";
         
         try (Connection conn = ConnectDB.getConnection();
@@ -137,8 +139,8 @@ public class PhieuDatBan_DAO {
             else
                 pstmt.setNull(3, Types.TIMESTAMP);
             
-            pstmt.setString(4, phieu.getKhachHang().getMaKH()); // SỬA: getMaKH
-            pstmt.setString(5, phieu.getNhanVien().getMaNhanVien()); // SỬA: getMaNhanVien
+            pstmt.setString(4, phieu.getKhachHang().getMaKH());
+            pstmt.setString(5, phieu.getNhanVien().getMaNhanVien());
             pstmt.setString(6, phieu.getBan().getMaBan());
             pstmt.setInt(7, phieu.getSoNguoi());
             pstmt.setString(8, phieu.getGhiChu());
@@ -154,6 +156,7 @@ public class PhieuDatBan_DAO {
     }
 
     public boolean deletePhieuDatBan(String maPhieu) {
+        // ... (Giữ nguyên)
         String sqlDeleteCT = "DELETE FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         String sqlDeletePDB = "DELETE FROM PHIEUDATBAN WHERE maPhieu = ?";
         
@@ -184,6 +187,7 @@ public class PhieuDatBan_DAO {
     }
     
     public String generateNewID() {
+        // ... (Giữ nguyên)
         String newID = "PDB00001";
         String sql = "SELECT TOP 1 maPhieu FROM PHIEUDATBAN ORDER BY maPhieu DESC";
         
@@ -194,7 +198,7 @@ public class PhieuDatBan_DAO {
             if (rs.next()) {
                 String lastID = rs.getString("maPhieu");
                 if (lastID != null && lastID.matches("PDB\\d{5}")) {
-                    int num = Integer.parseInt(lastID.trim().substring(3)) + 1; // SỬA: Thêm trim
+                    int num = Integer.parseInt(lastID.trim().substring(3)) + 1;
                     newID = String.format("PDB%05d", num);
                 }
             }
@@ -204,8 +208,8 @@ public class PhieuDatBan_DAO {
         return newID;
     }
 
-    // LƯU Ý: Hàm này chỉ trả về danh sách Ban (không phải logic chính của PDB)
     public Map<String, List<Ban>> getAllBanByFloor() {
+        // ... (Giữ nguyên)
         Map<String, List<Ban>> banTheoKhuVuc = new LinkedHashMap<>();
         
         try {
@@ -220,12 +224,11 @@ public class PhieuDatBan_DAO {
                     banTheoKhuVuc.put(tenKV, new ArrayList<>());
                 }
                 
-                // Mặc định trạng thái là TRONG
                 ban.setTrangThai(TrangThaiBan.TRONG.name()); 
 
                 for (PhieuDatBan phieu : phieuDat) {
                     if (phieu.getBan() != null && phieu.getBan().getMaBan().trim().equals(ban.getMaBan().trim()) && phieu.getTrangThaiPhieu().equals("Chưa đến")) {
-                         ban.setTrangThai(TrangThaiBan.DA_DAT.name()); // SỬA: Dùng name()
+                         ban.setTrangThai(TrangThaiBan.DA_DAT.name()); 
                          break;
                     }
                 }
@@ -262,7 +265,8 @@ public class PhieuDatBan_DAO {
                     double donGiaBan = rs.getDouble("DonGiaBan");
                     String ghiChu = rs.getString("ghiChu");
                     
-                    ChiTietPhieuDatBan ct = new ChiTietPhieuDatBan(mon, phieu, soLuong, donGiaBan, ghiChu); // SỬA: Thay đổi thứ tự tham số
+                    // SỬA: Dùng constructor 5 tham số của Entity ChiTietPhieuDatBan
+                    ChiTietPhieuDatBan ct = new ChiTietPhieuDatBan(mon, phieu, soLuong, donGiaBan, ghiChu);
                     dsCT.add(ct);
                 }
             }
@@ -273,6 +277,7 @@ public class PhieuDatBan_DAO {
     }
 
     public boolean addOrUpdateChiTiet(String maPhieu, String maMonAn, int soLuong, String ghiChu) {
+        // ... (Giữ nguyên)
         PhieuDatBan phieu = getPhieuDatBanById(maPhieu);
         MonAn mon = monAnDAO.getMonAnTheoMa(maMonAn);
 
@@ -319,6 +324,7 @@ public class PhieuDatBan_DAO {
     }
 
     public boolean deleteChiTiet(String maPhieu, String maMonAn) {
+        // ... (Giữ nguyên)
         String sql = "DELETE FROM CHITIETPHIEUDATBAN WHERE maPhieu = ? AND maMonAn = ?";
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -334,6 +340,7 @@ public class PhieuDatBan_DAO {
     }
 
     public List<Object[]> getChiTietTheoMaPhieu(String maPhieu) {
+        // ... (Giữ nguyên)
         List<Object[]> result = new ArrayList<>();
         String sql = 
             "SELECT ct.maMonAn, ma.tenMonAn, ct.soLuongMonAn, ct.ghiChu " +

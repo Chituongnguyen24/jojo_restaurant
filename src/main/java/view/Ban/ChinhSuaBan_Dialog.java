@@ -2,6 +2,7 @@ package view.Ban;
 
 import dao.Ban_DAO;
 import entity.Ban;
+import entity.KhuVuc; // Import KhuVuc
 import enums.LoaiBan;
 import enums.TrangThaiBan;
 
@@ -22,7 +23,7 @@ public class ChinhSuaBan_Dialog extends JDialog {
 
     private JTextField txtMaBan;
     private JSpinner spinSoCho;
-    private JComboBox<LoaiBan> cmbLoaiBan;
+    private JComboBox<String> cmbLoaiBan; // SỬA: Dùng String raw DB
     private JComboBox<String> cmbKhuVuc;
 
     // Theme
@@ -45,7 +46,6 @@ public class ChinhSuaBan_Dialog extends JDialog {
         initComponents();
         loadData();
 
-        // Use pack so layout sizes correctly
         pack();
         setResizable(false);
         setLocationRelativeTo(owner);
@@ -53,12 +53,10 @@ public class ChinhSuaBan_Dialog extends JDialog {
     }
 
     private void initComponents() {
-        // Root panel with padding
         JPanel root = new JPanel(new BorderLayout());
         root.setBorder(new EmptyBorder(12, 12, 12, 12));
         root.setBackground(Color.WHITE);
 
-        // Main content panel
         JPanel mainPanel = new JPanel(new GridBagLayout());
         mainPanel.setBackground(Color.WHITE);
         mainPanel.setBorder(BorderFactory.createCompoundBorder(
@@ -100,7 +98,6 @@ public class ChinhSuaBan_Dialog extends JDialog {
         gbc.weightx = 1.0;
         spinSoCho = new JSpinner(new SpinnerNumberModel(4, 1, 100, 1));
         spinSoCho.setFont(FONT_FIELD);
-        // center the spinner text and style editor
         JComponent editor = spinSoCho.getEditor();
         if (editor instanceof JSpinner.DefaultEditor) {
             JSpinner.DefaultEditor defEditor = (JSpinner.DefaultEditor) editor;
@@ -114,7 +111,7 @@ public class ChinhSuaBan_Dialog extends JDialog {
         }
         mainPanel.add(spinSoCho, gbc);
 
-        // Loại bàn
+        // Loại bàn (SỬA: Hiển thị String raw DB)
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0.0;
@@ -123,7 +120,11 @@ public class ChinhSuaBan_Dialog extends JDialog {
         gbc.gridx = 1;
         gbc.gridy = 2;
         gbc.weightx = 1.0;
-        cmbLoaiBan = new JComboBox<>(LoaiBan.values());
+        String[] loaiBanValues = new String[LoaiBan.values().length];
+        for (int i = 0; i < LoaiBan.values().length; i++) {
+            loaiBanValues[i] = LoaiBan.values()[i].name();
+        }
+        cmbLoaiBan = new JComboBox<>(loaiBanValues);
         cmbLoaiBan.setFont(FONT_FIELD);
         cmbLoaiBan.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220,220,220)),
@@ -165,13 +166,11 @@ public class ChinhSuaBan_Dialog extends JDialog {
         JButton btnLuu = createButton("Lưu Thay Đổi", COLOR_PRIMARY, COLOR_PRIMARY_HOVER);
         btnLuu.addActionListener(e -> luuThayDoi());
 
-        // ensure buttons have reasonable and equal size so all three are visible
         Dimension btnSize = new Dimension(150, 42);
         btnHuy.setPreferredSize(btnSize);
         btnXoa.setPreferredSize(btnSize);
         btnLuu.setPreferredSize(btnSize);
 
-        // ensure visible and enabled
         btnLuu.setVisible(true);
         btnLuu.setEnabled(true);
 
@@ -187,9 +186,11 @@ public class ChinhSuaBan_Dialog extends JDialog {
     private void loadData() {
         txtMaBan.setText(ban.getMaBan());
         spinSoCho.setValue(ban.getSoCho());
-        cmbLoaiBan.setSelectedItem(ban.getLoaiBan());
+        
+        // SỬA: Sử dụng giá trị String raw DB để chọn
+        cmbLoaiBan.setSelectedItem(ban.getLoaiBan()); 
 
-        String tenKhuVuc = khuVucMap.get(ban.getMaKhuVuc());
+        String tenKhuVuc = banDAO.getTenKhuVuc(ban.getKhuVuc().getMaKhuVuc()); // LẤY TÊN KV
         if (tenKhuVuc != null) {
             cmbKhuVuc.setSelectedItem(tenKhuVuc);
         }
@@ -202,19 +203,14 @@ public class ChinhSuaBan_Dialog extends JDialog {
         return label;
     }
 
-    /**
-     * Create a visually consistent flat button that paints background colors correctly across LAFs.
-     */
     private JButton createButton(String text, Color background, Color hoverBackground) {
         JButton button = new JButton(text);
         button.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-        // choose contrasting text color
         double luminance = (0.299 * background.getRed() + 0.587 * background.getGreen() + 0.114 * background.getBlue()) / 255;
         Color fg = luminance > 0.6 ? new Color(40,40,40) : Color.WHITE;
         button.setForeground(fg);
 
-        // ensure background is painted on various LookAndFeels
         button.setBackground(background);
         button.setOpaque(true);
         button.setContentAreaFilled(true);
@@ -223,7 +219,6 @@ public class ChinhSuaBan_Dialog extends JDialog {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 
-        // Hover effect
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -236,7 +231,6 @@ public class ChinhSuaBan_Dialog extends JDialog {
             }
         });
 
-        // When disabled, show subtle readable style
         button.addPropertyChangeListener("enabled", evt -> {
             boolean enabled = (boolean) evt.getNewValue();
             if (!enabled) {
@@ -254,7 +248,7 @@ public class ChinhSuaBan_Dialog extends JDialog {
     private void luuThayDoi() {
         try {
             int soCho = (int) spinSoCho.getValue();
-            LoaiBan loaiBan = (LoaiBan) cmbLoaiBan.getSelectedItem();
+            String loaiBan = (String) cmbLoaiBan.getSelectedItem(); // LẤY STRING RAW DB
 
             String tenKhuVuc = (String) cmbKhuVuc.getSelectedItem();
             String maKhuVuc = khuVucMap.entrySet().stream()
@@ -267,12 +261,15 @@ public class ChinhSuaBan_Dialog extends JDialog {
                 JOptionPane.showMessageDialog(this, "Khu vực không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+            
+            // TẠO ENTITY KHUVUC
+            KhuVuc khuVuc = new KhuVuc(maKhuVuc);
 
             Ban banCapNhat = new Ban(
                     ban.getMaBan(),
                     soCho,
-                    loaiBan,
-                    maKhuVuc,
+                    khuVuc, // ĐÃ SỬA: Dùng Entity KhuVuc
+                    loaiBan, // ĐÃ SỬA: Dùng String LoaiBan
                     ban.getTrangThai()
             );
 
@@ -291,7 +288,10 @@ public class ChinhSuaBan_Dialog extends JDialog {
     }
 
     private void xoaBan() {
-        TrangThaiBan trangThai = ban.getTrangThai();
+        String trangThaiString = ban.getTrangThai();
+
+        // SỬA: Chuyển String sang Enum để kiểm tra
+        TrangThaiBan trangThai = TrangThaiBan.fromString(trangThaiString);
 
         if (trangThai == TrangThaiBan.CO_KHACH || trangThai == TrangThaiBan.DA_DAT) {
             JOptionPane.showMessageDialog(this,

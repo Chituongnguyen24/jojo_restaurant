@@ -7,7 +7,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HoaDon_Thue_DAO {
+public class Thue_DAO {
 
     private Thue createThueFromResultSet(ResultSet rs) throws SQLException {
         String maThue = rs.getString("maSoThue");

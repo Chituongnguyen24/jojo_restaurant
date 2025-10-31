@@ -18,6 +18,7 @@ public class MonAn_TraCuu_View extends JPanel {
 
     private JTextField txtSearch;
     private JComboBox<String> cboFilterTrangThai;
+    private JComboBox<String> cboFilterLoaiMon; // THÊM
     private DefaultTableModel model;
     private JTable table;
     private MonAn_DAO monAnDAO;
@@ -60,10 +61,8 @@ public class MonAn_TraCuu_View extends JPanel {
 
         // ===== TABLE SECTION (CENTER) =====
         add(createTableSection(), BorderLayout.CENTER);
-
-        // ===== BOTTOM SECTION (ADD NEW) - BỎ NÚT THÊM MỚI =====
-        // (Không thêm JPanel bottomPanel vào BorderLayout.SOUTH nữa)
     }
+    
     private void setupTableStyle() {
         // Code này giữ nguyên style cho bảng
         tblMonAn.setRowHeight(48);
@@ -79,10 +78,10 @@ public class MonAn_TraCuu_View extends JPanel {
         centerRenderer.setHorizontalAlignment(SwingConstants.CENTER);
         NumberFormat currencyFormatter = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
 
-        // Căn giữa Mã Món (Column 0)
+        // Cột 0: Mã Món
         tblMonAn.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); 
         
-        // Định dạng Đơn giá (Column 2)
+        // Cột 2: Đơn giá
         tblMonAn.getColumnModel().getColumn(2).setCellRenderer(new DefaultTableCellRenderer() { 
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -97,7 +96,7 @@ public class MonAn_TraCuu_View extends JPanel {
                 return c;
             }
         });
-        // Căn giữa Trạng Thái (Column 3)
+        // Cột 3: Trạng Thái
         tblMonAn.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); 
         
         // Renderer cho cột Trạng Thái (hiển thị màu)
@@ -127,7 +126,6 @@ public class MonAn_TraCuu_View extends JPanel {
     }
 
     private JPanel createHeaderSection() {
-        // Code này giữ nguyên
         JPanel header = new JPanel(new BorderLayout());
         header.setOpaque(false);
         header.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
@@ -136,7 +134,7 @@ public class MonAn_TraCuu_View extends JPanel {
         titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
         titlePanel.setOpaque(false);
 
-        JLabel title = new JLabel("Tra cứu Thực đơn"); // Đổi tên cho phù hợp chức năng
+        JLabel title = new JLabel("Tra cứu Thực đơn"); 
         title.setFont(new Font("Segoe UI", Font.BOLD, 28));
         title.setForeground(TEXT_PRIMARY);
 
@@ -153,7 +151,6 @@ public class MonAn_TraCuu_View extends JPanel {
     }
 
     private JPanel createSearchSection() {
-        // Code này giữ nguyên
         JPanel searchCard = new RoundedPanel(12, CARD_BG);
         searchCard.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
         searchCard.setBorder(new CompoundBorder(
@@ -165,7 +162,7 @@ public class MonAn_TraCuu_View extends JPanel {
         JLabel lblSearch = new JLabel("Từ khóa:");
         lblSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
-        txtSearch = new JTextField(25);
+        txtSearch = new JTextField(20);
         txtSearch.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtSearch.setBorder(new CompoundBorder(
                 new LineBorder(BORDER_COLOR, 1, true),
@@ -177,15 +174,30 @@ public class MonAn_TraCuu_View extends JPanel {
             }
         });
 
-        JLabel lblFilter = new JLabel("Trạng thái:");
-        lblFilter.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        // 1. Lọc Trạng thái
+        JLabel lblFilterTrangThai = new JLabel("Trạng thái:");
+        lblFilterTrangThai.setFont(new Font("Segoe UI", Font.PLAIN, 14));
 
         cboFilterTrangThai = new JComboBox<>(new String[]{"Tất cả", "Còn bán", "Hết"});
         cboFilterTrangThai.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         cboFilterTrangThai.setBackground(Color.WHITE);
-        cboFilterTrangThai.setPreferredSize(new Dimension(150, 38));
+        cboFilterTrangThai.setPreferredSize(new Dimension(100, 38));
         cboFilterTrangThai.setBorder(new LineBorder(BORDER_COLOR, 1, true));
         cboFilterTrangThai.addActionListener(e -> searchData());
+        
+        // 2. Lọc Loại món ăn (THÊM)
+        JLabel lblFilterLoaiMon = new JLabel("Loại món:");
+        lblFilterLoaiMon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        List<String> loaiMonList = monAnDAO.getUniqueLoaiMonAn();
+        loaiMonList.add(0, "Tất cả"); // Thêm tùy chọn "Tất cả"
+        cboFilterLoaiMon = new JComboBox<>(loaiMonList.toArray(new String[0]));
+        cboFilterLoaiMon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cboFilterLoaiMon.setBackground(Color.WHITE);
+        cboFilterLoaiMon.setPreferredSize(new Dimension(120, 38));
+        cboFilterLoaiMon.setBorder(new LineBorder(BORDER_COLOR, 1, true));
+        cboFilterLoaiMon.addActionListener(e -> searchData());
+
 
         JButton btnSearch = createStyledButton("Tìm", PRIMARY_BLUE);
         btnSearch.addActionListener(e -> searchData());
@@ -194,13 +206,16 @@ public class MonAn_TraCuu_View extends JPanel {
         btnReset.addActionListener(e -> {
             txtSearch.setText("");
             cboFilterTrangThai.setSelectedIndex(0);
+            cboFilterLoaiMon.setSelectedIndex(0);
             loadData();
         });
 
         searchCard.add(lblSearch);
         searchCard.add(txtSearch);
-        searchCard.add(lblFilter);
+        searchCard.add(lblFilterTrangThai);
         searchCard.add(cboFilterTrangThai);
+        searchCard.add(lblFilterLoaiMon); // THÊM
+        searchCard.add(cboFilterLoaiMon); // THÊM
         searchCard.add(btnSearch);
         searchCard.add(btnReset);
 
@@ -208,7 +223,6 @@ public class MonAn_TraCuu_View extends JPanel {
     }
 
     private JPanel createStatsPanel() {
-        // Code này giữ nguyên
         JPanel statsPanel = new JPanel(new GridLayout(1, 3, 20, 0));
         statsPanel.setOpaque(false);
         statsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 120));
@@ -230,7 +244,6 @@ public class MonAn_TraCuu_View extends JPanel {
     }
     
     private JPanel createStatCard(String defaultValue, String label, Color bgColor, JLabel valueLabel) {
-        // Code này giữ nguyên
         JPanel card = new RoundedPanel(12, bgColor);
         card.setLayout(new BorderLayout());
         card.setBorder(new EmptyBorder(25, 25, 25, 25));
@@ -258,19 +271,21 @@ public class MonAn_TraCuu_View extends JPanel {
     }
 
     private JPanel createTableSection() {
-        // THAY ĐỔI: Bỏ cột "Sửa" và "Xóa"
-        String[] cols = {"Mã Món", "Tên Món Ăn", "Đơn Giá", "Trạng Thái", "Đường dẫn ảnh"};
+        // THAY ĐỔI: Thêm cột "Loại món ăn"
+        String[] cols = {"Mã Món", "Tên Món Ăn", "Loại món ăn", "Đơn Giá", "Trạng Thái", "Đường dẫn ảnh"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Không cho phép chỉnh sửa ô nào
+                return false; 
             }
         };
         tblMonAn = new JTable(model);
         table = tblMonAn;
         setupTableStyle(); 
         
-        table.getColumnModel().getColumn(4).setPreferredWidth(150); // Đường dẫn ảnh
+        // Điều chỉnh độ rộng cột
+        table.getColumnModel().getColumn(2).setPreferredWidth(120); // Loại món ăn
+        table.getColumnModel().getColumn(5).setPreferredWidth(150); // Đường dẫn ảnh
 
         JScrollPane scrollPane = new JScrollPane(table);
         scrollPane.setBorder(null);
@@ -320,13 +335,31 @@ public class MonAn_TraCuu_View extends JPanel {
         lblTotalMonAn.setText(String.valueOf(total));
         lblConBan.setText(String.valueOf(conBan));
         lblHetHang.setText(String.valueOf(hetHang));
+        
+        // Cập nhật ComboBox Loại món ăn
+        List<String> loaiMonList = monAnDAO.getUniqueLoaiMonAn();
+        cboFilterLoaiMon.removeAllItems();
+        cboFilterLoaiMon.addItem("Tất cả");
+        for (String loai : loaiMonList) {
+            cboFilterLoaiMon.addItem(loai);
+        }
     }
 
     private void searchData() {
-        String keyword = txtSearch.getText().trim();
-        String statusFilter = cboFilterTrangThai.getSelectedItem().toString();
+    	
+    	String keyword = txtSearch.getText().trim();
+    	
+    	Object selectedStatusObj = cboFilterTrangThai.getSelectedItem();
+        String statusFilter = (selectedStatusObj != null) ? selectedStatusObj.toString() : "Tất cả";
+        
+        Object selectedLoaiMonObj = cboFilterLoaiMon.getSelectedItem();
+        String loaiMonFilter = (selectedLoaiMonObj != null) ? selectedLoaiMonObj.toString() : "Tất cả";
+        
         model.setRowCount(0);
-        List<MonAn> dsMonAn = monAnDAO.searchMonAn(keyword, statusFilter);
+        
+        // SỬA: Truyền thêm tham số loại món ăn
+        List<MonAn> dsMonAn = monAnDAO.searchMonAn(keyword, statusFilter, loaiMonFilter); 
+        
         populateTable(dsMonAn);
     }
 
@@ -335,9 +368,10 @@ public class MonAn_TraCuu_View extends JPanel {
             model.addRow(new Object[]{
                 mon.getMaMonAn().trim(),
                 mon.getTenMonAn(),
+                mon.getLoaiMonAn(), // HIỂN THỊ LOẠI MÓN
                 mon.getDonGia(),
                 mon.isTrangThai() ? "Còn bán" : "Hết",
-                mon.getImagePath() // Cột cuối cùng
+                mon.getImagePath() 
             });
         }
     }

@@ -311,9 +311,11 @@ public class HoaDon_TraCuu_View extends JPanel {
         int countChuaTT = 0;
         double tongDoanhThu = 0.0;
         for (HoaDon hd : dsHD) {
+            // LƯU Ý: Dùng getMaHD
+            double tongTienHD = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD());
             if (hd.isDaThanhToan()) {
                 countDaTT++;
-                tongDoanhThu += hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon());
+                tongDoanhThu += tongTienHD;
             } else {
                 countChuaTT++;
             }
@@ -331,14 +333,14 @@ public class HoaDon_TraCuu_View extends JPanel {
             String tenKH = "";
             String sdtKH = "";
             // Lấy thông tin KH nếu có mã hợp lệ
-            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
-                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
+            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) { // SỬA: getMaKH
+                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH()); // SỬA: getMaKH
                 if (kh != null) {
-                    tenKH = safeLower(kh.getTenKhachHang());
-                    sdtKH = safeLower(kh.getSdt());
+                    tenKH = safeLower(kh.getTenKH()); // SỬA: getTenKH
+                    sdtKH = safeLower(kh.getSoDienThoai()); // SỬA: getSoDienThoai
                 }
             }
-            String maHD = safeLower(hd.getMaHoaDon());
+            String maHD = safeLower(hd.getMaHD()); // SỬA: getMaHD
             // Kiểm tra keyword khớp với mã HD, tên KH hoặc SĐT KH
             boolean matchKeyword = keyword.isEmpty()
                     || maHD.contains(keyword)
@@ -353,15 +355,15 @@ public class HoaDon_TraCuu_View extends JPanel {
 
         for (HoaDon hd : filtered) {
             KhachHang kh = null;
-            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
-                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
+            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) { // SỬA: getMaKH
+                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH()); // SỬA: getMaKH
             }
-            String tenKHDisplay = (kh != null) ? kh.getTenKhachHang() : "Khách lẻ";
-            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon());
+            String tenKHDisplay = (kh != null) ? kh.getTenKH() : "Khách lẻ"; // SỬA: getTenKH
+            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD()); // SỬA: getMaHD
             String trangThaiDisplay = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
             model.addRow(new Object[]{
-                    hd.getMaHoaDon(), tenKHDisplay, hd.getNgayLap().toString(),
-                    String.format("%,.0f VNĐ", tongTien), hd.getPhuongThuc(), trangThaiDisplay,
+                    hd.getMaHD(), tenKHDisplay, hd.getNgayLapHoaDon().toString(), // SỬA: getMaHD, getNgayLapHoaDon
+                    String.format("%,.0f VNĐ", tongTien), hd.getPhuongThucThanhToan(), trangThaiDisplay, // SỬA: getPhuongThucThanhToan
                     "Xem" // Nút xem chi tiết
             });
         }
@@ -424,7 +426,7 @@ public class HoaDon_TraCuu_View extends JPanel {
         }
     }
 
-    // --- Renderer và Editor cho nút trong bảng (Giữ nguyên nhưng điều chỉnh style nếu cần) ---
+    // --- Renderer và Editor cho nút trong bảng ---
     class ButtonRenderer extends JButton implements TableCellRenderer {
         private final Color bgColor;
         private final Color fgColor;
@@ -497,8 +499,8 @@ public class HoaDon_TraCuu_View extends JPanel {
                         HoaDon hd = hoaDonDAO.findByMaHD(maHD);
                         if (hd != null) {
                             KhachHang kh = null;
-                            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
-                                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
+                            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) { // SỬA: getMaKH
+                                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH()); // SỬA: getMaKH
                             }
                             hd.setKhachHang(kh); // Gán KH đầy đủ
                             Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(HoaDon_TraCuu_View.this);

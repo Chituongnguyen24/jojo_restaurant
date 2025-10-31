@@ -418,21 +418,23 @@ public class QuenMatKhau_Dialog extends JDialog {
                     Thread.sleep(800);
 
                     TaiKhoan tk = taiKhoan_DAO.findByUsername(tenDangNhap);
+                    // Dùng NhanVien_DAO để lấy đầy đủ thông tin xác minh
                     NhanVien nv = nhanVien_DAO.getNhanVienById(maNV);
                     
                     if (tk == null || nv == null) {
                         return new Object[]{false, "Tên đăng nhập hoặc Mã nhân viên không tồn tại"};
                     }
-
-                    if (!tk.getMaNV().equals(nv.getMaNV())) {
-                        return new Object[]{false, "Tên đăng nhập và Mã nhân viên không khớp"};
+                    
+                    // Lấy mã NV từ TaiKhoan để so sánh với mã NV người dùng nhập
+                    if (!tk.getNhanVien().getMaNhanVien().equals(maNV)) {
+                         return new Object[]{false, "Tên đăng nhập và Mã nhân viên không khớp"};
                     }
                     
-                    if (!nv.getTenNhanVien().equalsIgnoreCase(hoTen)) {
+                    if (!nv.getHoTen().equalsIgnoreCase(hoTen)) {
                         return new Object[]{false, "Họ tên không chính xác"};
                     }
                     
-                    if (!nv.getSdt().equals(sdt)) {
+                    if (!nv.getSoDienThoai().equals(sdt)) {
                         return new Object[]{false, "Số điện thoại không chính xác"};
                     }
 

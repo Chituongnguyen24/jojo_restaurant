@@ -137,9 +137,9 @@ public class KhachHang_DiemTichLuy_View extends JPanel {
             String hang = getHang(kh.getDiemTichLuy()); 
             String trangThai = kh.isLaThanhVien() ? "Thành viên" : "Khách thường";
             model.addRow(new Object[]{
-                    kh.getMaKhachHang(),
-                    kh.getTenKhachHang(),
-                    kh.getSdt(),
+                    kh.getMaKH(), // SỬA: getMaKH
+                    kh.getTenKH(), // SỬA: getTenKH
+                    kh.getSoDienThoai(), // SỬA: getSoDienThoai
                     kh.getEmail(),
                     kh.getDiemTichLuy(),
                     hang,

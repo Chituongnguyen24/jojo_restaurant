@@ -1,9 +1,10 @@
 package view.ThucDon;
 
 import dao.Ban_DAO;
-import dao.DatBan_DAO;
+import dao.PhieuDatBan_DAO;
 import entity.Ban;
 import entity.PhieuDatBan;
+import enums.TrangThaiBan;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -12,20 +13,20 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import java.awt.*;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.List;
 
-public class MonAn_View extends JPanel {
+public class DatMonAn_View extends JPanel {
     
     // DAOs
     private Ban_DAO banDAO;
-    private DatBan_DAO datBanDAO;
+    private PhieuDatBan_DAO datBanDAO;
 
     // Data
     private PhieuDatBan phieuDatBanHienTai; 
 
-    // UI Components
+    // Components
     private JTable tblBan;
     private JTable tblDonDatMon;
     private DefaultTableModel modelBan;
@@ -33,22 +34,25 @@ public class MonAn_View extends JPanel {
     
     private JButton btnDatMon, btnHoanThanhMon, btnHuyMon, btnLamMoi;
     private JLabel lblThongTinBan;
-    private JPanel pnlMonTongHop;
 
     // Colors
     private static final Color PRIMARY_COLOR = new Color(59, 130, 246);
     private static final Color SUCCESS_COLOR = new Color(34, 197, 94);
     private static final Color DANGER_COLOR = new Color(239, 68, 68);
     private static final Color WARNING_COLOR = new Color(251, 146, 60);
-    private static final Color BACKGROUND_COLOR = new Color(248, 250, 252);
+    private static final Color BACKGROUND_COLOR = new Color(248, 249, 250);
     private static final Color CARD_COLOR = Color.WHITE;
     private static final Color TEXT_PRIMARY = new Color(15, 23, 42);
     private static final Color TEXT_SECONDARY = new Color(100, 116, 139);
     private static final Color BORDER_COLOR = new Color(226, 232, 240);
 
-    public MonAn_View() {
+    private static final Font FONT_TITLE = new Font("Segoe UI", Font.BOLD, 22);
+    private static final Font FONT_HEADER = new Font("Segoe UI", Font.BOLD, 14);
+
+
+    public DatMonAn_View() {
         this.banDAO = new Ban_DAO();
-        this.datBanDAO = new DatBan_DAO();
+        this.datBanDAO = new PhieuDatBan_DAO(); // Khởi tạo đúng DAO
 
         setLayout(new BorderLayout(0, 0));
         setBackground(BACKGROUND_COLOR);
@@ -83,7 +87,7 @@ public class MonAn_View extends JPanel {
         leftPanel.setOpaque(false);
 
         JLabel titleLabel = new JLabel("Quản lý Đặt món");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        titleLabel.setFont(FONT_TITLE);
         titleLabel.setForeground(TEXT_PRIMARY);
 
         JLabel subtitleLabel = new JLabel("Chọn bàn và gọi món cho khách hàng");
@@ -126,7 +130,7 @@ public class MonAn_View extends JPanel {
         JPanel panel = new JPanel(new BorderLayout(0, 15));
         panel.setOpaque(false);
 
-        // Card header (no icon)
+        // Card header 
         JPanel headerCard = createCardHeader("Danh sách bàn", "Chọn bàn để xem chi tiết");
         
         // Table
@@ -151,17 +155,24 @@ public class MonAn_View extends JPanel {
                 
                 if (column == 2) { // Cột trạng thái
                     setFont(new Font("Segoe UI", Font.BOLD, 12));
-                    setForeground(SUCCESS_COLOR);
-                    // Remove icon, show only status text
+                    TrangThaiBan status = TrangThaiBan.fromString(value.toString());
+                    
+                    if (status == TrangThaiBan.CO_KHACH) {
+                        setForeground(DANGER_COLOR);
+                    } else if (status == TrangThaiBan.DA_DAT) {
+                        setForeground(WARNING_COLOR);
+                    } else {
+                        setForeground(SUCCESS_COLOR);
+                    }
                     setText(value != null ? value.toString() : "");
                 }
                 
                 if (isSelected) {
                     setBackground(new Color(219, 234, 254));
-                    setForeground(column == 2 ? SUCCESS_COLOR : TEXT_PRIMARY);
+                    setForeground(TEXT_PRIMARY); // Màu chữ chính
                 } else {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
-                    setForeground(column == 2 ? SUCCESS_COLOR : TEXT_PRIMARY);
+                    if (column != 2) setForeground(TEXT_PRIMARY);
                 }
                 
                 setBorder(new EmptyBorder(10, 15, 10, 15));
@@ -220,7 +231,6 @@ public class MonAn_View extends JPanel {
         leftInfo.add(Box.createVerticalStrut(5));
         leftInfo.add(lblStatus);
 
-        // No icon on the right side to avoid display issues
         card.add(leftInfo, BorderLayout.WEST);
 
         return card;
@@ -230,7 +240,7 @@ public class MonAn_View extends JPanel {
         JPanel panel = new JPanel(new BorderLayout(0, 15));
         panel.setOpaque(false);
 
-        // Header (no icon)
+        // Header
         JPanel header = createCardHeader("Chi tiết đơn đặt món", "Danh sách món đã gọi");
 
         // Table
@@ -272,14 +282,10 @@ public class MonAn_View extends JPanel {
                         String s = value.toString();
                         if (s.contains("Hoàn thành")) {
                             setForeground(SUCCESS_COLOR);
-                            setText(s); // no checkmark icon
                         } else {
                             setForeground(WARNING_COLOR);
-                            setText(s); // no hourglass icon
                         }
-                    } else {
-                        setText("");
-                    }
+                    } 
                 } else {
                     setHorizontalAlignment(LEFT);
                 }
@@ -385,11 +391,11 @@ public class MonAn_View extends JPanel {
         table.setIntercellSpacing(new Dimension(1, 1));
 
         JTableHeader header = table.getTableHeader();
-        header.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        header.setBackground(new Color(241, 245, 249));
+        header.setFont(FONT_HEADER);
+        header.setBackground(new Color(241,245,249));
         header.setForeground(TEXT_PRIMARY);
         header.setPreferredSize(new Dimension(header.getWidth(), 45));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, BORDER_COLOR));
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(220, 220, 220)));
 
         ((DefaultTableCellRenderer)header.getDefaultRenderer()).setHorizontalAlignment(JLabel.CENTER);
 
@@ -467,12 +473,13 @@ public class MonAn_View extends JPanel {
         phieuDatBanHienTai = null;
         lblThongTinBan.setText("Chưa chọn bàn");
         
+        // Lấy danh sách bàn đang ĐÃ ĐẶT hoặc CÓ KHÁCH
         List<Ban> dsBan = banDAO.getBanDangHoatDong();
         for (Ban ban : dsBan) {
             modelBan.addRow(new Object[]{
                 ban.getMaBan().trim(),
                 ban.getSoCho(),
-                "Có khách"
+                ban.getTrangThai() // Trạng thái String raw DB
             });
         }
     }
@@ -483,25 +490,43 @@ public class MonAn_View extends JPanel {
         
         String maBan = (String) modelBan.getValueAt(row, 0);
         int soCho = (int) modelBan.getValueAt(row, 1);
+        String trangThaiStr = (String) modelBan.getValueAt(row, 2);
         
         lblThongTinBan.setText("Bàn " + maBan + " - " + soCho + " chỗ ngồi");
         
+        // 1. Lấy phiếu đặt bàn đang CHƯA ĐẾN (nếu có)
         this.phieuDatBanHienTai = datBanDAO.getPhieuByBan(maBan);
         
-        if (this.phieuDatBanHienTai != null) {
-            taiDonDatMon(this.phieuDatBanHienTai.getMaPhieu());
+        if (this.phieuDatBanHienTai != null && this.phieuDatBanHienTai.getTrangThaiPhieu().equals("Chưa đến")) {
+             // Bàn đang ở trạng thái ĐÃ ĐẶT 
+             taiDonDatMon(this.phieuDatBanHienTai.getMaPhieu());
+             btnDatMon.setEnabled(true);
+             btnHuyMon.setEnabled(true);
         } else {
-            modelDonDatMon.setRowCount(0);
-            JOptionPane.showMessageDialog(this, 
-                "Bàn này đang 'Có khách' nhưng không tìm thấy Phiếu đặt bàn.\n" +
-                "Tính năng gọi món cho khách vãng lai chưa được hỗ trợ.", 
-                "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+            // 2. Nếu không có phiếu CHƯA ĐẾN, kiểm tra Hóa đơn (CO_KHACH)
+            // Logic cho bàn CO_KHACH (đã có hóa đơn)
+            if (TrangThaiBan.fromString(trangThaiStr) == TrangThaiBan.CO_KHACH) {
+                 // Cần code để lấy chi tiết món ăn từ bảng CTHOADON
+                 // Hiện tại, ta chỉ hiển thị cảnh báo và tắt nút
+                 modelDonDatMon.setRowCount(0);
+                 JOptionPane.showMessageDialog(this, 
+                    "Bàn đang phục vụ (CO_KHACH). Vui lòng dùng menu Thanh Toán/Gọi món ở DatBan_View.", 
+                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                 // Tắt nút
+                 btnDatMon.setEnabled(false);
+                 btnHuyMon.setEnabled(false);
+            } else {
+                 modelDonDatMon.setRowCount(0);
+                 btnDatMon.setEnabled(false);
+                 btnHuyMon.setEnabled(false);
+            }
         }
     }
 
     private void taiDonDatMon(String maPhieu) {
         modelDonDatMon.setRowCount(0);
-        List<Object[]> dsMon = datBanDAO.getChiTietTheoMaPhieu(maPhieu);
+        // Dùng hàm getChiTietTheoMaPhieu của PhieuDatBan_DAO
+        List<Object[]> dsMon = datBanDAO.getChiTietTheoMaPhieu(maPhieu); 
         
         String thoiDiemGia = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
         String trangThaiGia = "Chưa hoàn thành";
@@ -532,6 +557,7 @@ public class MonAn_View extends JPanel {
         );
         dialog.setVisible(true);
         
+        // Sau khi đóng dialog, refresh lại đơn đặt món
         taiDonDatMon(phieuDatBanHienTai.getMaPhieu());
     }
 
@@ -555,6 +581,7 @@ public class MonAn_View extends JPanel {
             JOptionPane.YES_NO_OPTION);
             
         if (confirm == JOptionPane.YES_OPTION) {
+            // Dùng hàm deleteChiTiet của PhieuDatBan_DAO
             boolean success = datBanDAO.deleteChiTiet(phieuDatBanHienTai.getMaPhieu(), maMonAn);
             if (success) {
                 JOptionPane.showMessageDialog(this, "Hủy món thành công!");

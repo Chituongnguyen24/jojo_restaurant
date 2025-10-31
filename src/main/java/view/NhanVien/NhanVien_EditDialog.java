@@ -22,11 +22,12 @@ import java.util.Date;
 import java.util.Properties;
 
 public class NhanVien_EditDialog extends JDialog {
-    private JTextField txtTenNV, txtSDT, txtEmail, txtUser;
+    // THÊM CÁC TRƯỜNG MỚI
+    private JTextField txtTenNV, txtSDT, txtEmail, txtUser, txtCCCD;
     private JPasswordField txtPass;
     private JLabel lblPasswordStrength;
-    private JDatePickerImpl datePicker;
-    private JComboBox<String> cbVaiTro;
+    private JDatePickerImpl datePickerNS, datePickerNVL;
+    private JComboBox<String> cbChucVu, cbTrangThai; 
     private JRadioButton rdNam, rdNu;
     private JButton btnSave, btnCancel;
     private NhanVien_DAO nhanVienDAO;
@@ -91,7 +92,7 @@ public class NhanVien_EditDialog extends JDialog {
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titleLabel.setForeground(TEXT_PRIMARY);
 
-        JLabel subtitleLabel = new JLabel("Cập nhật thông tin: " + nhanVien.getMaNV());
+        JLabel subtitleLabel = new JLabel("Cập nhật thông tin: " + nhanVien.getMaNhanVien());
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         subtitleLabel.setForeground(TEXT_SECONDARY);
 
@@ -116,31 +117,68 @@ public class NhanVien_EditDialog extends JDialog {
         gbc.insets = new Insets(0, 0, 18, 0);
         gbc.weightx = 1.0;
 
+        // Hàng 1: Tên nhân viên
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
-        txtTenNV = new JTextField(nhanVien.getTenNhanVien());
+        txtTenNV = new JTextField(nhanVien.getHoTen());
         mainPanel.add(createFormField("Tên nhân viên", txtTenNV), gbc);
 
-        gbc.gridy++;
-        JPanel genderPanel = createGenderPanel();
-        mainPanel.add(createFormField("Giới tính", genderPanel), gbc);
-
-        gbc.gridy++;
-        JPanel datePanel = createDatePanel();
-        mainPanel.add(createFormField("Ngày sinh", datePanel), gbc);
-
+        // Hàng 2: Giới tính & Ngày sinh
         gbc.gridy++;
         gbc.gridwidth = 1;
         gbc.insets = new Insets(0, 0, 18, 10);
-        txtSDT = new JTextField(nhanVien.getSdt());
+        JPanel genderPanel = createGenderPanel();
+        mainPanel.add(createFormField("Giới tính", genderPanel), gbc);
+
+        gbc.gridx = 1;
+        gbc.insets = new Insets(0, 10, 18, 0);
+        JPanel datePanelNS = createDatePanel(false); // Ngày sinh
+        mainPanel.add(createFormField("Ngày sinh", datePanelNS), gbc);
+        
+        // Hàng 3: SĐT & Email
+        gbc.gridy++;
+        gbc.gridx = 0;
+        gbc.insets = new Insets(0, 0, 18, 10);
+        txtSDT = new JTextField(nhanVien.getSoDienThoai());
         mainPanel.add(createFormField("Số điện thoại", txtSDT), gbc);
 
         gbc.gridx = 1;
         gbc.insets = new Insets(0, 10, 18, 0);
         txtEmail = new JTextField(nhanVien.getEmail() != null ? nhanVien.getEmail() : "");
         mainPanel.add(createFormField("Email", txtEmail), gbc);
+        
+        // Hàng 4: Số CCCD & Ngày vào làm
+        gbc.gridy++;
+        gbc.gridx = 0;
+        gbc.insets = new Insets(0, 0, 18, 10);
+        txtCCCD = new JTextField(nhanVien.getSoCCCD() != null ? nhanVien.getSoCCCD() : ""); 
+        mainPanel.add(createFormField("Số CCCD", txtCCCD), gbc); 
 
+        gbc.gridx = 1;
+        gbc.insets = new Insets(0, 10, 18, 0);
+        JPanel datePanelNVL = createDatePanel(true); // Ngày vào làm
+        mainPanel.add(createFormField("Ngày vào làm", datePanelNVL), gbc); 
+        
+        // Hàng 5: Chức vụ & Trạng thái
+        gbc.gridy++;
+        gbc.gridx = 0;
+        gbc.insets = new Insets(0, 0, 18, 10);
+        cbChucVu = new JComboBox<>(new String[]{"Nhân viên quản lý", "Nhân viên tiếp tân"});
+        if (nhanVien.getChucVu() != null) 
+            cbChucVu.setSelectedItem(nhanVien.getChucVu());
+        styleComboBox(cbChucVu);
+        mainPanel.add(createFormField("Chức vụ", cbChucVu), gbc);
+
+        gbc.gridx = 1;
+        gbc.insets = new Insets(0, 10, 18, 0);
+        cbTrangThai = new JComboBox<>(new String[]{"Đang làm", "Đã nghỉ"});
+        if (nhanVien.getTrangThai() != null)
+             cbTrangThai.setSelectedItem(nhanVien.getTrangThai());
+        styleComboBox(cbTrangThai);
+        mainPanel.add(createFormField("Trạng thái", cbTrangThai), gbc);
+        
+        // Hàng 6: Tên đăng nhập
         gbc.gridy++;
         gbc.gridx = 0;
         gbc.insets = new Insets(0, 0, 18, 10);
@@ -148,22 +186,13 @@ public class NhanVien_EditDialog extends JDialog {
         txtUser = new JTextField(tk != null ? tk.getTenDangNhap() : "");
         mainPanel.add(createFormField("Tên đăng nhập", txtUser), gbc);
 
-        gbc.gridx = 1;
-        gbc.insets = new Insets(0, 10, 18, 0);
-        cbVaiTro = new JComboBox<>(new String[]{"Quản lý", "Tiếp tân"});
-        if (tk != null && tk.getVaiTro() != null && tk.getVaiTro().equalsIgnoreCase("NVQL"))
-            cbVaiTro.setSelectedItem("Quản lý");
-        else
-            cbVaiTro.setSelectedItem("Tiếp tân");
-        styleComboBox(cbVaiTro);
-        mainPanel.add(createFormField("Vai trò", cbVaiTro), gbc);
-
+        // Hàng 7: Mật khẩu
         gbc.gridy++;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
         gbc.insets = new Insets(0, 0, 0, 0);
         JPanel passwordPanel = createPasswordPanel();
-        mainPanel.add(createFormField("Mật khẩu", passwordPanel), gbc);
+        mainPanel.add(createFormField("Mật khẩu (Không đổi nếu để trống)", passwordPanel), gbc);
 
         return mainPanel;
     }
@@ -208,8 +237,8 @@ public class NhanVien_EditDialog extends JDialog {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         panel.setOpaque(false);
 
-        rdNam = createModernRadioButton("Nam", nhanVien.isGioiTinh());
-        rdNu = createModernRadioButton("Nữ", !nhanVien.isGioiTinh());
+        rdNam = createModernRadioButton("Nam", nhanVien.getGioiTinh()); 
+        rdNu = createModernRadioButton("Nữ", !nhanVien.getGioiTinh()); 
 
         ButtonGroup bg = new ButtonGroup();
         bg.add(rdNam);
@@ -233,21 +262,22 @@ public class NhanVien_EditDialog extends JDialog {
         return rb;
     }
 
-    private JPanel createDatePanel() {
+    private JPanel createDatePanel(boolean isNgayVaoLam) {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         panel.setOpaque(false);
 
         UtilDateModel model = new UtilDateModel();
         Calendar cal = Calendar.getInstance();
-        int currentYear = cal.get(Calendar.YEAR);
-
-        LocalDate ngaySinhLD = nhanVien.getNgaySinh();
-        if (ngaySinhLD != null) {
-            model.setDate(ngaySinhLD.getYear(), ngaySinhLD.getMonthValue() - 1, ngaySinhLD.getDayOfMonth());
+        
+        LocalDate ld = isNgayVaoLam ? nhanVien.getNgayVaoLam() : nhanVien.getNgaySinh();
+        
+        if (ld != null) {
+            model.setDate(ld.getYear(), ld.getMonthValue() - 1, ld.getDayOfMonth());
             model.setSelected(true);
         } else {
-            model.setDate(currentYear - 18, cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
-            model.setSelected(true);
+             int currentYear = cal.get(Calendar.YEAR);
+             model.setDate(currentYear - (isNgayVaoLam ? 0 : 18), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
+             model.setSelected(true);
         }
 
         Properties p = new Properties();
@@ -255,10 +285,16 @@ public class NhanVien_EditDialog extends JDialog {
         p.put("text.month", "Tháng");
         p.put("text.year", "Năm");
 
+        JDatePickerImpl picker;
         JDatePanelImpl datePanelImpl = new JDatePanelImpl(model, p);
-        datePicker = new JDatePickerImpl(datePanelImpl, new DateLabelFormatter());
+        picker = new JDatePickerImpl(datePanelImpl, new DateLabelFormatter());
+        
+        // Gán lại biến cho dialog
+        if (isNgayVaoLam) datePickerNVL = picker;
+        else datePickerNS = picker;
 
-        JFormattedTextField dateTextField = datePicker.getJFormattedTextField();
+
+        JFormattedTextField dateTextField = picker.getJFormattedTextField();
         dateTextField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         dateTextField.setBorder(BorderFactory.createCompoundBorder(
                 new LineBorder(BORDER_COLOR, 1, true),
@@ -288,7 +324,7 @@ public class NhanVien_EditDialog extends JDialog {
             }
         });
 
-        panel.add(datePicker);
+        panel.add(picker);
         return panel;
     }
 
@@ -299,7 +335,7 @@ public class NhanVien_EditDialog extends JDialog {
         panel.setOpaque(false);
 
         TaiKhoan tk = nhanVien.getTaiKhoan();
-        txtPass = new JPasswordField(tk != null ? tk.getMatKhau() : "");
+        txtPass = new JPasswordField(tk != null ? tk.getMatKhau() : ""); 
         styleTextField(txtPass);
         txtPass.setEchoChar('●');
         txtPass.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -460,32 +496,52 @@ public class NhanVien_EditDialog extends JDialog {
         try {
             String tenNV = txtTenNV.getText().trim();
             boolean gioiTinh = rdNam.isSelected();
-            Date selectedDateUtil = null;
-            Object modelValue = datePicker.getModel().getValue();
-             if (modelValue instanceof Date) {
-                 selectedDateUtil = (Date) modelValue;
-             }
-
-            if (selectedDateUtil == null) {
+            
+            // Ngày sinh
+            Date selectedDateNSUtil = null;
+            Object modelValueNS = datePickerNS.getModel().getValue();
+            if (modelValueNS instanceof Date) {
+                 selectedDateNSUtil = (Date) modelValueNS;
+            }
+            if (selectedDateNSUtil == null) {
                 showError("Vui lòng chọn ngày sinh!");
-                datePicker.getJFormattedTextField().requestFocus();
+                datePickerNS.getJFormattedTextField().requestFocus();
                 return;
             }
-            LocalDate ngaySinh = selectedDateUtil.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate ngaySinh = selectedDateNSUtil.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 
+            // Ngày vào làm
+            Date selectedDateNVLUtil = null;
+            Object modelValueNVL = datePickerNVL.getModel().getValue();
+            if (modelValueNVL instanceof Date) {
+                 selectedDateNVLUtil = (Date) modelValueNVL;
+            }
+            if (selectedDateNVLUtil == null) {
+                showError("Vui lòng chọn ngày vào làm!");
+                datePickerNVL.getJFormattedTextField().requestFocus();
+                return;
+            }
+            LocalDate ngayVaoLam = selectedDateNVLUtil.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            
+            String cccd = txtCCCD.getText().trim();
             String sdt = txtSDT.getText().trim();
             String email = txtEmail.getText().trim();
+            String chucVuDisplay = (String) cbChucVu.getSelectedItem();
+            String trangThai = (String) cbTrangThai.getSelectedItem(); 
+            
             String user = txtUser.getText().trim();
             String pass = new String(txtPass.getPassword()).trim();
-            String roleDisplay = (String) cbVaiTro.getSelectedItem();
-            String role = roleDisplay.equals("Quản lý") ? "NVQL" : "NVTT";
+            
+            String vaiTroTK = chucVuDisplay.equals("Nhân viên quản lý") ? "NVQL" : "NVTT"; // Vai trò TK
 
+            // Ràng buộc
             if (tenNV.isEmpty()) { showError("Tên nhân viên không được để trống!"); txtTenNV.requestFocus(); return; }
             if (sdt.isEmpty()) { showError("Số điện thoại không được để trống!"); txtSDT.requestFocus(); return; }
+            if (cccd.isEmpty()) { showError("Số CCCD không được để trống!"); txtCCCD.requestFocus(); return; }
             if (user.isEmpty()) { showError("Tên đăng nhập không được để trống!"); txtUser.requestFocus(); return; }
-            if (pass.isEmpty()) { showError("Mật khẩu không được để trống!"); txtPass.requestFocus(); return; }
+            // Mật khẩu không cần kiểm tra trống nếu muốn giữ nguyên mật khẩu cũ
 
-            if (!isValidPassword(pass)) {
+            if (!pass.isEmpty() && !isValidPassword(pass)) {
                 showError("Mật khẩu không đáp ứng yêu cầu:\n\n" +
                           "• 8-20 ký tự\n" +
                           "• Ít nhất 1 chữ hoa\n" +
@@ -496,21 +552,36 @@ public class NhanVien_EditDialog extends JDialog {
                 return;
             }
 
-            nhanVien.setTenNhanVien(tenNV);
+            // Cập nhật Entity NhanVien
+            nhanVien.setHoTen(tenNV);
             nhanVien.setGioiTinh(gioiTinh);
             nhanVien.setNgaySinh(ngaySinh);
-            nhanVien.setSdt(sdt);
+            nhanVien.setNgayVaoLam(ngayVaoLam); 
+            nhanVien.setSoCCCD(cccd); 
+            nhanVien.setSoDienThoai(sdt);
             nhanVien.setEmail(email.isEmpty() ? null : email);
+            nhanVien.setChucVu(chucVuDisplay); 
+            nhanVien.setTrangThai(trangThai); 
 
+            // Cập nhật Entity TaiKhoan
             TaiKhoan tk = nhanVien.getTaiKhoan();
+            
             if (tk == null) {
+                // Nếu chưa có TK, tạo mới
                 tk = new TaiKhoan();
-                tk.setMaNV(nhanVien.getMaNV());
+                tk.setNhanVien(nhanVien);
+                // Cần đảm bảo các trường bắt buộc của TK được set
+                tk.setMatKhau("123456"); // Mặc định mật khẩu nếu pass trống và TK mới
                 nhanVien.setTaiKhoan(tk);
             }
+            
             tk.setTenDangNhap(user);
-            tk.setMatKhau(pass);
-            tk.setVaiTro(role);
+            // Chỉ cập nhật mật khẩu nếu trường không trống
+            if (!pass.isEmpty()) {
+                tk.setMatKhau(pass);
+            }
+            tk.setVaiTro(vaiTroTK);
+            tk.setTrangThai(trangThai.equals("Đang làm")); // Trạng thái TK = Trạng thái NV
 
             boolean updated = nhanVienDAO.updateNhanVien(nhanVien);
 
@@ -523,15 +594,6 @@ public class NhanVien_EditDialog extends JDialog {
 
         } catch (IllegalArgumentException ex) {
             showError(ex.getMessage());
-             if (ex.getMessage().contains("Ngày sinh")) {
-                 datePicker.getJFormattedTextField().requestFocus();
-            } else if (ex.getMessage().contains("Số điện thoại")) {
-                 txtSDT.requestFocus();
-            } else if (ex.getMessage().contains("Email")) {
-                 txtEmail.requestFocus();
-            } else if (ex.getMessage().contains("Tên nhân viên")) {
-                 txtTenNV.requestFocus();
-            }
         } catch (Exception ex) {
             ex.printStackTrace();
             showError("Đã xảy ra lỗi không mong muốn: " + ex.getMessage());

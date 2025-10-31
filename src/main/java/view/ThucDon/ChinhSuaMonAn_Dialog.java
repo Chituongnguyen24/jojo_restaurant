@@ -1,18 +1,19 @@
 package view.ThucDon;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter; // Thêm import
 import dao.MonAn_DAO;
 import entity.MonAn;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.File; // Thêm import
-import java.io.IOException; // Thêm import
-import java.nio.file.Files; // Thêm import
-import java.nio.file.Path; // Thêm import
-import java.nio.file.Paths; // Thêm import
-import java.nio.file.StandardCopyOption; // Thêm import
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
 
 public class ChinhSuaMonAn_Dialog extends JDialog {
     private MonAn monAn;
@@ -21,30 +22,27 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
     
     private JTextField txtTenMon;
     private JTextField txtDonGia;
-    private JTextField txtImagePath; // === THÊM MỚI ===
+    private JTextField txtImagePath; 
+    private JComboBox<String> cmbLoaiMon; // THÊM
     private JLabel lblTrangThaiHienTai;
-    private JLabel lblAnhPreview; // === THÊM MỚI ===
+    private JLabel lblAnhPreview; 
     private JButton btnLuu;
     private JButton btnDoiTrangThai;
     private JButton btnXoa;
-    private JButton btnChonAnh; // === THÊM MỚI ===
+    private JButton btnChonAnh; 
 
-    public ChinhSuaMonAn_Dialog(JFrame owner, MonAn monAn, Runnable refreshCallback) { // << Sửa tham số
-        // super(owner); // Không cần super nếu dùng setModal(true)
+    public ChinhSuaMonAn_Dialog(JFrame owner, MonAn monAn, Runnable refreshCallback) { 
+        super(owner, "Chỉnh sửa món ăn: " + monAn.getTenMonAn(), true);
         this.monAn = monAn;
-        // this.parentView = parentView;
-        this.refreshCallback = refreshCallback; // << Lưu lại callback
-        initComponents(); // Gọi hàm này trước loadData
+        this.refreshCallback = refreshCallback; 
+        initComponents(); 
         loadData();
+        loadLoaiMonAn();
     }
 
-    /**
-     * === SỬA ĐỔI BỐ CỤC HOÀN TOÀN ===
-     */
     private void initComponents() {
         setTitle("Chỉnh sửa món ăn: " + monAn.getTenMonAn());
-        setModal(true);
-        setSize(700, 400); // Tăng kích thước
+        setSize(700, 400); 
         setLocationRelativeTo(null);
         setLayout(new BorderLayout(10, 10));
         getContentPane().setBackground(Color.WHITE);
@@ -101,10 +99,19 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
         txtDonGia.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         panelMain.add(txtDonGia, gbc);
         
-        // Đường dẫn ảnh (THÊM MỚI)
+        // Loại món (THÊM)
         gbc.gridx = 0; gbc.gridy = 2;
-        panelMain.add(createLabel("Đường dẫn ảnh:"), gbc);
+        panelMain.add(createLabel("Loại món:"), gbc);
         gbc.gridx = 1; gbc.gridy = 2;
+        cmbLoaiMon = new JComboBox<>();
+        cmbLoaiMon.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cmbLoaiMon.setBackground(Color.WHITE);
+        panelMain.add(cmbLoaiMon, gbc);
+        
+        // Đường dẫn ảnh
+        gbc.gridx = 0; gbc.gridy = 3;
+        panelMain.add(createLabel("Đường dẫn ảnh:"), gbc);
+        gbc.gridx = 1; gbc.gridy = 3;
         txtImagePath = new JTextField();
         txtImagePath.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         txtImagePath.setEditable(false);
@@ -112,9 +119,9 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
         panelMain.add(txtImagePath, gbc);
 
         // Trạng thái hiện tại
-        gbc.gridx = 0; gbc.gridy = 3;
+        gbc.gridx = 0; gbc.gridy = 4;
         panelMain.add(createLabel("Trạng thái:"), gbc);
-        gbc.gridx = 1; gbc.gridy = 3;
+        gbc.gridx = 1; gbc.gridy = 4;
         lblTrangThaiHienTai = new JLabel();
         lblTrangThaiHienTai.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblTrangThaiHienTai.setHorizontalAlignment(SwingConstants.CENTER);
@@ -123,7 +130,7 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
         panelMain.add(lblTrangThaiHienTai, gbc);
         
         // Nút đổi trạng thái
-        gbc.gridx = 1; gbc.gridy = 4; gbc.anchor = GridBagConstraints.EAST;
+        gbc.gridx = 1; gbc.gridy = 5; gbc.anchor = GridBagConstraints.EAST;
         btnDoiTrangThai = new JButton("Đổi trạng thái");
         btnDoiTrangThai.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         btnDoiTrangThai.addActionListener(e -> doiTrangThai());
@@ -165,16 +172,26 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
         return label;
     }
 
+    private void loadLoaiMonAn() {
+        // Lấy danh sách loại món ăn duy nhất từ DAO
+        List<String> loaiMonAnList = monAnDAO.getUniqueLoaiMonAn();
+        cmbLoaiMon.removeAllItems();
+        
+        for (String loai : loaiMonAnList) {
+            cmbLoaiMon.addItem(loai);
+        }
+    }
+
     private void loadData() {
         txtTenMon.setText(monAn.getTenMonAn());
         txtDonGia.setText(String.valueOf((int)monAn.getDonGia()));
-        txtImagePath.setText(monAn.getImagePath()); // Tải đường dẫn ảnh
-        updatePreviewImage(monAn.getImagePath()); // Tải ảnh xem trước
+        txtImagePath.setText(monAn.getImagePath()); 
+        cmbLoaiMon.setSelectedItem(monAn.getLoaiMonAn()); // Tải Loại món ăn
+        updatePreviewImage(monAn.getImagePath()); 
         capNhatGiaoDienTrangThai();
     }
     
     /**
-     * === HÀM MỚI ===
      * Tải và scale ảnh xem trước
      */
     private void updatePreviewImage(String path) {
@@ -192,7 +209,6 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
     }
     
     /**
-     * === HÀM MỚI ===
      * Mở JFileChooser để chọn ảnh
      */
     private void chonAnh() {
@@ -203,10 +219,8 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fileChooser.getSelectedFile();
-            // Sao chép file vào dự án và lấy đường dẫn tương đối
             String relativePath = copyImageToProject(selectedFile);
             if (relativePath != null) {
-                // Cập nhật text field và ảnh xem trước
                 txtImagePath.setText(relativePath.replace(File.separator, "/"));
                 updatePreviewImage(relativePath);
             }
@@ -214,7 +228,6 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
     }
     
     /**
-     * === HÀM MỚI ===
      * Sao chép file được chọn vào thư mục "images/mon an" của dự án
      */
     private String copyImageToProject(File sourceFile) {
@@ -237,21 +250,20 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
     private void capNhatGiaoDienTrangThai() {
         if (monAn.isTrangThai()) {
             lblTrangThaiHienTai.setText("CÓ SẴN");
-            lblTrangThaiHienTai.setBackground(new Color(40, 167, 69)); // Xanh lá
+            lblTrangThaiHienTai.setBackground(new Color(40, 167, 69)); 
             lblTrangThaiHienTai.setForeground(Color.WHITE);
             btnDoiTrangThai.setText("Đổi thành HẾT MÓN");
-            btnDoiTrangThai.setBackground(new Color(255, 193, 7)); // Vàng
+            btnDoiTrangThai.setBackground(new Color(255, 193, 7)); 
         } else {
             lblTrangThaiHienTai.setText("HẾT MÓN");
-            lblTrangThaiHienTai.setBackground(new Color(220, 53, 69)); // Đỏ
+            lblTrangThaiHienTai.setBackground(new Color(220, 53, 69)); 
             lblTrangThaiHienTai.setForeground(Color.WHITE);
             btnDoiTrangThai.setText("Đổi thành CÓ SẴN");
-            btnDoiTrangThai.setBackground(new Color(40, 167, 69)); // Xanh lá
+            btnDoiTrangThai.setBackground(new Color(40, 167, 69)); 
         }
     }
 
     private void doiTrangThai() {
-        // (Không thay đổi logic)
         int confirm = JOptionPane.showConfirmDialog(this,
             "Bạn có chắc muốn đổi trạng thái món " + monAn.getTenMonAn() + "?",
             "Xác nhận đổi trạng thái",
@@ -262,25 +274,25 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
             if (monAnDAO.updateMonAn(monAn)) {
                 JOptionPane.showMessageDialog(this, "Đã đổi trạng thái thành công!");
                 capNhatGiaoDienTrangThai();
-                // THAY ĐỔI: Gọi callback nếu có
                 if (refreshCallback != null) {
-                    refreshCallback.run(); // << Thực thi hành động làm mới
+                    refreshCallback.run(); 
                 }
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi khi đổi trạng thái!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                monAn.setTrangThai(!monAn.isTrangThai()); // Rollback local object
+                monAn.setTrangThai(!monAn.isTrangThai()); 
             }
         }
     }
 
     /**
-     * === SỬA ĐỔI: Thêm lưu imagePath ===
+     * Lưu thay đổi (cập nhật 6 trường)
      */
     private void luuThayDoi() {
         try {
             String tenMoi = txtTenMon.getText().trim();
             double donGiaMoi = Double.parseDouble(txtDonGia.getText().trim());
-            String imagePathMoi = txtImagePath.getText().trim(); // === THÊM MỚI ===
+            String imagePathMoi = txtImagePath.getText().trim(); 
+            String loaiMonAnMoi = (String) cmbLoaiMon.getSelectedItem(); // LẤY LOẠI MÓN
             
             if (tenMoi.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Tên món không được để trống!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -294,13 +306,13 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
 
             monAn.setTenMonAn(tenMoi);
             monAn.setDonGia(donGiaMoi);
-            monAn.setImagePath(imagePathMoi); // === THÊM MỚI ===
+            monAn.setImagePath(imagePathMoi);
+            monAn.setLoaiMonAn(loaiMonAnMoi); // Cập nhật loại món ăn
 
             if (monAnDAO.updateMonAn(monAn)) {
             	JOptionPane.showMessageDialog(this, "Đã lưu thay đổi thành công!");
-                // THAY ĐỔI: Gọi callback nếu có
                 if (refreshCallback != null) {
-                    refreshCallback.run(); // << Thực thi hành động làm mới
+                    refreshCallback.run(); 
                 }
                 dispose();
             } else {
@@ -313,7 +325,6 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
     }
 
     private void xoaMonAn() {
-        // (Không thay đổi logic)
         int confirm = JOptionPane.showConfirmDialog(this,
             "Bạn có chắc muốn xóa món " + monAn.getTenMonAn() + "?\nHành động này không thể hoàn tác!",
             "Xác nhận xóa",
@@ -323,6 +334,9 @@ public class ChinhSuaMonAn_Dialog extends JDialog {
         if (confirm == JOptionPane.YES_OPTION) {
             if (monAnDAO.deleteMonAn(monAn.getMaMonAn())) {
                 JOptionPane.showMessageDialog(this, "Đã xóa món ăn thành công!");
+                if (refreshCallback != null) {
+                    refreshCallback.run();
+                }
                 dispose();
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi khi xóa món ăn! (Món ăn có thể đang nằm trong một hóa đơn)", "Lỗi", JOptionPane.ERROR_MESSAGE);

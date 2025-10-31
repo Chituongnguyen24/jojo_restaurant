@@ -2,6 +2,9 @@ package view.KhachHang;
 
 import dao.KhachHang_DAO;
 import entity.KhachHang;
+import org.jdatepicker.impl.JDatePanelImpl;
+import org.jdatepicker.impl.JDatePickerImpl;
+import org.jdatepicker.impl.UtilDateModel;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -9,9 +12,16 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Properties;
 
 public class KhachHang_EditDialog extends JDialog {
     private JTextField txtTenKH, txtSDT, txtEmail, txtDiem;
+    private JDatePickerImpl datePickerNS; // THÊM: DatePicker cho NgaySinh
     private JButton btnSave, btnCancel;
     private KhachHang_DAO khachHangDAO;
     private KhachHang khachHang;
@@ -39,7 +49,7 @@ public class KhachHang_EditDialog extends JDialog {
         lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 22));
         lblTitle.setForeground(new Color(30, 30, 35));
         
-        JLabel lblSubtitle = new JLabel("Điền thông tin khách hàng vào form bên dưới");
+        JLabel lblSubtitle = new JLabel("Cập nhật thông tin khách hàng " + khachHang.getMaKH());
         lblSubtitle.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblSubtitle.setForeground(new Color(120, 120, 130));
 
@@ -66,18 +76,23 @@ public class KhachHang_EditDialog extends JDialog {
 
         // Tên khách hàng
         formCard.add(createFieldPanel("Tên khách hàng *", 
-            txtTenKH = createStyledTextField("Nhập họ và tên", khachHang.getTenKhachHang())));
+            txtTenKH = createStyledTextField("Nhập họ và tên", khachHang.getTenKH()))); // SỬA: getTenKH
         formCard.add(Box.createVerticalStrut(18));
 
         // Số điện thoại
         formCard.add(createFieldPanel("Số điện thoại *", 
-            txtSDT = createStyledTextField("Nhập số điện thoại", khachHang.getSdt())));
+            txtSDT = createStyledTextField("Nhập số điện thoại", khachHang.getSoDienThoai()))); // SỬA: getSoDienThoai
         formCard.add(Box.createVerticalStrut(18));
 
         // Email
         formCard.add(createFieldPanel("Email *", 
             txtEmail = createStyledTextField("Nhập địa chỉ email", khachHang.getEmail())));
         formCard.add(Box.createVerticalStrut(18));
+        
+        // Ngày sinh (MỚI)
+        formCard.add(createDateFieldPanel("Ngày sinh", datePickerNS = createDatePicker()));
+        formCard.add(Box.createVerticalStrut(18));
+
 
         // Điểm tích lũy
         formCard.add(createFieldPanel("Điểm tích lũy", 
@@ -112,6 +127,78 @@ public class KhachHang_EditDialog extends JDialog {
 
         add(btnPanel, BorderLayout.SOUTH);
     }
+    
+    // THÊM: Tạo DatePicker
+    private JDatePickerImpl createDatePicker() {
+        UtilDateModel model = new UtilDateModel();
+        
+        // PRE-FILL DATA
+        LocalDate ngaySinhLD = khachHang.getNgaySinh();
+        if (ngaySinhLD != null) {
+            model.setDate(ngaySinhLD.getYear(), ngaySinhLD.getMonthValue() - 1, ngaySinhLD.getDayOfMonth());
+            model.setSelected(true);
+        } else {
+             model.setSelected(false);
+        }
+        
+        Properties p = new Properties();
+        p.put("text.today", "Hôm nay");
+        p.put("text.month", "Tháng");
+        p.put("text.year", "Năm");
+
+        JDatePanelImpl datePanelImpl = new JDatePanelImpl(model, p);
+        JDatePickerImpl picker = new JDatePickerImpl(datePanelImpl, new DateLabelFormatter());
+        
+        JFormattedTextField dateTextField = picker.getJFormattedTextField();
+        dateTextField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        dateTextField.setPreferredSize(new Dimension(400, 45));
+        dateTextField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        dateTextField.setBorder(BorderFactory.createCompoundBorder(
+            new RoundedBorder(8, new Color(220, 220, 230)),
+            BorderFactory.createEmptyBorder(12, 16, 12, 16)
+        ));
+        
+        dateTextField.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                dateTextField.setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedBorder(8, new Color(76, 175, 80)),
+                    BorderFactory.createEmptyBorder(12, 16, 12, 16)
+                ));
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                dateTextField.setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedBorder(8, new Color(220, 220, 230)),
+                    BorderFactory.createEmptyBorder(12, 16, 12, 16)
+                ));
+            }
+        });
+        
+        return picker;
+    }
+    
+    // THÊM: Panel cho DateField
+    private JPanel createDateFieldPanel(String label, JDatePickerImpl datePicker) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setOpaque(false);
+
+        JLabel lbl = new JLabel(label);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        lbl.setForeground(new Color(50, 50, 60));
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        datePicker.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+        panel.add(lbl);
+        panel.add(Box.createVerticalStrut(8));
+        panel.add(datePicker);
+
+        return panel;
+    }
+
 
     private JPanel createFieldPanel(String label, JTextField textField) {
         JPanel panel = new JPanel();
@@ -131,51 +218,9 @@ public class KhachHang_EditDialog extends JDialog {
 
         return panel;
     }
-
+    
     private JTextField createStyledTextField(String placeholder, String initialValue) {
-        JTextField field = new JTextField() {
-            private String placeholderText = placeholder;
-            private boolean showingPlaceholder = initialValue == null || initialValue.trim().isEmpty();
-
-            {
-                setText(showingPlaceholder ? placeholderText : initialValue);
-                setForeground(showingPlaceholder ? new Color(160, 160, 170) : new Color(40, 40, 50));
-                
-                addFocusListener(new FocusAdapter() {
-                    @Override
-                    public void focusGained(FocusEvent e) {
-                        if (showingPlaceholder) {
-                            setText("");
-                            setForeground(new Color(40, 40, 50));
-                            showingPlaceholder = false;
-                        }
-                        setBorder(BorderFactory.createCompoundBorder(
-                            new RoundedBorder(8, new Color(76, 175, 80)),
-                            BorderFactory.createEmptyBorder(12, 16, 12, 16)
-                        ));
-                    }
-
-                    @Override
-                    public void focusLost(FocusEvent e) {
-                        if (getText().trim().isEmpty()) {
-                            setText(placeholderText);
-                            setForeground(new Color(160, 160, 170));
-                            showingPlaceholder = true;
-                        }
-                        setBorder(BorderFactory.createCompoundBorder(
-                            new RoundedBorder(8, new Color(220, 220, 230)),
-                            BorderFactory.createEmptyBorder(12, 16, 12, 16)
-                        ));
-                    }
-                });
-            }
-
-            @Override
-            public String getText() {
-                return showingPlaceholder ? "" : super.getText();
-            }
-        };
-
+        JTextField field = new JTextField();
         field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         field.setBackground(new Color(250, 250, 252));
         field.setBorder(BorderFactory.createCompoundBorder(
@@ -184,6 +229,38 @@ public class KhachHang_EditDialog extends JDialog {
         ));
         field.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
         field.setPreferredSize(new Dimension(400, 45));
+        
+        // Thêm Placeholder Logic
+        boolean showingPlaceholder = initialValue == null || initialValue.trim().isEmpty();
+        field.setText(showingPlaceholder ? placeholder : initialValue);
+        field.setForeground(showingPlaceholder ? new Color(160, 160, 170) : new Color(40, 40, 50));
+        field.putClientProperty("placeholder", placeholder);
+
+        field.addFocusListener(new FocusAdapter() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                if (field.getText().equals(placeholder)) {
+                    field.setText("");
+                    field.setForeground(new Color(40, 40, 50));
+                }
+                field.setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedBorder(8, new Color(76, 175, 80)),
+                    BorderFactory.createEmptyBorder(12, 16, 12, 16)
+                ));
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (field.getText().trim().isEmpty()) {
+                    field.setText(placeholder);
+                    field.setForeground(new Color(160, 160, 170));
+                }
+                field.setBorder(BorderFactory.createCompoundBorder(
+                    new RoundedBorder(8, new Color(220, 220, 230)),
+                    BorderFactory.createEmptyBorder(12, 16, 12, 16)
+                ));
+            }
+        });
 
         return field;
     }
@@ -224,13 +301,25 @@ public class KhachHang_EditDialog extends JDialog {
 
         return btn;
     }
+    
+    private String getFieldValue(JTextField field) {
+        String placeholder = (String) field.getClientProperty("placeholder");
+        String text = field.getText().trim();
+        return text.equals(placeholder) ? "" : text;
+    }
 
     private void saveChanges(ActionEvent e) {
         try {
-            String tenKH = txtTenKH.getText().trim();
-            String sdt = txtSDT.getText().trim();
-            String email = txtEmail.getText().trim();
-            String diemStr = txtDiem.getText().trim();
+            String tenKH = getFieldValue(txtTenKH);
+            String sdt = getFieldValue(txtSDT);
+            String email = getFieldValue(txtEmail);
+            String diemStr = getFieldValue(txtDiem);
+            
+            Date selectedDateUtil = (Date) datePickerNS.getModel().getValue();
+            LocalDate ngaySinh = null;
+            if (selectedDateUtil != null) {
+                ngaySinh = selectedDateUtil.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            }
 
             // Validation
             if (tenKH.isEmpty() || sdt.isEmpty() || email.isEmpty()) {
@@ -255,10 +344,11 @@ public class KhachHang_EditDialog extends JDialog {
             }
 
             // Cập nhật thông tin
-            khachHang.setTenKhachHang(tenKH);
-            khachHang.setSdt(sdt);
+            khachHang.setTenKH(tenKH); // SỬA: setTenKH
+            khachHang.setSoDienThoai(sdt); // SỬA: setSoDienThoai
             khachHang.setEmail(email);
             khachHang.setDiemTichLuy(diem);
+            khachHang.setNgaySinh(ngaySinh); // MỚI: Cập nhật Ngày sinh
 
             boolean updated = khachHangDAO.updateKhachHang(khachHang);
             if (updated) {
@@ -283,6 +373,30 @@ public class KhachHang_EditDialog extends JDialog {
     private void showErrorDialog(String message) {
         JOptionPane.showMessageDialog(this, message, "Lỗi", 
             JOptionPane.ERROR_MESSAGE);
+    }
+    
+    // THÊM: DateLabelFormatter
+    private static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
+        private final java.text.SimpleDateFormat dateFormatter =
+                new java.text.SimpleDateFormat("dd/MM/yyyy");
+
+        @Override
+        public Object stringToValue(String text) throws ParseException {
+            if (text == null || text.trim().isEmpty()) return null;
+            try {
+                 return dateFormatter.parse(text);
+            } catch (ParseException e) {
+                 throw e;
+            }
+        }
+
+        @Override
+        public String valueToString(Object value) throws ParseException {
+            if (value == null) return "";
+            if (value instanceof Date) return dateFormatter.format((Date) value);
+            if (value instanceof Calendar) return dateFormatter.format(((Calendar) value).getTime());
+            return "";
+        }
     }
 
     // ===== Custom Rounded Border =====

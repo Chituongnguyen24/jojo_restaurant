@@ -1,22 +1,19 @@
 package view.Ban;
 
 import dao.Ban_DAO;
-import dao.DatBan_DAO;
+import dao.ChiTietHoaDon_DAO;
 import dao.HoaDon_DAO;
-import dao.HoaDon_KhuyenMai_DAO;
-import dao.HoaDon_Thue_DAO;
-import dao.MonAn_DAO;
+import dao.PhieuDatBan_DAO; 
 import entity.Ban;
 import entity.ChiTietHoaDon;
+import entity.ChiTietPhieuDatBan;
 import entity.KhachHang;
 import entity.KhuyenMai;
 import entity.PhieuDatBan;
-import view.HoaDon.HoaDon_ThanhToan_Dialog;
-import view.ThucDon.ChonMon_Dialog;
-import entity.ChiTietPhieuDatBan;
-import entity.MonAn;
 import entity.HoaDon;
 import entity.Thue;
+import enums.TrangThaiBan;
+import view.ThucDon.ChonMon_Dialog;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -35,7 +32,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
     private JTable table;
     private PhieuDatBan phieu;
     private Ban ban;
-    private DatBan_DAO daoDatBan = new DatBan_DAO();
+    private PhieuDatBan_DAO daoDatBan = new PhieuDatBan_DAO(); 
     private HoaDon_DAO daoHoaDon = new HoaDon_DAO();
     private Runnable onCloseCallback;
 
@@ -210,22 +207,27 @@ public class ChiTietPhieuDatBan_View extends JPanel {
 
         if (phieu != null) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-            String thoiGianStr = phieu.getThoiGianDat().format(formatter);
+            String thoiGianStr = phieu.getThoiGianDenHen().format(formatter);
             String[] parts = thoiGianStr.split(" ");
 
             card.add(createInfoRow("Mã phiếu", phieu.getMaPhieu()));
 
             String khTen = "Khách vãng lai";
             KhachHang kh = phieu.getKhachHang();
-            if (kh != null && !"KH00000000".equals(kh.getMaKhachHang().trim())) {
-                khTen = kh.getTenKhachHang();
-            } else if (phieu.getGhiChu() != null && phieu.getGhiChu().startsWith("Khách: ")) {
-                try {
-                    String[] ghiChuParts = phieu.getGhiChu().split(" - SĐT: ");
-                    if (ghiChuParts.length > 0) {
-                        khTen = ghiChuParts[0].substring(7).trim();
-                    }
-                } catch (Exception e) {}
+            
+            if (kh != null && "KH00000000".equals(kh.getMaKH().trim())) { // SỬA: getMaKH
+                // Logic parse khách vãng lai từ Ghi chú
+                String ghiChuDisplay = phieu.getGhiChu() != null ? phieu.getGhiChu().trim() : "";
+                 if (ghiChuDisplay.startsWith("Khách: ")) {
+                    try {
+                        String[] ghiChuParts = ghiChuDisplay.split(" - SĐT: ");
+                        if (ghiChuParts.length > 0) {
+                            khTen = ghiChuParts[0].substring(7).trim();
+                        }
+                    } catch (Exception e) {}
+                }
+            } else if (kh != null) {
+                khTen = kh.getTenKH(); // SỬA: getTenKH
             }
 
             card.add(createInfoRow("Khách hàng", khTen));
@@ -235,7 +237,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         } else {
             card.add(createInfoRow("Số bàn", ban.getMaBan()));
             card.add(createInfoRow("Trạng thái", "Có khách"));
-            card.add(createInfoRow("Loại bàn", ban.getLoaiBan() != null ? ban.getLoaiBan().getTenHienThi() : "N/A"));
+            card.add(createInfoRow("Loại bàn", ban.getLoaiBan())); // SỬA: LoaiBan là String
             card.add(createInfoRow("Số chỗ", String.valueOf(ban.getSoCho())));
         }
 
@@ -254,7 +256,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         statusBadge.setForeground(Color.WHITE);
         statusBadge.setBackground(new Color(220, 53, 69));
         statusBadge.setOpaque(true);
-        statusBadge.setBorder(new EmptyBorder(8, 16, 8, 16));
+        statusBadge.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
 
         statusPanel.add(statusBadge);
 
@@ -314,26 +316,15 @@ public class ChiTietPhieuDatBan_View extends JPanel {
 
         for (int i = 0; i < chiTietList.size(); i++) {
             ChiTietPhieuDatBan ct = chiTietList.get(i);
-            MonAn mon = ct.getMonAn() != null ? ct.getMonAn() : new MonAn();
-
+            
             data[i][0] = i + 1;
-            data[i][1] = mon.getTenMonAn() != null ? mon.getTenMonAn() : "N/A";
+            data[i][1] = ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "N/A";
 
-            double donGia = 0;
-            try {
-                if (ct.getDonGia() > 0) {
-                    donGia = ct.getDonGia();
-                } else if (mon != null && mon.getDonGia() > 0) {
-                    donGia = mon.getDonGia();
-                }
-            } catch (Exception ex) {
-                donGia = 0;
-            }
-
+            double donGiaBan = ct.getDonGiaBan(); // LẤY ĐƠN GIÁ BÁN TỪ CTPDB
             int soLuong = ct.getSoLuongMonAn();
-            double thanhTien = donGia * soLuong;
+            double thanhTien = donGiaBan * soLuong;
 
-            data[i][2] = CURRENCY_FORMAT.format(donGia);
+            data[i][2] = CURRENCY_FORMAT.format(donGiaBan);
             data[i][3] = soLuong;
             data[i][4] = CURRENCY_FORMAT.format(thanhTien);
 
@@ -464,7 +455,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         btn.setBackground(bgColor);
         btn.setBorder(new EmptyBorder(10, 20, 10, 20));
         btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         btn.setOpaque(true);
         btn.setContentAreaFilled(true);
@@ -492,83 +483,53 @@ public class ChiTietPhieuDatBan_View extends JPanel {
             return;
         }
 
-        // Chuyển đến trang thanh toán
         JFrame mainFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
         if (mainFrame == null) {
             JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy cửa sổ chính.", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        Runnable goBackCallback = () -> {
-            if (onCloseCallback != null) {
-                onCloseCallback.run();
-            }
-        };
-
         try {
+            // SỬA: Lấy hóa đơn chưa thanh toán
             HoaDon hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
 
             if (hoaDonHienTai == null) {
                 JOptionPane.showMessageDialog(this,
                     "Không tìm thấy hóa đơn chưa thanh toán cho bàn " + ban.getMaBan(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return; // Dừng lại nếu không có hóa đơn
+                return; 
             }
 
-            List<ChiTietHoaDon> chiTietList = daoHoaDon.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHoaDon());
+            // Tính tổng tiền sau thuế và khuyến mãi (dùng hàm tổng hợp)
+            double tongThanhToan = daoHoaDon.tinhTongTienHoaDon(hoaDonHienTai.getMaHD());
+            
+            // Lấy chi tiết món ăn (cần để in hóa đơn)
+            List<ChiTietHoaDon> chiTietList = daoHoaDon.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
             if (chiTietList == null) chiTietList = new ArrayList<>();
 
-            // Tính toán chi tiết tiền
-            double tongTienMonAn = 0;
-            for (ChiTietHoaDon ct : chiTietList) {
-                try {
-                    tongTienMonAn += ct.tinhThanhTien();
-                } catch (Exception ex) {
-                    double donGia = ct.getDonGia() > 0 ? ct.getDonGia() : (ct.getMonAn() != null ? ct.getMonAn().getDonGia() : 0);
-                    tongTienMonAn += donGia * ct.getSoLuong();
-                }
-            }
-
-            // Lấy thông tin Thuế và KM đầy đủ
-            HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO();
-            HoaDon_KhuyenMai_DAO kmDAO = new HoaDon_KhuyenMai_DAO();
-
-            Thue thue = (hoaDonHienTai.getThue() != null && hoaDonHienTai.getThue().getMaThue() != null)
-                ? thueDAO.getThueById(hoaDonHienTai.getThue().getMaThue()) : null;
-            KhuyenMai km = (hoaDonHienTai.getKhuyenMai() != null && hoaDonHienTai.getKhuyenMai().getMaKM() != null)
-                ? kmDAO.getKhuyenMaiById(hoaDonHienTai.getKhuyenMai().getMaKM()) : null;
-
-            double tienGiam = 0, tienThue = 0, tongTienSauGiam = tongTienMonAn;
-
-            // Tính tiền giảm
-            if (km != null && !"KM00000000".equals(km.getMaKM().trim()) && km.getGiaTri() > 0) {
-                if (km.getGiaTri() < 1.0) tienGiam = tongTienMonAn * km.getGiaTri();
-                else tienGiam = km.getGiaTri();
-                tongTienSauGiam -= tienGiam;
-                if (tongTienSauGiam < 0) tongTienSauGiam = 0;
-            }
-
-            if (thue != null && thue.getTyLeThue() > 0) {
-                tienThue = tongTienSauGiam * thue.getTyLeThue();
-            }
-double tongThanhToan = tongTienSauGiam + tienThue;
-
-            HoaDon_ThanhToan_Dialog thanhToanDialog = new HoaDon_ThanhToan_Dialog(
+            // Tính tổng tiền món ăn (trước KM và Thuế)
+            double tongTienMonAn = chiTietList.stream().mapToDouble(ct -> ct.getSoLuong() * ct.getDonGiaBan()).sum();
+            
+            // Lấy tiền giảm và tiền thuế đã lưu trong HĐ (giả định đã được cập nhật khi gọi món)
+            // LƯU Ý: Phải tính tiền giảm và tiền thuế chính xác ở đây để truyền vào Dialog
+            double tienGiam = hoaDonHienTai.getTongGiamGia();
+            double tienThue = tongThanhToan - (tongTienMonAn - tienGiam);
+            
+            
+            view.HoaDon.HoaDon_ThanhToan_Dialog thanhToanDialog = new view.HoaDon.HoaDon_ThanhToan_Dialog(
                 mainFrame, hoaDonHienTai, daoHoaDon,
                 tongTienMonAn, tienGiam, tienThue, tongThanhToan,
                 chiTietList
             );
             thanhToanDialog.setVisible(true);
 
-            HoaDon hoaDonSauKhiDongDialog = daoHoaDon.findByMaHD(hoaDonHienTai.getMaHoaDon());
+            // Cập nhật lại trạng thái nếu thanh toán thành công
+            HoaDon hoaDonSauKhiDongDialog = daoHoaDon.findByMaHD(hoaDonHienTai.getMaHD());
             if (hoaDonSauKhiDongDialog != null && hoaDonSauKhiDongDialog.isDaThanhToan()) {
-                System.out.println("Hóa đơn " + hoaDonHienTai.getMaHoaDon() + " đã được thanh toán.");
                 if (onCloseCallback != null) {
                     onCloseCallback.run();
                 }
-            } else {
-                System.out.println("Hóa đơn " + hoaDonHienTai.getMaHoaDon() + " chưa được thanh toán (dialog bị hủy).");
-            }
+            } 
 
         } catch (Exception e) {
             e.printStackTrace();

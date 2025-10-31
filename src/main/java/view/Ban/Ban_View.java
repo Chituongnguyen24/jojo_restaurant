@@ -1,7 +1,10 @@
 package view.Ban;
 
 import dao.Ban_DAO;
+import dao.KhuVuc_DAO; // THÊM
 import entity.Ban;
+import entity.KhuVuc; // THÊM
+import enums.LoaiBan;
 
 import java.awt.BasicStroke;
 import java.awt.Graphics;
@@ -18,10 +21,12 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 public class Ban_View extends JPanel {
 
     private Ban_DAO banDAO;
+    private KhuVuc_DAO khuVucDAO; // THÊM
     private Map<String, List<Ban>> danhSachBanTheoKhuVuc;
     private Map<String, Integer> soLuongBanTheoKhuVuc;
     private List<String> tenKhuVuc;
@@ -68,6 +73,7 @@ public class Ban_View extends JPanel {
 
     public Ban_View() {
         banDAO = new Ban_DAO();
+        khuVucDAO = new KhuVuc_DAO(); // KHỞI TẠO DAO KHU VỰC
         danhSachBanTheoKhuVuc = new LinkedHashMap<>();
         soLuongBanTheoKhuVuc = new LinkedHashMap<>();
         tenKhuVuc = new ArrayList<>();
@@ -117,24 +123,39 @@ public class Ban_View extends JPanel {
     }
 
     private void taiDuLieuTuDB() {
-        soLuongBanTheoKhuVuc = banDAO.getSoBanTheoKhuVuc();
+        // Lấy danh sách KHUVUC (maKV -> tenKV)
+        Map<String, String> kvMap = banDAO.getDanhSachKhuVuc();
+        
+        // Lấy toàn bộ danh sách bàn
+        List<Ban> tatCaBan = banDAO.getAllBan();
+        
+        // 1. Phân loại bàn theo Tên Khu vực (tenKV)
+        danhSachBanTheoKhuVuc.clear();
+        for (Ban ban : tatCaBan) {
+             String maKV = ban.getKhuVuc().getMaKhuVuc();
+             String tenKV = kvMap.getOrDefault(maKV, "Không rõ");
+             
+             danhSachBanTheoKhuVuc
+                .computeIfAbsent(tenKV, k -> new ArrayList<>())
+                .add(ban);
+        }
+        
+        // 2. Cập nhật tên Khu vực và số lượng bàn
+        soLuongBanTheoKhuVuc = danhSachBanTheoKhuVuc.entrySet().stream()
+            .collect(Collectors.toMap(
+                Map.Entry::getKey, 
+                e -> e.getValue().size(),
+                (oldValue, newValue) -> newValue,
+                LinkedHashMap::new
+            ));
+            
         tenKhuVuc = new ArrayList<>(soLuongBanTheoKhuVuc.keySet());
+
+        // 3. Cập nhật khu vực hiện tại
         if (khuVucHienTai == null && !tenKhuVuc.isEmpty()) {
             khuVucHienTai = tenKhuVuc.get(0);
         } else if (tenKhuVuc.isEmpty()) {
             khuVucHienTai = "Không có dữ liệu";
-        }
-        danhSachBanTheoKhuVuc.clear();
-        Map<String, String> kvMap = banDAO.getDanhSachKhuVuc();
-        for (String tenKV : tenKhuVuc) {
-            String maKV = kvMap.entrySet().stream()
-                    .filter(entry -> entry.getValue().equals(tenKV))
-                    .map(Map.Entry::getKey)
-                    .findFirst()
-                    .orElse(null);
-            if (maKV != null) {
-                danhSachBanTheoKhuVuc.put(tenKV, banDAO.getBanTheoKhuVuc(maKV));
-            }
         }
     }
 
@@ -338,7 +359,7 @@ public class Ban_View extends JPanel {
         headerPanel.add(titlePanel, BorderLayout.CENTER);
         headerPanel.add(buttonWrapper, BorderLayout.EAST);
 
-        pnlLuoiBan = new JPanel(new GridLayout(0, 4, 20, 20));
+        pnlLuoiBan = new JPanel(new GridLayout(0, 4, 20, 20)); // SỬA: pnlLuoiBan nên là FlowLayout để tự gói gọn
         pnlLuoiBan.setOpaque(false);
 
         TheBoTron tablesContainer = new TheBoTron(new BorderLayout(), 20);
@@ -373,7 +394,10 @@ public class Ban_View extends JPanel {
 
     private void capNhatHienThiLuoiBan() {
         pnlLuoiBan.removeAll(); 
+        
+        // SỬA: Đảm bảo layout là GridLayout hoặc FlowLayout
         pnlLuoiBan.setLayout(new GridLayout(0, 4, 20, 20));
+        
         List<Ban> tables = danhSachBanTheoKhuVuc.get(khuVucHienTai);
         if (tables != null && !tables.isEmpty()) {
             for (Ban b : tables) { 
@@ -406,7 +430,15 @@ public class Ban_View extends JPanel {
         lblIcon.setHorizontalAlignment(SwingConstants.CENTER);
         lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        String loaiBanTen = ban.getLoaiBan().getTenHienThi();
+        // SỬA: Lấy tên hiển thị từ Enum LoaiBan dựa trên String raw DB
+        String loaiBanRaw = ban.getLoaiBan();
+        String loaiBanTen;
+        try {
+            loaiBanTen = LoaiBan.fromString(loaiBanRaw).getTenHienThi();
+        } catch (IllegalArgumentException e) {
+            loaiBanTen = loaiBanRaw;
+        }
+
         if (loaiBanTen.equalsIgnoreCase("Bàn VIP")) {
             loaiBanTen = "VIP";
         }

@@ -8,7 +8,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
-import dao.HoaDon_Thue_DAO;
+import dao.Thue_DAO; // SỬA: Import đúng DAO
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -21,14 +21,14 @@ public class Thue_TraCuu_View extends JPanel {
     private DefaultTableModel model;
     private JTextField txtSearch;
     private JComboBox<String> cboFilter;
-    private HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO();
+    private Thue_DAO thueDAO = new Thue_DAO(); // SỬA: Khởi tạo đúng DAO
 
     // Stats Labels
     private JLabel lblTotal; 
     private JLabel lblHoatDong; 
     private JLabel lblKhongHoatDong;  
 
-    // Màu sắc và Styles chung (ĐỒNG BỘ VỚI KHÁCH HÀNG)
+    // Màu sắc và Styles chung
     private static final Color PRIMARY_BLUE = new Color(41, 128, 185); 
     private static final Color SUCCESS_GREEN = new Color(46, 204, 113);
     private static final Color WARNING_ORANGE = new Color(243, 156, 18);
@@ -325,7 +325,7 @@ public class Thue_TraCuu_View extends JPanel {
         
         // --- LỌC DỮ LIỆU ĐỂ HIỂN THỊ (Logic chính) ---
         List<Thue> filtered = dsThue.stream().filter(thue -> {
-            String ma = safeLower(thue.getMaThue());
+            String ma = safeLower(thue.getMaSoThue());
             String ten = safeLower(thue.getTenThue());
             String moTa = safeLower(thue.getMoTa());
 
@@ -334,7 +334,6 @@ public class Thue_TraCuu_View extends JPanel {
                     || ten.contains(keyword)
                     || moTa.contains(keyword);
 
-            String statusStr = thue.isTrangThai() ? "Hoạt động" : "Không hoạt động";
             boolean matchFilter = filter.equals("Tất cả") 
                     || (filter.equals("Hoạt động") && thue.isTrangThai())
                     || (filter.equals("Không hoạt động") && !thue.isTrangThai());
@@ -344,9 +343,10 @@ public class Thue_TraCuu_View extends JPanel {
 
         for (Thue thue : filtered) {
             String statusStr = thue.isTrangThai() ? "Hoạt động" : "Không hoạt động";
-            String tyLeStr = String.format("%.1f%%", thue.getTyLeThue() * 100);
+            // SỬA: Chuyển đổi double (ví dụ: 0.08) sang hiển thị phần trăm (ví dụ: 8.0%)
+            String tyLeStr = String.format("%.1f%%", thue.getTyLeThue()); 
             model.addRow(new Object[]{
-                    thue.getMaThue(),
+                    thue.getMaSoThue(),
                     thue.getTenThue(),
                     tyLeStr,
                     thue.getMoTa(),

@@ -1,35 +1,55 @@
 package entity;
 
+import java.time.LocalDate;
+
 public class KhachHang {
-    private String maKhachHang;
-    private String tenKhachHang;
-    private String sdt;
+    private String maKH;
+    private String tenKH;
+    private String soDienThoai;
     private String email;
+    private LocalDate ngaySinh;
     private int diemTichLuy;
     private boolean laThanhVien;
 
-    public String getMaKhachHang() {
-        return maKhachHang;
+    public KhachHang() {
     }
 
-    public void setMaKhachHang(String maKhachHang) {
-        this.maKhachHang = maKhachHang;
+    public KhachHang(String maKH) {
+        this.maKH = maKH;
     }
 
-    public String getTenKhachHang() {
-        return tenKhachHang;
+    public KhachHang(String maKH, String tenKH, String soDienThoai, String email, LocalDate ngaySinh, int diemTichLuy, boolean laThanhVien) {
+        this.maKH = maKH;
+        this.tenKH = tenKH;
+        this.soDienThoai = soDienThoai;
+        this.email = email;
+        this.ngaySinh = ngaySinh;
+        this.diemTichLuy = diemTichLuy;
+        this.laThanhVien = laThanhVien;
     }
 
-    public void setTenKhachHang(String tenKhachHang) {
-        this.tenKhachHang = tenKhachHang;
+    public String getMaKH() {
+        return maKH;
     }
 
-    public String getSdt() {
-        return sdt;
+    public void setMaKH(String maKH) {
+        this.maKH = maKH;
     }
 
-    public void setSdt(String sdt) {
-        this.sdt = sdt;
+    public String getTenKH() {
+        return tenKH;
+    }
+
+    public void setTenKH(String tenKH) {
+        this.tenKH = tenKH;
+    }
+
+    public String getSoDienThoai() {
+        return soDienThoai;
+    }
+
+    public void setSoDienThoai(String soDienThoai) {
+        this.soDienThoai = soDienThoai;
     }
 
     public String getEmail() {
@@ -38,6 +58,14 @@ public class KhachHang {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public LocalDate getNgaySinh() {
+        return ngaySinh;
+    }
+
+    public void setNgaySinh(LocalDate ngaySinh) {
+        this.ngaySinh = ngaySinh;
     }
 
     public int getDiemTichLuy() {
@@ -58,24 +86,19 @@ public class KhachHang {
 
     @Override
     public String toString() {
-        return "KhachHang [maKhachHang=" + maKhachHang + ", tenKhachHang=" + tenKhachHang + ", sdt=" + sdt
-                + ", email=" + email + ", diemTichLuy=" + diemTichLuy + ", laThanhVien=" + laThanhVien + "]";
+        return tenKH + " (" + maKH + ")";
     }
 
-    public KhachHang(String maKhachHang, String tenKhachHang, String sdt, String email, int diemTichLuy, boolean laThanhVien) {
-        this.maKhachHang = maKhachHang;
-        this.tenKhachHang = tenKhachHang;
-        this.sdt = sdt;
-        this.email = email;
-        this.diemTichLuy = diemTichLuy;
-        this.laThanhVien = laThanhVien;
+    @Override
+    public int hashCode() {
+        return maKH.hashCode();
     }
 
-    public KhachHang() {}
-
-	public KhachHang(String maKhachHang) {
-		super();
-		this.maKhachHang = maKhachHang;
-	}
-    
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        KhachHang other = (KhachHang) obj;
+        return maKH.equals(other.maKH);
+    }
 }

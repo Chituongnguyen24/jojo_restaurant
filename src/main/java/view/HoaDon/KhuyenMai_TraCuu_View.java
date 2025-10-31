@@ -8,7 +8,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
-import dao.HoaDon_KhuyenMai_DAO;
+import dao.KhuyenMai_DAO;
 
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -22,7 +22,7 @@ public class KhuyenMai_TraCuu_View extends JPanel {
     private DefaultTableModel model;
     private JTextField txtSearch;
     private JComboBox<String> cboFilter;
-    private HoaDon_KhuyenMai_DAO khuyenMaiDAO = new HoaDon_KhuyenMai_DAO();
+    private KhuyenMai_DAO khuyenMaiDAO = new KhuyenMai_DAO();
 
     // Stats Labels
     private JLabel lblTotal; 
@@ -205,8 +205,8 @@ public class KhuyenMai_TraCuu_View extends JPanel {
     }
 
     private JPanel createTableSection() {
-        // Cột: Mã KM, Tên KM, Giá trị, Ngày bắt đầu, Ngày kết thúc, Trạng thái
-        String[] cols = {"Mã KM", "Tên KM", "Giá trị", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái"};
+        // SỬA: Thêm cột Loại KM
+        String[] cols = {"Mã KM", "Tên KM", "Giá trị", "Loại KM", "Ngày bắt đầu", "Ngày kết thúc", "Trạng thái"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -234,12 +234,12 @@ public class KhuyenMai_TraCuu_View extends JPanel {
         tableTitle.setForeground(TEXT_PRIMARY);
 
         tableHeader.add(tableTitle, BorderLayout.WEST);
-        tableCard.add(tableHeader, BorderLayout.NORTH);
-        tableCard.add(scrollPane, BorderLayout.CENTER);
+        tableCard.add(tableHeader, BorderLayout.CENTER);
+        tableCard.add(scrollPane, BorderLayout.SOUTH); // SỬA: Dùng CENTER
 
         return tableCard;
     }
-
+    
     private void setupTableStyle() {
         table.setRowHeight(48);
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -267,9 +267,9 @@ public class KhuyenMai_TraCuu_View extends JPanel {
         // Áp dụng Cell Renderer
         table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); // Mã KM
         table.getColumnModel().getColumn(2).setCellRenderer(rightRenderer); // Giá trị
-        table.getColumnModel().getColumn(3).setCellRenderer(centerRenderer); // Ngày bắt đầu
-        table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer); // Ngày kết thúc
-        table.getColumnModel().getColumn(5).setCellRenderer(centerRenderer); // Trạng thái
+        table.getColumnModel().getColumn(4).setCellRenderer(centerRenderer); // Ngày bắt đầu
+        table.getColumnModel().getColumn(5).setCellRenderer(centerRenderer); // Ngày kết thúc
+        table.getColumnModel().getColumn(6).setCellRenderer(centerRenderer); // Trạng thái
         
         // Renderer đặc biệt cho cột Trạng thái
         DefaultTableCellRenderer statusRenderer = new DefaultTableCellRenderer() {
@@ -282,8 +282,8 @@ public class KhuyenMai_TraCuu_View extends JPanel {
                     setHorizontalAlignment(CENTER);
                     String text = value.toString();
                     
-                    if (column == 5) { // Cột Trạng thái
-                        if (text.equals("Hoạt động")) {
+                    if (column == 6) { // Cột Trạng thái
+                        if (text.equals("Hoạt động") || text.equals("Luôn áp dụng")) {
                             c.setForeground(SUCCESS_GREEN.darker());
                         } else if (text.equals("Hết hạn")) {
                             c.setForeground(RED_ORANGE.darker());
@@ -297,24 +297,25 @@ public class KhuyenMai_TraCuu_View extends JPanel {
             }
         };
         
-        table.getColumnModel().getColumn(5).setCellRenderer(statusRenderer); // Trạng thái
+        table.getColumnModel().getColumn(6).setCellRenderer(statusRenderer); // Trạng thái
 
         // Điều chỉnh độ rộng cột
         table.getColumnModel().getColumn(0).setPreferredWidth(80); // Mã KM
+        table.getColumnModel().getColumn(1).setPreferredWidth(150); // Tên KM
         table.getColumnModel().getColumn(2).setPreferredWidth(100); // Giá trị
-        table.getColumnModel().getColumn(3).setPreferredWidth(120); // Ngày bắt đầu
-        table.getColumnModel().getColumn(4).setPreferredWidth(120); // Ngày kết thúc
-        table.getColumnModel().getColumn(5).setPreferredWidth(120); // Trạng thái
+        table.getColumnModel().getColumn(3).setPreferredWidth(100); // Loại KM
+        table.getColumnModel().getColumn(4).setPreferredWidth(120); // Ngày bắt đầu
+        table.getColumnModel().getColumn(5).setPreferredWidth(120); // Ngày kết thúc
+        table.getColumnModel().getColumn(6).setPreferredWidth(120); // Trạng thái
     }
 
     private String getCurrentTrangThai(KhuyenMai km) {
-        if (km.getMaKM().equals("KM00000000")) {
-            return "Hoạt động";
-        }
+        if (km.getMaKM().equals("KM00000000")) return "Luôn áp dụng";
+
         LocalDate now = LocalDate.now();
-        if (now.isBefore(km.getNgayBatDau())) {
+        if (now.isBefore(km.getNgayApDung())) {
             return "Sắp bắt đầu";
-        } else if (now.isAfter(km.getNgayKetThuc())) {
+        } else if (now.isAfter(km.getNgayHetHan())) {
             return "Hết hạn";
         } else {
             return "Hoạt động";
@@ -337,7 +338,7 @@ public class KhuyenMai_TraCuu_View extends JPanel {
 
         for (KhuyenMai km : dsKM) {
             String trangThai = getCurrentTrangThai(km);
-            if ("Hoạt động".equals(trangThai)) countHoatDong++;
+            if ("Hoạt động".equals(trangThai) || "Luôn áp dụng".equals(trangThai)) countHoatDong++;
             else if ("Sắp bắt đầu".equals(trangThai)) countSapBatDau++;
             else if ("Hết hạn".equals(trangThai)) countHetHan++;
         }
@@ -350,7 +351,7 @@ public class KhuyenMai_TraCuu_View extends JPanel {
         
         // --- LỌC DỮ LIỆU ĐỂ HIỂN THỊ (Logic chính) ---
         List<KhuyenMai> filtered = dsKM.stream().filter(km -> {
-            String ten = safeLower(km.getTenKM());
+            String ten = safeLower(km.getMoTa());
             String ma = safeLower(km.getMaKM());
             String trangThai = getCurrentTrangThai(km); 
 
@@ -359,7 +360,7 @@ public class KhuyenMai_TraCuu_View extends JPanel {
                     || ma.contains(keyword);
 
             boolean matchFilter = filter.equals("Tất cả") 
-                    || (filter.equals("Hoạt động") && trangThai.equals("Hoạt động"))
+                    || (filter.equals("Hoạt động") && (trangThai.equals("Hoạt động") || trangThai.equals("Luôn áp dụng")))
                     || (filter.equals("Sắp bắt đầu") && trangThai.equals("Sắp bắt đầu"))
                     || (filter.equals("Hết hạn") && trangThai.equals("Hết hạn"));
 
@@ -368,12 +369,20 @@ public class KhuyenMai_TraCuu_View extends JPanel {
 
         for (KhuyenMai km : filtered) {
             String trangThai = getCurrentTrangThai(km);
+            String giaTriHienThi;
+            if (km.getMucKM() < 1.0) {
+                 giaTriHienThi = String.format("%.0f%%", km.getMucKM() * 100);
+            } else {
+                 giaTriHienThi = String.format("%,.0f VNĐ", km.getMucKM());
+            }
+
             model.addRow(new Object[]{
                     km.getMaKM(),
-                    km.getTenKM(),
-                    km.getGiaTri(),
-                    km.getNgayBatDau().toString(),
-                    km.getNgayKetThuc().toString(),
+                    km.getMoTa(),
+                    giaTriHienThi,
+                    km.getLoaiKM(), // MỚI
+                    km.getNgayApDung().toString(),
+                    km.getNgayHetHan().toString(),
                     trangThai
             });
         }

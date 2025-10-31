@@ -76,11 +76,11 @@ public class KhachHang_View extends JPanel {
         statsPanel.add(createStatBox(lblBac, "Bạc", new Color(156, 39, 176)));
 
         // ===== TABLE =====
-        String[] cols = {"Mã KH", "Thông tin", "Liên hệ", "Email", "Điểm tích lũy", "Hạng", "Trạng thái", "Sửa", "Xóa"};
+        String[] cols = {"Mã KH", "Tên KH", "SĐT", "Email", "Điểm tích lũy", "Hạng", "Trạng thái", "Sửa", "Xóa"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 7 || column == 8;  // Fix: Chỉnh đúng index (Sửa=7, Xóa=8)
+                return column == 7 || column == 8;  // Sửa=7, Xóa=8
             }
         };
 
@@ -148,28 +148,16 @@ public class KhachHang_View extends JPanel {
 
     // ===== Load dữ liệu khách hàng =====
     private void loadKhachHangData() {
-        loadKhachHangData(null);  
-    }
-
-    private void loadKhachHangData(String keyword) {
-//        System.out.println("[VIEW] Bắt đầu load dữ liệu, keyword: '" + (keyword != null ? keyword : "null") + "'");  // Log debug (có thể bỏ sau)
         model.setRowCount(0);
-        List<KhachHang> dsKH;
-        if (keyword == null || keyword.isEmpty()) {
-            dsKH = khachHangDAO.getAllKhachHang();
-        } else {
-            dsKH = khachHangDAO.findKhachHang(keyword);  
-        }
-
-//        System.out.println("[VIEW] Nhận dsKH size: " + dsKH.size());  // Log debug
+        List<KhachHang> dsKH = khachHangDAO.getAllKhachHang();
 
         for (KhachHang kh : dsKH) {
-            String hang = getHang(kh.getDiemTichLuy());  // Sử dụng method đồng bộ
+            String hang = getHang(kh.getDiemTichLuy());
             String trangThai = kh.isLaThanhVien() ? "Thành viên" : "Khách thường";
             model.addRow(new Object[]{
-                    kh.getMaKhachHang(),
-                    kh.getTenKhachHang(),
-                    kh.getSdt(),
+                    kh.getMaKH(), // SỬA: getMaKH
+                    kh.getTenKH(), // SỬA: getTenKH
+                    kh.getSoDienThoai(), // SỬA: getSoDienThoai
                     kh.getEmail(),
                     kh.getDiemTichLuy(),
                     hang,
@@ -177,20 +165,19 @@ public class KhachHang_View extends JPanel {
                     "Sửa",
                     "Xóa"
             });
-//            System.out.println("[VIEW] Đã add row cho KH: " + kh.getMaKhachHang());  // Log debug
         }
-//        System.out.println("[VIEW] Tổng rows trong model: " + model.getRowCount());  // Log debug
     }
 
     // ===== Thống kê =====
     private void loadThongKe() {
         List<KhachHang> dsKH = khachHangDAO.getAllKhachHang();
 
-        int tong = dsKH.size();
+        int tong = 0;
         int dong = 0, vang = 0, bac = 0;
 
         for (KhachHang kh : dsKH) {
-            String h = getHang(kh.getDiemTichLuy());  // Đồng bộ với DAO
+            tong++; // Đếm tất cả khách hàng thành viên
+            String h = getHang(kh.getDiemTichLuy()); 
             if ("Đồng".equals(h)) dong++;
             else if ("Vàng".equals(h)) vang++;
             else if ("Bạc".equals(h)) bac++;
@@ -202,7 +189,6 @@ public class KhachHang_View extends JPanel {
         lblBac.setText(String.valueOf(bac));
     }
 
-    // Fix: Đồng bộ logic hạng với DAO
     private String getHang(int diem) {
         return khachHangDAO.xepHangKhachHang(diem);
     }

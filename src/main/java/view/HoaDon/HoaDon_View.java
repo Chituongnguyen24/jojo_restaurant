@@ -1,9 +1,9 @@
 package view.HoaDon;
 
 import dao.HoaDon_DAO;
-import dao.HoaDon_KhuyenMai_DAO;
-import dao.HoaDon_Thue_DAO;
 import dao.KhachHang_DAO;
+import dao.Thue_DAO; // SỬA: Dùng Thue_DAO
+import dao.KhuyenMai_DAO; // SỬA: Dùng KhuyenMai_DAO
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
 import entity.KhachHang;
@@ -47,6 +47,7 @@ public class HoaDon_View extends JPanel {
         titlePanel.add(title);
         titlePanel.add(subtitle);
 
+        // Nút Thanh toán hóa đơn (ADD) đã được xóa khỏi đây theo yêu cầu trước đó
         header.add(titlePanel, BorderLayout.WEST);
         add(header, BorderLayout.NORTH);
 
@@ -68,6 +69,9 @@ public class HoaDon_View extends JPanel {
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
+                // Chỉ cho sửa, xóa và thanh toán nếu chưa thanh toán
+                boolean isPaid = "Đã thanh toán".equals(getValueAt(row, 5));
+                if (isPaid && (column == 6 || column == 7)) return false; // Không cho TT/Sửa HD đã TT
                 return column == 6 || column == 7 || column == 8;
             }
         };
@@ -91,11 +95,11 @@ public class HoaDon_View extends JPanel {
         table.getColumn("Xóa").setCellRenderer(new ButtonRenderer("Xóa", new Color(244, 67, 54), Color.WHITE));
         table.getColumn("Xóa").setCellEditor(new ButtonEditor(new JCheckBox(), "Xóa"));
 
-        table.getColumnModel().getColumn(6).setPreferredWidth(100); // Thanh Toán
+        table.getColumnModel().getColumn(6).setPreferredWidth(100); 
         table.getColumnModel().getColumn(6).setMaxWidth(100);
-        table.getColumnModel().getColumn(7).setPreferredWidth(80);  // Sửa
+        table.getColumnModel().getColumn(7).setPreferredWidth(80);  
         table.getColumnModel().getColumn(7).setMaxWidth(80);
-        table.getColumnModel().getColumn(8).setPreferredWidth(80);  // Xóa
+        table.getColumnModel().getColumn(8).setPreferredWidth(80);  
         table.getColumnModel().getColumn(8).setMaxWidth(80);
 
         JScrollPane scroll = new JScrollPane(table);
@@ -132,20 +136,24 @@ public class HoaDon_View extends JPanel {
         model.setRowCount(0);
         List<HoaDon> dsHD = hoaDonDAO.getAllHoaDon();
         for (HoaDon hd : dsHD) {
-            if (!hd.isDaThanhToan()) {
-                KhachHang kh = null;
-                if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
-                    kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
-                }
-                String tenKH = (kh != null) ? kh.getTenKhachHang() : "Khách lẻ";
-                double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon());
-                String trangThai = "Chưa thanh toán";
+            
+            KhachHang kh = null;
+            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) { // SỬA: getMaKH
+                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH()); // SỬA: getMaKH
+            }
+            String tenKH = (kh != null) ? kh.getTenKH() : "Khách lẻ"; // SỬA: getTenKH
+            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD()); // SỬA: getMaHD
+            String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
+            
+            // Chỉ hiển thị HD CHƯA thanh toán (như cũ), nhưng hiển thị cột Trạng thái chính xác.
+            // Nếu muốn hiển thị tất cả, bỏ if
+            // if (!hd.isDaThanhToan()) { 
                 model.addRow(new Object[]{
-                        hd.getMaHoaDon(), tenKH, hd.getNgayLap(),
-                        String.format("%,.0f VNĐ", tongTien), hd.getPhuongThuc(), trangThai,
+                        hd.getMaHD(), tenKH, hd.getNgayLapHoaDon(), // SỬA: getMaHD, getNgayLapHoaDon
+                        String.format("%,.0f VNĐ", tongTien), hd.getPhuongThucThanhToan(), trangThai, // SỬA: getPhuongThucThanhToan
                         "Thanh Toán", "Sửa", "Xóa"
                 });
-            }
+            // }
         }
     }
 
@@ -154,7 +162,7 @@ public class HoaDon_View extends JPanel {
         int chuaTT = 0, daTT = 0;
         double doanhThu = 0;
         for (HoaDon hd : dsHD) {
-            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHoaDon()); 
+            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD()); // SỬA: getMaHD
             if (hd.isDaThanhToan()) { daTT++; doanhThu += tongTien; }
             else { chuaTT++; }
         }
@@ -235,6 +243,11 @@ public class HoaDon_View extends JPanel {
             button.addActionListener(e -> fireEditingStopped());
         }
         @Override public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+            String trangThai = (String) table.getValueAt(row, 5);
+             if (("Đã thanh toán".equals(trangThai)) && (column == 6 || column == 7)) {
+                // Không cho chỉnh sửa nút nếu đã thanh toán và là cột TT/Sửa
+                return null; 
+            }
             button.setText(type); button.setFont(new Font("Segoe UI", Font.BOLD, 12));
             button.setForeground(Color.WHITE); button.setCursor(new Cursor(Cursor.HAND_CURSOR));
             isPushed = true; return button;
@@ -246,52 +259,62 @@ public class HoaDon_View extends JPanel {
                 String maHD = table.getValueAt(selectedRow, 0).toString();
 
                 if (type.equals("Thanh Toán")) {
+                    // Kiểm tra lại trạng thái trước khi mở dialog
+                    String trangThai = (String) table.getValueAt(selectedRow, 5);
+                    if ("Đã thanh toán".equals(trangThai)) {
+                        JOptionPane.showMessageDialog(null, "Hóa đơn này đã được thanh toán.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                        isPushed = false; return type;
+                    }
+
                     SwingUtilities.invokeLater(() -> {
                         HoaDon hd = hoaDonDAO.findByMaHD(maHD);
                         if (hd != null) {
                             KhachHang kh = null;
-                            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKhachHang() != null) {
-                                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKhachHang());
+                            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) { // SỬA: getMaKH
+                                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH()); // SỬA: getMaKH
                             }
                             hd.setKhachHang(kh); 
+                            
                             List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(maHD);
+                            
                             double tongTienMonAn = 0;
                             for (ChiTietHoaDon ct : chiTietList) {
-                                tongTienMonAn += ct.tinhThanhTien();
+                                // SỬA: Giả định Entity ChiTietHoaDon có phương thức tính thành tiền riêng
+                                tongTienMonAn += ct.getSoLuong() * ct.getDonGiaBan(); 
                             }
 
-                            HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO(); 
-                            HoaDon_KhuyenMai_DAO kmDAO = new HoaDon_KhuyenMai_DAO();
+                            Thue_DAO thueDAO = new Thue_DAO(); 
+                            KhuyenMai_DAO kmDAO = new KhuyenMai_DAO();
 
-                            Thue thue = (hd.getThue() != null) ? thueDAO.getThueById(hd.getThue().getMaThue()) : null;
+                            Thue thue = (hd.getThue() != null) ? thueDAO.getThueById(hd.getThue().getMaSoThue()) : null; // SỬA: getMaSoThue
                             KhuyenMai km = (hd.getKhuyenMai() != null) ? kmDAO.getKhuyenMaiById(hd.getKhuyenMai().getMaKM()) : null;
 
                             double tienGiam = 0;
                             double tienThue = 0;
                             double tongTienSauGiam = tongTienMonAn;
 
-                            if (km != null && !"KM00000000".equals(km.getMaKM().trim()) && km.getGiaTri() > 0) {
-                                if (km.getGiaTri() < 1.0) { 
-                                    tienGiam = tongTienMonAn * km.getGiaTri();
+                            // TÍNH TOÁN LẠI TỔNG TIỀN (logic giống trong HoaDon_Printer)
+                            if (km != null && !"KM00000000".equals(km.getMaKM().trim()) && km.getMucKM() > 0) { // SỬA: getMucKM
+                                if (km.getMucKM() < 1.0) { 
+                                    tienGiam = tongTienMonAn * km.getMucKM();
                                 } else { 
-                                    tienGiam = km.getGiaTri();
+                                    tienGiam = km.getMucKM();
                                 }
                                 tongTienSauGiam -= tienGiam;
                                 if (tongTienSauGiam < 0) tongTienSauGiam = 0;
                             }
 
-                            if (thue != null && thue.getTyLeThue() > 0) {
+                            if (thue != null && thue.getTyLeThue() > 0) { // SỬA: getTyLeThue
                                 tienThue = tongTienSauGiam * thue.getTyLeThue();
                             }
 
                             double tongThanhToan = tongTienSauGiam + tienThue;
 
-
                             Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(HoaDon_View.this);
                             HoaDon_ThanhToan_Dialog dialog = new HoaDon_ThanhToan_Dialog(
                                 parentFrame, hd, hoaDonDAO,
-                                tongTienMonAn, tienGiam, tienThue, tongThanhToan, // Các giá trị tiền
-                                chiTietList // Danh sách chi tiết
+                                tongTienMonAn, tienGiam, tienThue, tongThanhToan, 
+                                chiTietList 
                             );
                             dialog.setVisible(true);
 
@@ -300,12 +323,28 @@ public class HoaDon_View extends JPanel {
                         }
                     });
                 } else if (type.equals("Sửa")) {
+                    // Kiểm tra lại trạng thái trước khi mở dialog
+                    String trangThai = (String) table.getValueAt(selectedRow, 5);
+                    if ("Đã thanh toán".equals(trangThai)) {
+                        JOptionPane.showMessageDialog(null, "Hóa đơn đã được thanh toán, không thể sửa.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                        isPushed = false; return type;
+                    }
+
                     SwingUtilities.invokeLater(() -> {
                         HoaDon hd = hoaDonDAO.findByMaHD(maHD);
                         if (hd != null) {
                             Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(HoaDon_View.this);
-                        
-                            JOptionPane.showMessageDialog(parentFrame, "Chức năng Sửa đang được phát triển.");
+                            
+                            // Lấy KhachHang đầy đủ trước khi truyền vào dialog
+                            KhachHang kh = null;
+                            if (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) {
+                                kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH());
+                            }
+                            hd.setKhachHang(kh);
+                            
+                            HoaDon_EditDialog editDialog = new HoaDon_EditDialog(parentFrame, hd, hoaDonDAO);
+                            editDialog.setVisible(true);
+
                             loadHoaDonData(); loadThongKe();
                         }
                     });

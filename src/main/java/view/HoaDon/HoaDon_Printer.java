@@ -1,7 +1,17 @@
 package view.HoaDon;
 
-import dao.*;
-import entity.*;
+import dao.Ban_DAO;
+import dao.KhachHang_DAO;
+import dao.NhanVien_DAO;
+import dao.Thue_DAO; // Thay thế HoaDon_Thue_DAO
+import dao.KhuyenMai_DAO; // Thay thế HoaDon_KhuyenMai_DAO
+import entity.Ban;
+import entity.ChiTietHoaDon;
+import entity.HoaDon;
+import entity.KhachHang;
+import entity.KhuyenMai;
+import entity.NhanVien;
+import entity.Thue;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,16 +23,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * HoaDon_Printer: chứa cả logic sinh text hóa đơn và hiển thị preview (dialog) bên trong.
- *
- * - generateInvoiceText(hoaDon, chiTietList, pageWidth): sinh chuỗi hóa đơn đã căn đều theo pageWidth.
- * - showPreview(owner, hoaDon, chiTietList): tạo dialog preview (dùng font Monospaced),
- *   tính pageWidth dựa trên kích thước dialog/FontMetrics trước khi gán text và show,
- *   đảm bảo khi mở dialog lần đầu nội dung đã được căn đều hai bên.
- *
- * Lưu ý: đặt font Monospaced trên JTextArea để các cột luôn thẳng.
- */
 public class HoaDon_Printer {
 
     private static final DecimalFormat moneyFormatter = new DecimalFormat("#,###");
@@ -32,19 +32,20 @@ public class HoaDon_Printer {
     // === DAO cần thiết ===
     private static NhanVien_DAO nhanVienDAO = new NhanVien_DAO();
     private static Ban_DAO banDAO = new Ban_DAO();
-    private static HoaDon_Thue_DAO thueDAO = new HoaDon_Thue_DAO();
-    private static HoaDon_KhuyenMai_DAO khuyenMaiDAO = new HoaDon_KhuyenMai_DAO();
+    private static Thue_DAO thueDAO = new Thue_DAO(); // SỬA
+    private static KhuyenMai_DAO khuyenMaiDAO = new KhuyenMai_DAO(); // SỬA
+    private static KhachHang_DAO khachHangDAO = new KhachHang_DAO(); // THÊM
 
     // Chiều rộng "giấy" in nội dung
     private static final int LINE_WIDTH = 48;
     // Kích thước mặc định dialog để lần đầu mở có đủ chỗ (tăng chiều rộng)
-    private static final Dimension DEFAULT_DIALOG_SIZE = new Dimension(1200, 800);
-    private static final Dimension MIN_DIALOG_SIZE = new Dimension(900, 600);
+    private static final Dimension DEFAULT_DIALOG_SIZE = new Dimension(500, 800); // Giảm bớt để gần với thực tế
+    private static final Dimension MIN_DIALOG_SIZE = new Dimension(400, 600);
 
     // --------- PUBLIC API ---------
 
     public static String generateInvoiceText(HoaDon hoaDon, List<ChiTietHoaDon> chiTietList) {
-        return generateInvoiceText(hoaDon, chiTietList, 64);
+        return generateInvoiceText(hoaDon, chiTietList, LINE_WIDTH);
     }
 
     public static String generateInvoiceText(HoaDon hoaDon, List<ChiTietHoaDon> chiTietList, int pageWidth) {
@@ -55,22 +56,24 @@ public class HoaDon_Printer {
         Ban ban = null;
         Thue thue = null;
         KhuyenMai km = null;
+        KhachHang kh = null;
         try {
             if (hoaDon.getNhanVien() != null) {
-                nv = nhanVienDAO.getNhanVienById(hoaDon.getNhanVien().getMaNV());
+                nv = nhanVienDAO.getNhanVienById(hoaDon.getNhanVien().getMaNhanVien()); // SỬA: getMaNhanVien
             }
             if (hoaDon.getBan() != null) {
                 ban = banDAO.getBanTheoMa(hoaDon.getBan().getMaBan());
             }
             if (hoaDon.getThue() != null) {
-                thue = thueDAO.getThueById(hoaDon.getThue().getMaThue());
+                thue = thueDAO.getThueById(hoaDon.getThue().getMaSoThue()); // SỬA: getMaSoThue
             }
-            if (hoaDon.getKhuyenMai() != null && !hoaDon.getKhuyenMai().getMaKM().equals("KM00000000")) {
+            if (hoaDon.getKhuyenMai() != null && !safeTrim(hoaDon.getKhuyenMai().getMaKM()).equals("KM00000000")) {
                 km = khuyenMaiDAO.getKhuyenMaiById(hoaDon.getKhuyenMai().getMaKM());
             }
+            if (hoaDon.getKhachHang() != null) {
+                 kh = khachHangDAO.getKhachHangById(hoaDon.getKhachHang().getMaKH()); // SỬA: getMaKH
+            }
         } catch (Exception ignored) {}
-
-        KhachHang kh = hoaDon.getKhachHang();
 
         // Header (format theo LINE_WIDTH)
         sb.append(center("*** JOJO RESTAURANT ***", LINE_WIDTH)).append("\n");
@@ -81,20 +84,20 @@ public class HoaDon_Printer {
         sb.append(repeat('-', LINE_WIDTH)).append("\n");
 
         // Thông tin hóa đơn
-        sb.append(padRight("Số HD: " + safeTrim(hoaDon.getMaHoaDon()), LINE_WIDTH)).append("\n");
-        String ngay = hoaDon.getNgayLap() != null ? hoaDon.getNgayLap().format(dateFormatter) : "";
+        sb.append(padRight("Số HD: " + safeTrim(hoaDon.getMaHD()), LINE_WIDTH)).append("\n"); // SỬA: getMaHD
+        String ngay = hoaDon.getNgayLapHoaDon() != null ? hoaDon.getNgayLapHoaDon().format(dateFormatter) : ""; // SỬA: getNgayLapHoaDon
         String gioVao = hoaDon.getGioVao() != null ? hoaDon.getGioVao().format(timeFormatter) : "";
         String gioRa = hoaDon.getGioRa() != null ? hoaDon.getGioRa().format(timeFormatter) : "";
         sb.append(padRight("Ngày: " + ngay + "  Giờ vào: " + gioVao, LINE_WIDTH)).append("\n");
         sb.append(padRight("Giờ ra: " + gioRa, LINE_WIDTH)).append("\n");
         if (ban != null) sb.append(padRight("Bàn: " + safeTrim(ban.getMaBan()), LINE_WIDTH)).append("\n");
-        if (nv != null) sb.append(padRight("Thu ngân: " + nv.getTenNhanVien(), LINE_WIDTH)).append("\n");
+        if (nv != null) sb.append(padRight("Thu ngân: " + nv.getHoTen(), LINE_WIDTH)).append("\n"); // SỬA: getHoTen
 
         // Khách hàng
-        if (kh != null && !"KH00000000".equals(safeTrim(kh.getMaKhachHang()))) {
-            sb.append(padRight("Khách hàng: " + kh.getTenKhachHang(), LINE_WIDTH)).append("\n");
-            if (kh.getSdt() != null && !kh.getSdt().trim().isEmpty() && !"0000000000".equals(kh.getSdt().trim())) {
-                sb.append(padRight("SĐT KH: " + kh.getSdt(), LINE_WIDTH)).append("\n");
+        if (kh != null && !"KH00000000".equals(safeTrim(kh.getMaKH()))) { // SỬA: getMaKH
+            sb.append(padRight("Khách hàng: " + kh.getTenKH(), LINE_WIDTH)).append("\n"); // SỬA: getTenKH
+            if (kh.getSoDienThoai() != null && !kh.getSoDienThoai().trim().isEmpty() && !"0000000000".equals(kh.getSoDienThoai().trim())) {
+                sb.append(padRight("SĐT KH: " + kh.getSoDienThoai(), LINE_WIDTH)).append("\n"); // SỬA: getSoDienThoai
             }
         } else {
             sb.append(padRight("Khách hàng: Khách lẻ", LINE_WIDTH)).append("\n");
@@ -114,7 +117,8 @@ public class HoaDon_Printer {
         double tongTienMonAn = 0;
         if (chiTietList != null) {
             for (ChiTietHoaDon ct : chiTietList) {
-                double thanhTien = ct.getSoLuong() * ct.getDonGia();
+                // SỬA: Dùng getDonGiaBan
+                double thanhTien = ct.getSoLuong() * ct.getDonGiaBan(); 
                 String itemName = ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "";
                 List<String> wrapped = wrapText(itemName, nameCol);
                 for (int i = 0; i < wrapped.size(); i++) {
@@ -136,12 +140,13 @@ public class HoaDon_Printer {
         double tongTienSauGiam = tongTienMonAn;
 
         if (km != null) {
-            String tenKM = km.getTenKM() != null ? km.getTenKM() : "Khuyến mãi";
-            if (km.getGiaTri() < 1.0) {
-                tienGiam = tongTienMonAn * km.getGiaTri();
-                sb.append(formatLine(tenKM + String.format(" (%.0f%%):", km.getGiaTri() * 100), "-" + formatCurrency(tienGiam), LINE_WIDTH)).append("\n");
-            } else {
-                tienGiam = km.getGiaTri();
+            String tenKM = km.getMoTa() != null ? km.getMoTa() : "Khuyến mãi"; // SỬA: getMoTa
+            double mucKM = km.getMucKM(); // SỬA: getMucKM
+            if (mucKM < 1.0) { // Giảm theo phần trăm
+                tienGiam = tongTienMonAn * mucKM;
+                sb.append(formatLine(tenKM + String.format(" (%.0f%%):", mucKM * 100), "-" + formatCurrency(tienGiam), LINE_WIDTH)).append("\n");
+            } else { // Giảm theo số tiền
+                tienGiam = mucKM;
                 sb.append(formatLine(tenKM + ":", "-" + formatCurrency(tienGiam), LINE_WIDTH)).append("\n");
             }
             tongTienSauGiam -= tienGiam;
@@ -149,14 +154,16 @@ public class HoaDon_Printer {
         }
 
         if (thue != null && thue.getTyLeThue() > 0) {
-            tienThue = tongTienSauGiam * thue.getTyLeThue();
-            sb.append(formatLine(thue.getTenThue() + String.format(" (%.1f%%):", thue.getTyLeThue() * 100), formatCurrency(tienThue), LINE_WIDTH)).append("\n");
+            double tyLeThue = thue.getTyLeThue(); // SỬA: getTyLeThue
+            tienThue = tongTienSauGiam * tyLeThue;
+            sb.append(formatLine(thue.getTenThue() + String.format(" (%.1f%%):", tyLeThue * 100), formatCurrency(tienThue), LINE_WIDTH)).append("\n");
         }
 
         double tongThanhToan = tongTienSauGiam + tienThue;
 
         sb.append(repeat('-', LINE_WIDTH)).append("\n");
 
+        // Làm tròn đến 1000 đồng gần nhất
         long rounded = Math.round(tongThanhToan / 1000.0) * 1000;
         long roundingDiff = rounded - Math.round(tongThanhToan);
 
@@ -260,12 +267,6 @@ public class HoaDon_Printer {
         return s.toString();
     }
 
-    private static String repeat(String str, int count) {
-        StringBuilder s = new StringBuilder(Math.max(0, str.length() * count));
-        for (int i = 0; i < count; i++) s.append(str);
-        return s.toString();
-    }
-
     private static String center(String text, int width) {
         if (text == null) text = "";
         if (text.length() >= width) return text;
@@ -278,12 +279,6 @@ public class HoaDon_Printer {
         if (text == null) text = "";
         if (text.length() >= width) return text.substring(0, width);
         return text + repeat(' ', width - text.length());
-    }
-
-    private static String padLeft(String text, int width) {
-        if (text == null) text = "";
-        if (text.length() >= width) return text.substring(0, width);
-        return repeat(' ', width - text.length()) + text;
     }
 
     private static String formatLine(String left, String right, int width) {
@@ -328,12 +323,6 @@ public class HoaDon_Printer {
         }
         if (lines.isEmpty()) lines.add("");
         return lines;
-    }
-
-    private static String truncate(String text, int maxLength) {
-        if (text == null) return "";
-        if (text.length() <= maxLength) return text;
-        return text.substring(0, maxLength - 1) + ".";
     }
 
     private static String centerBlock(String block, int pageWidth) {

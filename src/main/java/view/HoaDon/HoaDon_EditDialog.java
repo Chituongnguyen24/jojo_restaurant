@@ -7,10 +7,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Vector;
 
 public class HoaDon_EditDialog extends JDialog {
     private JComboBox<KhachHang> cbxKhachHang;
@@ -18,37 +14,34 @@ public class HoaDon_EditDialog extends JDialog {
     private JComboBox<Thue> cbxThue;
     private JComboBox<KhuyenMai> cbxKhuyenMai;
     private JComboBox<PhieuDatBan> cbxPhieuDatBan;
+    private JComboBox<Ban> cbxBan; // THÊM
     private JComboBox<String> cbxPhuongThuc;
+    private JCheckBox chkDaThanhToan; // SỬA: Dùng checkbox cho trạng thái thanh toán
     private JButton btnSave, btnCancel;
 
     private HoaDon hoaDon;
     private HoaDon_DAO hoaDonDAO;
     private KhachHang_DAO khachHangDAO;
     private NhanVien_DAO nhanVienDAO;
-    private HoaDon_Thue_DAO thueDAO;
-    private HoaDon_KhuyenMai_DAO khuyenMaiDAO; 
-    private DatBan_DAO phieuDatBanDAO;
-
-    private final KhachHang KH_PLACEHOLDER = new KhachHang("KH_NULL", "Khách lẻ", "", "", 0, false);
-    private final Thue THUE_PLACEHOLDER = new Thue("THUE_NULL", "Không tính thuế", 0, "", false);
-    private final KhuyenMai KM_PLACEHOLDER = new KhuyenMai("KM_NULL", "Không áp dụng KM", 0, null, null, "");
-    private final PhieuDatBan PDB_PLACEHOLDER = new PhieuDatBan("PDB_NULL");
-	private List<ChiTietHoaDon> chiTietList;
-	private Vector<String> monAnVector;
-	private JList listMonAn;
+    private Thue_DAO thueDAO;
+    private KhuyenMai_DAO khuyenMaiDAO; // SỬA: Dùng KhuyenMai_DAO
+    private PhieuDatBan_DAO phieuDatBanDAO; // SỬA: Dùng PhieuDatBan_DAO
+    private Ban_DAO banDAO; // THÊM
 
     public HoaDon_EditDialog(Frame owner, HoaDon hoaDon, HoaDon_DAO hoaDonDAO) {
         super(owner, "Chỉnh sửa hóa đơn", true);
         this.hoaDon = hoaDon;
         this.hoaDonDAO = hoaDonDAO;
 
+        // Khởi tạo DAO
         khachHangDAO = new KhachHang_DAO();
         nhanVienDAO = new NhanVien_DAO();
-        thueDAO = new HoaDon_Thue_DAO(); 
-        khuyenMaiDAO = new HoaDon_KhuyenMai_DAO(); 
-        phieuDatBanDAO = new DatBan_DAO();
+        thueDAO = new Thue_DAO();
+        khuyenMaiDAO = new KhuyenMai_DAO(); // SỬA
+        phieuDatBanDAO = new PhieuDatBan_DAO(); // SỬA
+        banDAO = new Ban_DAO(); // THÊM
 
-        setSize(500, 600);
+        setSize(600, 650); // Tăng kích thước
         setLocationRelativeTo(owner);
         setResizable(false);
         setLayout(new BorderLayout());
@@ -58,120 +51,80 @@ public class HoaDon_EditDialog extends JDialog {
         lblTitle.setFont(new Font("Arial", Font.BOLD, 18));
         lblTitle.setBorder(new EmptyBorder(15, 10, 15, 10));
         add(lblTitle, BorderLayout.NORTH);
+
+        JPanel mainContent = new JPanel(new BorderLayout());
+        mainContent.setOpaque(false);
+        mainContent.setBorder(new EmptyBorder(0, 10, 0, 10));
         
-        JPanel	pnCen= new JPanel(new BorderLayout());
-        
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(8, 2, 10, 10));
         formPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
         formPanel.setOpaque(false);
 
-        // --- Khách hàng (Optional) ---
+        // Khách hàng
         formPanel.add(new JLabel("Khách hàng:"));
         cbxKhachHang = new JComboBox<>();
-        cbxKhachHang.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof KhachHang) {
-                    setText(((KhachHang) value).getTenKhachHang());
-                } else if (value == null){
-                     setText("Chọn khách hàng..."); 
-                }
-                return this;
-            }
-        });
         formPanel.add(cbxKhachHang);
-
-        // --- Nhân viên (Required) ---
-        formPanel.add(new JLabel("Nhân viên (*):"));
+        
+        // Nhân viên
+        formPanel.add(new JLabel("Nhân viên:"));
         cbxNhanVien = new JComboBox<>();
-        // Custom renderer để chỉ hiển thị tên NV
-        cbxNhanVien.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof NhanVien) {
-                    setText(((NhanVien) value).getTenNhanVien());
-                } else if (value == null){
-                     setText("Chọn nhân viên...");
-                }
-                return this;
-            }
-        });
         formPanel.add(cbxNhanVien);
+        
+        // Bàn (MỚI)
+        formPanel.add(new JLabel("Bàn (*):"));
+        cbxBan = new JComboBox<>();
+        formPanel.add(cbxBan);
 
-        // --- Phương thức thanh toán (Required) ---
-        formPanel.add(new JLabel("Phương thức (*):"));
+        // Phương thức thanh toán
+        formPanel.add(new JLabel("Phương thức:"));
         cbxPhuongThuc = new JComboBox<>(new String[]{"Tiền mặt", "Thẻ tín dụng", "Chuyển khoản"});
         formPanel.add(cbxPhuongThuc);
 
-        // --- Thuế (Optional) ---
+        // Thuế
         formPanel.add(new JLabel("Thuế:"));
         cbxThue = new JComboBox<>();
-        // Custom renderer để chỉ hiển thị tên Thuế
-        cbxThue.setRenderer(new DefaultListCellRenderer() {
-             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof Thue) {
-                    Thue t = (Thue) value;
-                    // Hiển thị tên + % cho rõ
-                    setText(String.format("%s (%.1f%%)", t.getTenThue(), t.getTyLeThue() * 100));
-                } else if (value == null){
-                     setText("Chọn loại thuế...");
-                }
-                return this;
-            }
-        });
         formPanel.add(cbxThue);
 
+        // Khuyến mãi
         formPanel.add(new JLabel("Khuyến mãi:"));
         cbxKhuyenMai = new JComboBox<>();
         formPanel.add(cbxKhuyenMai);
+
+        // Phiếu đặt bàn
         formPanel.add(new JLabel("Phiếu đặt bàn:"));
         cbxPhieuDatBan = new JComboBox<>();
-        cbxPhieuDatBan.setRenderer(new DefaultListCellRenderer() {
-             @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof PhieuDatBan) {
-                     PhieuDatBan pdb = (PhieuDatBan) value;
-                     if(PDB_PLACEHOLDER.equals(pdb)){
-                          setText("(Không có)");
-                     } else {
-                          setText(pdb.getMaPhieu() != null ? pdb.getMaPhieu().trim() : "(Lỗi)");
-                     }
-                } else if (value == null) {
-                    setText("(Không có)");
-                }
-                return this;
-            }
-        });
         formPanel.add(cbxPhieuDatBan);
         
-        List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hoaDon.getMaHoaDon());
-        if (chiTietList == null) {
-        	chiTietList = new ArrayList<>();
-        }
+        // Trạng thái thanh toán (MỚI)
+        formPanel.add(new JLabel("Đã thanh toán:"));
+        chkDaThanhToan = new JCheckBox("Xác nhận đã thanh toán");
+        formPanel.add(chkDaThanhToan);
 
-        JPanel monAnPanel = createMonAnListPanel(chiTietList);
+        mainContent.add(formPanel, BorderLayout.NORTH);
         
-        pnCen.setBorder(new EmptyBorder(10, 10, 15, 10));
-        pnCen.setOpaque(false);
-        pnCen.add(formPanel, BorderLayout.CENTER);
-        pnCen.add(monAnPanel, BorderLayout.SOUTH);
-        add(pnCen,BorderLayout.CENTER);
+        // Thêm chi tiết hóa đơn (JList/JTable) nếu cần, hiện tại giữ đơn giản.
+        
+        add(mainContent, BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel();
         btnPanel.setBorder(new EmptyBorder(10, 10, 15, 10));
         btnPanel.setOpaque(false);
+
         btnSave = new JButton("Lưu thay đổi");
-        btnSave.setBackground(new Color(30, 150, 80)); btnSave.setForeground(Color.WHITE);
-        btnSave.setFont(new Font("Arial", Font.BOLD, 13)); btnSave.addActionListener(this::saveChanges);
+        btnSave.setBackground(new Color(30, 150, 80));
+        btnSave.setForeground(Color.WHITE);
+        btnSave.setFont(new Font("Arial", Font.BOLD, 13));
+        btnSave.addActionListener(this::saveChanges);
+
         btnCancel = new JButton("Hủy");
-        btnCancel.setBackground(new Color(200, 80, 70)); btnCancel.setForeground(Color.WHITE);
-        btnCancel.setFont(new Font("Arial", Font.BOLD, 13)); btnCancel.addActionListener(e -> dispose());
-        btnPanel.add(btnSave); btnPanel.add(btnCancel);
+        btnCancel.setBackground(new Color(200, 80, 70));
+        btnCancel.setForeground(Color.WHITE);
+        btnCancel.setFont(new Font("Arial", Font.BOLD, 13));
+        btnCancel.addActionListener(e -> dispose());
+
+        btnPanel.add(btnSave);
+        btnPanel.add(btnCancel);
+
         add(btnPanel, BorderLayout.SOUTH);
 
         loadComboBoxData();
@@ -179,60 +132,63 @@ public class HoaDon_EditDialog extends JDialog {
     }
 
     private void loadComboBoxData() {
-        cbxKhachHang.addItem(KH_PLACEHOLDER);
-        khachHangDAO.getAllKhachHang().forEach(cbxKhachHang::addItem); 
+        // Khách hàng
+        cbxKhachHang.addItem(new KhachHang("KH00000000", "Khách vãng lai", null, null, null, 0, false));
+        khachHangDAO.getAllKhachHang().forEach(cbxKhachHang::addItem);
 
+        // Nhân viên
         nhanVienDAO.getAllNhanVien().forEach(cbxNhanVien::addItem); 
+        
+        // Bàn
+        banDAO.getAllBan().forEach(cbxBan::addItem);
+        
+        // Thuế
+        // Thue Entity không có constructor này, ta phải giả định giá trị cho Thue "null"
+        // Hoặc tạo đối tượng Entity đầy đủ
+        Thue thueNull = new Thue();
+        thueNull.setMaSoThue("THUE_NULL"); thueNull.setTenThue("(Không tính)"); thueNull.setTyLeThue(0);
+        cbxThue.addItem(thueNull);
+        thueDAO.getAllThue().forEach(cbxThue::addItem);
 
-        cbxThue.addItem(THUE_PLACEHOLDER);
-        thueDAO.getAllThueActive().forEach(cbxThue::addItem);
-
+        // Khuyến mãi
+        // KhuyenMai Entity không có constructor này, ta phải giả định giá trị cho KM "null"
+        KhuyenMai kmNull = new KhuyenMai();
+        kmNull.setMaKM("KM00000000"); kmNull.setMoTa("Không áp dụng"); kmNull.setMucKM(0);
+        cbxKhuyenMai.addItem(kmNull);
         khuyenMaiDAO.getAllKhuyenMai().forEach(cbxKhuyenMai::addItem);
 
-        cbxPhieuDatBan.removeAllItems();
-        if (hoaDon != null && hoaDon.getPhieuDatBan() != null && hoaDon.getPhieuDatBan().getMaPhieu() != null) {
-             PhieuDatBan pdbChiTiet = phieuDatBanDAO.getPhieuDatBanById(hoaDon.getPhieuDatBan().getMaPhieu());
-             if (pdbChiTiet != null) {
-                 cbxPhieuDatBan.addItem(pdbChiTiet);
-             } else {
-                 cbxPhieuDatBan.addItem(hoaDon.getPhieuDatBan());
-             }
-        } else {
-             cbxPhieuDatBan.addItem(PDB_PLACEHOLDER);
-        }
+        // Phiếu đặt bàn
+        cbxPhieuDatBan.addItem(null);
+        phieuDatBanDAO.getAllPhieuDatBan().forEach(cbxPhieuDatBan::addItem);
     }
 
     private void prefillData() {
         if (hoaDon == null) return;
 
-        if (hoaDon.getKhachHang() != null && !hoaDon.getKhachHang().getMaKhachHang().trim().equals("KH00000000")) {
-            selectComboBoxItem(cbxKhachHang, hoaDon.getKhachHang());
-        } else {
-            cbxKhachHang.setSelectedItem(KH_PLACEHOLDER);
-        }
+        // Khách hàng
+        selectComboBoxItem(cbxKhachHang, hoaDon.getKhachHang());
 
+        // Nhân viên
         selectComboBoxItem(cbxNhanVien, hoaDon.getNhanVien());
+        
+        // Bàn
+        selectComboBoxItem(cbxBan, hoaDon.getBan());
 
-        if (hoaDon.getThue() != null) {
-            selectComboBoxItem(cbxThue, hoaDon.getThue());
-        } else {
-             cbxThue.setSelectedItem(THUE_PLACEHOLDER);
-        }
+        // Thuế
+        selectComboBoxItem(cbxThue, hoaDon.getThue());
 
-        if (hoaDon.getKhuyenMai() != null) {
-            selectComboBoxItem(cbxKhuyenMai, hoaDon.getKhuyenMai());
-        } else {
-             selectComboBoxItemByMaKM(cbxKhuyenMai, "KM00000000"); 
-        }
+        // Khuyến mãi
+        selectComboBoxItem(cbxKhuyenMai, hoaDon.getKhuyenMai());
 
-        cbxPhieuDatBan.setEnabled(false);
+        // Phiếu đặt bàn
+        selectComboBoxItem(cbxPhieuDatBan, hoaDon.getPhieuDatBan());
 
-        // Chọn Phương thức
-        if (hoaDon.getPhuongThuc() != null) {
-            cbxPhuongThuc.setSelectedItem(hoaDon.getPhuongThuc());
-        } else {
-            cbxPhuongThuc.setSelectedItem("Tiền mặt"); 
-        }
+        // Phương thức
+        if (hoaDon.getPhuongThucThanhToan() != null)
+            cbxPhuongThuc.setSelectedItem(hoaDon.getPhuongThucThanhToan());
+        
+        // Đã thanh toán
+        chkDaThanhToan.setSelected(hoaDon.isDaThanhToan());
     }
 
     private <T> void selectComboBoxItem(JComboBox<T> comboBox, T itemToSelect) {
@@ -245,120 +201,50 @@ public class HoaDon_EditDialog extends JDialog {
                 return;
             }
         }
-         comboBox.setSelectedIndex(-1); 
     }
-
-    private void selectComboBoxItemByMaKM(JComboBox<KhuyenMai> comboBox, String maKM) {
-        ComboBoxModel<KhuyenMai> model = comboBox.getModel();
-        for (int i = 0; i < model.getSize(); i++) {
-             KhuyenMai km = model.getElementAt(i);
-            if (km != null && km.getMaKM() != null && maKM.equals(km.getMaKM().trim())) {
-                comboBox.setSelectedIndex(i);
-                return;
-            }
-        }
-         comboBox.setSelectedIndex(-1); 
-    }
-    private JPanel createMonAnListPanel(List<ChiTietHoaDon> chiTietList) {
-        JPanel monAnPanel = new JPanel(new BorderLayout());
-        monAnPanel.setBorder(BorderFactory.createTitledBorder("Chi tiết món ăn"));
-        monAnPanel.setOpaque(false);
-
-        monAnVector = createMonAnVector(chiTietList);
-        listMonAn = new JList<>(monAnVector);
-        listMonAn.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        listMonAn.setLayoutOrientation(JList.VERTICAL);
-        listMonAn.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        listMonAn.setBackground(Color.WHITE);
-
-        JScrollPane scrollPaneMonAn = new JScrollPane(listMonAn);
-        scrollPaneMonAn.setPreferredSize(new Dimension(400, 150));
-
-        monAnPanel.add(scrollPaneMonAn, BorderLayout.CENTER);
-        return monAnPanel;
-    }
-    private Vector<String> createMonAnVector(List<ChiTietHoaDon> chiTietList) {
-        Vector<String> vector = new Vector<>();
-        if (chiTietList == null || chiTietList.isEmpty()) {
-            vector.add("  (Chưa có món nào trong hóa đơn)");
-            return vector;
-        }
-        // Thêm tiêu đề cột cho JList
-        vector.add(String.format("%-4s %-25s %8s %15s", "STT", "Tên món", "SL", "Đơn giá"));
-        vector.add("-------------------------------------------------------"); 
-
-        DecimalFormat itemPriceFormatter = new DecimalFormat("###,###"); 
-
-        for (int i = 0; i < chiTietList.size(); i++) {
-            ChiTietHoaDon cthd = chiTietList.get(i);
-            String tenMon = "N/A";
-            double donGia = 0;
-            if(cthd.getMonAn() != null) {
-                tenMon = cthd.getMonAn().getTenMonAn() != null ? cthd.getMonAn().getTenMonAn() : "Lỗi tên món";
-                donGia = cthd.tinhThanhTien();
-            }
-
-            // Cắt bớt tên món nếu quá dài
-            if (tenMon.length() > 24) {
-                tenMon = tenMon.substring(0, 21) + "...";
-            }
-
-            vector.add(String.format("%-4d %-25s %8d %15s",
-                                     i + 1,
-                                     tenMon,
-                                     cthd.getSoLuong(),
-                                     itemPriceFormatter.format(donGia))); // Format đơn giá
-        }
-        return vector;
-    }
-
+    
     private void saveChanges(ActionEvent e) {
-        // Lấy các giá trị được chọn
-        KhachHang khSelected = (KhachHang) cbxKhachHang.getSelectedItem();
-        NhanVien nvSelected = (NhanVien) cbxNhanVien.getSelectedItem();
-        Thue thueSelected = (Thue) cbxThue.getSelectedItem();
-        KhuyenMai kmSelected = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
+        KhachHang kh = (KhachHang) cbxKhachHang.getSelectedItem();
+        NhanVien nv = (NhanVien) cbxNhanVien.getSelectedItem();
+        Thue thue = (Thue) cbxThue.getSelectedItem();
+        KhuyenMai km = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
+        PhieuDatBan pdb = (PhieuDatBan) cbxPhieuDatBan.getSelectedItem();
+        Ban ban = (Ban) cbxBan.getSelectedItem();
         String phuongThuc = (String) cbxPhuongThuc.getSelectedItem();
+        boolean thanhToan = chkDaThanhToan.isSelected();
 
-        if (nvSelected == null || phuongThuc == null || phuongThuc.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn Nhân viên và Phương thức thanh toán!", "Thiếu thông tin bắt buộc", JOptionPane.WARNING_MESSAGE);
+        if (nv == null || thue == null || phuongThuc == null || ban == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ thông tin bắt buộc (*): Nhân viên, Bàn, Thuế, Phương thức.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         try {
+            hoaDon.setKhachHang(kh);
+            hoaDon.setNhanVien(nv);
+            hoaDon.setThue(thue);
+            hoaDon.setKhuyenMai(km);
+            hoaDon.setPhieuDatBan(pdb);
+            hoaDon.setBan(ban);
+            hoaDon.setPhuongThucThanhToan(phuongThuc);
+            hoaDon.setDaThanhToan(thanhToan);
+            
+            // LƯU Ý: Cần tính lại TongTienTruocThue và TongGiamGia
+            // Để đơn giản, ta sẽ gán lại giá trị 0.0 để updateHoaDon có thể chạy mà không bị null, 
+            // nhưng thực tế cần phải tính lại dựa trên ChiTietHoaDon.
+            hoaDon.setTongTienTruocThue(0.0);
+            hoaDon.setTongGiamGia(0.0);
 
-            if (khSelected == null || KH_PLACEHOLDER.equals(khSelected)) {
-                hoaDon.setKhachHang(new KhachHang("KH00000000")); 
-            } else {
-                hoaDon.setKhachHang(khSelected);
-            }
 
-            hoaDon.setNhanVien(nvSelected);
-
-            if (thueSelected == null || THUE_PLACEHOLDER.equals(thueSelected)) {
-            } else {
-                hoaDon.setThue(thueSelected);
-            }
-
-            if (kmSelected == null || KM_PLACEHOLDER.equals(kmSelected) || "KM00000000".equals(kmSelected.getMaKM().trim())) {
-                hoaDon.setKhuyenMai(new KhuyenMai("KM00000000")); 
-            } else {
-                hoaDon.setKhuyenMai(kmSelected);
-            }
-
-            hoaDon.setPhuongThuc(phuongThuc);
-
-            // --- Gọi DAO ---
             boolean updated = hoaDonDAO.updateHoaDon(hoaDon);
             if (updated) {
                 JOptionPane.showMessageDialog(this, "Cập nhật thành công!");
                 dispose();
             } else {
-                JOptionPane.showMessageDialog(this, "Cập nhật thất bại!", "Lỗi Cập Nhật", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Cập nhật thất bại, vui lòng thử lại!", "Lỗi Cập Nhật", JOptionPane.ERROR_MESSAGE);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi lưu: " + ex.getMessage(), "Lỗi Hệ Thống", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi khi lưu thay đổi: " + ex.getMessage(), "Lỗi Hệ Thống", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

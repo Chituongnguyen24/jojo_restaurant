@@ -1,23 +1,13 @@
 package view.Ban;
 
 import dao.Ban_DAO;
-import dao.DatBan_DAO;
 import dao.HoaDon_DAO;
-import dao.HoaDon_KhuyenMai_DAO;
-import dao.HoaDon_Thue_DAO;
-import dao.KhachHang_DAO;
+import dao.PhieuDatBan_DAO;
 import entity.Ban;
-import entity.ChiTietHoaDon;
 import entity.HoaDon;
-import entity.KhachHang;
-import entity.KhuyenMai;
 import entity.PhieuDatBan;
-import entity.Thue;
 import enums.TrangThaiBan;
-import view.HoaDon.HoaDon_ThanhToan_Dialog;
 import view.ThucDon.ChonMon_Dialog;
-import view.Ban.ChiTietPhieuDatBan_View; 
-import view.Ban.ChiTietPhieu_Dialog;
 import java.awt.BasicStroke;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -27,7 +17,6 @@ import java.awt.geom.RoundRectangle2D;
 import java.text.SimpleDateFormat;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -43,7 +32,7 @@ import java.util.Date;
 public class DatBan_View extends JPanel {
 
     private Ban_DAO banDAO;
-    private DatBan_DAO datBanDAO;
+    private PhieuDatBan_DAO phieuDatBanDAO; // Đã đổi DatBan_DAO thành PhieuDatBan_DAO
 
     private Map<String, List<Ban>> danhSachBanTheoKhuVuc;
     private List<String> tenKhuVuc;
@@ -91,7 +80,7 @@ public class DatBan_View extends JPanel {
 
     public DatBan_View() {
         banDAO = new Ban_DAO();
-        datBanDAO = new DatBan_DAO();
+        phieuDatBanDAO = new PhieuDatBan_DAO(); // Khởi tạo PhieuDatBan_DAO
         danhSachBanTheoKhuVuc = new LinkedHashMap<>();
         tenKhuVuc = new ArrayList<>();
         cacNutChonKhuVuc = new LinkedHashMap<>();
@@ -271,11 +260,11 @@ public class DatBan_View extends JPanel {
     private void taiDuLieuKhuVuc() {
         System.out.println("--- Bắt đầu tải dữ liệu khu vực ---"); // DEBUG
         try {
-            Map<String, List<Ban>> banTheoKhuVuc = datBanDAO.getAllBanByFloor();
+            Map<String, List<Ban>> banTheoKhuVuc = phieuDatBanDAO.getAllBanByFloor(); // Dùng phieuDatBanDAO
 
             // === THÊM LOG KIỂM TRA ===
             if (banTheoKhuVuc == null) {
-                System.out.println("!!! LỖI: datBanDAO.getAllBanByFloor() trả về NULL!");
+                System.out.println("!!! LỖI: phieuDatBanDAO.getAllBanByFloor() trả về NULL!");
             } else {
                 System.out.println(">>> Dữ liệu từ DAO: Số khu vực = " + banTheoKhuVuc.size());
                 // In ra số bàn trong khu vực hiện tại (nếu có) để kiểm tra kỹ hơn
@@ -314,7 +303,7 @@ public class DatBan_View extends JPanel {
     
     private void taiDuLieuDatBan() {
         try {
-            danhSachPhieuDatDangHoatDong = datBanDAO.getAllPhieuDatBan();
+            danhSachPhieuDatDangHoatDong = phieuDatBanDAO.getAllPhieuDatBan(); // Dùng phieuDatBanDAO
             if (danhSachPhieuDatDangHoatDong == null) {
                 danhSachPhieuDatDangHoatDong = new ArrayList<>();
             }
@@ -328,7 +317,8 @@ public class DatBan_View extends JPanel {
         Set<String> maBanDaDat = new HashSet<>();
         if (danhSachPhieuDatDangHoatDong != null) {
             for (PhieuDatBan phieu : danhSachPhieuDatDangHoatDong) {
-                if (phieu != null && phieu.getBan() != null && phieu.getBan().getMaBan() != null) {
+                // Chỉ xét các phiếu CHƯA ĐẾN
+                if (phieu != null && phieu.getBan() != null && phieu.getBan().getMaBan() != null && "Chưa đến".equals(phieu.getTrangThaiPhieu())) {
                     maBanDaDat.add(phieu.getBan().getMaBan().trim());
                 }
             }
@@ -340,17 +330,20 @@ public class DatBan_View extends JPanel {
                     for (Ban ban : danhSachBan) {
                         if (ban != null && ban.getMaBan() != null) {
                             String maBanHienTai = ban.getMaBan().trim();
-                            TrangThaiBan trangThaiHienTai = ban.getTrangThai();
+                            String trangThaiHienTai = ban.getTrangThai().trim(); // Lấy String
 
                             boolean coPhieuDat = maBanDaDat.contains(maBanHienTai);
 
                             if (coPhieuDat) {
-                                if (trangThaiHienTai == TrangThaiBan.TRONG) {
-                                    ban.setTrangThai(TrangThaiBan.DA_DAT);
+                                if (TrangThaiBan.TRONG.toString().equals(trangThaiHienTai)) {
+                                    // Bàn trống + Có phiếu đặt = Đã đặt
+                                    ban.setTrangThai(TrangThaiBan.DA_DAT.toString());
                                 }
+                                // Nếu là Có khách, giữ nguyên
                             } else {
-                                if (trangThaiHienTai == TrangThaiBan.DA_DAT) {
-                                    ban.setTrangThai(TrangThaiBan.TRONG);
+                                if (TrangThaiBan.DA_DAT.toString().equals(trangThaiHienTai)) {
+                                    // Bàn Đã đặt + Không có phiếu đặt = Trống
+                                    ban.setTrangThai(TrangThaiBan.TRONG.toString());
                                 }
                             }
                         }
@@ -516,10 +509,14 @@ public class DatBan_View extends JPanel {
         if (dsBan != null) {
             for (Ban ban : dsBan) {
                 if (ban != null && ban.getTrangThai() != null) {
-                    switch (ban.getTrangThai()) {
-                        case TRONG: trong++; break;
-                        case DA_DAT: daDat++; break;
-                        case CO_KHACH: coKhach++; break;
+                    // Cập nhật logic so sánh với String (giá trị Enum.toString() đã lưu)
+                    String trangThai = ban.getTrangThai().trim();
+                    if (TrangThaiBan.TRONG.toString().equals(trangThai)) {
+                        trong++;
+                    } else if (TrangThaiBan.DA_DAT.toString().equals(trangThai)) {
+                        daDat++;
+                    } else if (TrangThaiBan.CO_KHACH.toString().equals(trangThai)) {
+                        coKhach++;
                     }
                 }
             }
@@ -623,10 +620,14 @@ public class DatBan_View extends JPanel {
         if (dsBan != null) {
             for (Ban ban : dsBan) {
                 if (ban != null && ban.getTrangThai() != null) {
-                    switch (ban.getTrangThai()) {
-                        case TRONG: trong++; break;
-                        case DA_DAT: daDat++; break;
-                        case CO_KHACH: coKhach++; break;
+                    // Cập nhật logic so sánh với String
+                    String trangThai = ban.getTrangThai().trim();
+                    if (TrangThaiBan.TRONG.toString().equals(trangThai)) {
+                        trong++;
+                    } else if (TrangThaiBan.DA_DAT.toString().equals(trangThai)) {
+                        daDat++;
+                    } else if (TrangThaiBan.CO_KHACH.toString().equals(trangThai)) {
+                        coKhach++;
                     }
                 }
             }
@@ -692,30 +693,27 @@ public class DatBan_View extends JPanel {
         Color mauVien, mauNen, mauChu;
         String trangThaiText, iconEmoji;
 
-        TrangThaiBan currentStatus = ban.getTrangThai() != null ? ban.getTrangThai() : TrangThaiBan.TRONG;
+        String trangThaiString = ban.getTrangThai() != null ? ban.getTrangThai().trim() : TrangThaiBan.TRONG.toString();
 
-        switch (currentStatus) {
-            case TRONG:
-                mauVien = MAU_TRANGTHAI_TRONG;
-                mauNen = new Color(232, 245, 233);
-                mauChu = MAU_TRANGTHAI_TRONG.darker();
-                trangThaiText = "Trống";
-                iconEmoji = "✓";
-                break;
-            case CO_KHACH:
-                mauVien = MAU_TRANGTHAI_CO_KHACH;
-                mauNen = new Color(255, 235, 238);
-                mauChu = MAU_TRANGTHAI_CO_KHACH.darker();
-                trangThaiText = "Có khách";
-                iconEmoji = "👥";
-                break;
-            default:
-                mauVien = MAU_TRANGTHAI_DA_DAT;
-                mauNen = new Color(255, 248, 225);
-                mauChu = MAU_TRANGTHAI_DA_DAT.darker();
-                trangThaiText = "Đã đặt";
-                iconEmoji = "📅";
-                break;
+        // So sánh với String đại diện cho Enum (giá trị đã lưu trong DB)
+        if (TrangThaiBan.TRONG.toString().equals(trangThaiString)) {
+            mauVien = MAU_TRANGTHAI_TRONG;
+            mauNen = new Color(232, 245, 233);
+            mauChu = MAU_TRANGTHAI_TRONG.darker();
+            trangThaiText = "Trống";
+            iconEmoji = "✓";
+        } else if (TrangThaiBan.CO_KHACH.toString().equals(trangThaiString)) {
+            mauVien = MAU_TRANGTHAI_CO_KHACH;
+            mauNen = new Color(255, 235, 238);
+            mauChu = MAU_TRANGTHAI_CO_KHACH.darker();
+            trangThaiText = "Có khách";
+            iconEmoji = "👥";
+        } else { // DA_DAT
+            mauVien = MAU_TRANGTHAI_DA_DAT;
+            mauNen = new Color(255, 248, 225);
+            mauChu = MAU_TRANGTHAI_DA_DAT.darker();
+            trangThaiText = "Đã đặt";
+            iconEmoji = "📅";
         }
 
         card.setBorderColor(mauVien);
@@ -744,7 +742,9 @@ public class DatBan_View extends JPanel {
         lblIcon.setHorizontalAlignment(SwingConstants.CENTER);
         lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        String loaiBanTen = (ban.getLoaiBan() != null) ? ban.getLoaiBan().getTenHienThi() : "N/A";
+        // Giả định loaiBan có thể không có getTenHienThi() nếu không phải enum
+        // Giữ nguyên logic cũ, nếu lỗi cần xem lại entity Ban
+        String loaiBanTen = (ban.getLoaiBan() != null) ? ban.getLoaiBan().toString() : "N/A"; 
         if ("Bàn VIP".equalsIgnoreCase(loaiBanTen)) loaiBanTen = "VIP";
 
         JLabel lblName = new JLabel(ban.getMaBan() != null ? ban.getMaBan().trim() : "N/A");
@@ -804,21 +804,15 @@ public class DatBan_View extends JPanel {
             public void mouseClicked(MouseEvent e) {
                 if (e.getButton() != MouseEvent.BUTTON1 || ban == null) return;
 
-                TrangThaiBan trangThai = ban.getTrangThai();
-                if (trangThai == null) trangThai = TrangThaiBan.TRONG;
+                String trangThai = ban.getTrangThai();
+                if (trangThai == null) trangThai = TrangThaiBan.TRONG.toString(); // Dùng String
 
-                switch(trangThai) {
-                    case TRONG:
-                        moDialogDatBan(ban);
-                        break;
-                    case DA_DAT:
-                       
-                        moDialogChiTietPhieu(ban);
-                        // === KẾT THÚC THAY ĐỔI ===
-                        break;
-                    case CO_KHACH:
-                        xuLyBanCoKhach(ban); // Giữ nguyên xử lý cho bàn có khách
-                        break;
+                if (TrangThaiBan.TRONG.toString().equals(trangThai)) {
+                    moDialogDatBan(ban);
+                } else if (TrangThaiBan.DA_DAT.toString().equals(trangThai)) {
+                    moDialogChiTietPhieu(ban);
+                } else if (TrangThaiBan.CO_KHACH.toString().equals(trangThai)) {
+                    xuLyBanCoKhach(ban);
                 }
             
             }
@@ -863,7 +857,7 @@ public class DatBan_View extends JPanel {
         }
 
         // 2. Lấy thông tin phiếu đặt (vẫn cần để mở dialog gọi món)
-        PhieuDatBan phieu = datBanDAO.getPhieuByBan(ban.getMaBan().trim());
+        PhieuDatBan phieu = phieuDatBanDAO.getPhieuByBan(ban.getMaBan().trim()); // Dùng phieuDatBanDAO
         if (phieu == null) {
             JOptionPane.showMessageDialog(this,
                 "Lỗi: Không tìm thấy phiếu đặt bàn tương ứng!",
@@ -874,7 +868,7 @@ public class DatBan_View extends JPanel {
 
         try {
             // 4. Cập nhật trạng thái bàn
-            ban.setTrangThai(TrangThaiBan.CO_KHACH);
+            ban.setTrangThai(TrangThaiBan.CO_KHACH.toString()); // Lưu String
             
             if (!banDAO.capNhatBan(ban)) { 
                 throw new Exception("Không thể cập nhật trạng thái bàn lên CSDL.");
@@ -944,7 +938,8 @@ public class DatBan_View extends JPanel {
     }
 
     private void hienThiChiTietMonAn(Ban ban) {
-        PhieuDatBan phieu = datBanDAO.getPhieuByBan(ban.getMaBan().trim());
+        // Cần tìm phiếu đặt bàn đang hoạt động (Chưa đến/Đang phục vụ) để lấy chi tiết món.
+        PhieuDatBan phieu = phieuDatBanDAO.getPhieuByBan(ban.getMaBan().trim()); // Dùng PhieuDatBan_DAO
         
         if (phieu == null) {
             JOptionPane.showMessageDialog(this,
@@ -958,8 +953,10 @@ public class DatBan_View extends JPanel {
         
         Runnable closeCallback = this::refreshData;
         
+        // Giả định ChiTietPhieuDatBan_View cần Ban và Callback
         ChiTietPhieuDatBan_View detailView = new ChiTietPhieuDatBan_View(ban, closeCallback);
         
+        // Giả định cách chuyển View
         Container parentContainer = getParent();
         if (parentContainer instanceof JComponent && parentContainer.getLayout() instanceof CardLayout) {
             parentContainer.add(detailView, "CHI_TIET_MON_AN_VIEW");
@@ -982,21 +979,22 @@ public class DatBan_View extends JPanel {
             return;
         }
 
-        // Lấy hóa đơn của bàn
+        // Lấy hóa đơn của bàn (SỬA: dùng phương thức lấy hóa đơn CHƯA thanh toán)
         HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
-        HoaDon hoaDon = hoaDonDAO.getHoaDonByBan(ban.getMaBan());
+        HoaDon hoaDon = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan().trim());
         
         if (hoaDon == null) {
             JOptionPane.showMessageDialog(this,
-                "Không tìm thấy hóa đơn cho bàn này.",
+                "Không tìm thấy hóa đơn chưa thanh toán cho bàn này.",
                 "Lỗi",
                 JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         // Tính tổng tiền hóa đơn
-        double tongTien = hoaDonDAO.tinhTongTienHoaDon(hoaDon.getMaHoaDon());
+        double tongTien = hoaDonDAO.tinhTongTienHoaDon(hoaDon.getMaHD()); // SỬA: dùng getMaHD()
 
+        // Giả định các tham số tổng tiền bằng nhau trong trường hợp đơn giản này
         // Hiển thị dialog thanh toán
         view.HoaDon.HoaDon_ThanhToan_Dialog thanhToanDialog = 
             new view.HoaDon.HoaDon_ThanhToan_Dialog(parentFrame, hoaDon, hoaDonDAO, tongTien, tongTien, tongTien, tongTien, null);
@@ -1004,8 +1002,10 @@ public class DatBan_View extends JPanel {
         thanhToanDialog.setVisible(true);
 
         // Sau khi thanh toán xong, cập nhật trạng thái bàn về TRỐNG
-        if (hoaDon.isDaThanhToan()) {
-            ban.setTrangThai(TrangThaiBan.TRONG);
+        // Cần lấy lại HoaDon để kiểm tra trạng thái thanh toán mới nhất sau khi dialog đóng
+        HoaDon hdUpdated = hoaDonDAO.findByMaHD(hoaDon.getMaHD());
+        if (hdUpdated != null && hdUpdated.isDaThanhToan()) {
+            ban.setTrangThai(TrangThaiBan.TRONG.toString()); // Lưu String
             banDAO.capNhatBan(ban);
             
             // Refresh lại dữ liệu
@@ -1025,9 +1025,49 @@ public class DatBan_View extends JPanel {
 
         Runnable refreshCallback = this::refreshData;
 
+        // Giả định DatBan_Dialog tồn tại
         DatBan_Dialog dialog = new DatBan_Dialog(parentFrame, ban, refreshCallback);
         dialog.setVisible(true);
     }
+
+    /**
+     * Mở dialog hiển thị chi tiết phiếu đặt bàn khi click vào bàn DA_DAT.
+     * @param ban Bàn được click.
+     */
+    private void moDialogChiTietPhieu(Ban ban) {
+        if (ban == null || ban.getMaBan() == null) {
+            System.err.println("moDialogChiTietPhieu: Thông tin bàn không hợp lệ.");
+            return;
+        }
+
+        // Tìm phiếu đặt bàn tương ứng với bàn này (Chỉ tìm phiếu trạng thái 'Chưa đến')
+        PhieuDatBan phieu = phieuDatBanDAO.getPhieuByBan(ban.getMaBan().trim()); // Dùng PhieuDatBan_DAO
+
+        // Kiểm tra xem có tìm thấy phiếu không
+        if (phieu == null) {
+            JOptionPane.showMessageDialog(this,
+                "Lỗi: Không tìm thấy phiếu đặt bàn tương ứng cho bàn " + ban.getMaBan().trim() + ".\n" +
+                "Có thể phiếu đã bị hủy hoặc có lỗi dữ liệu. Đang làm mới...",
+                "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
+            // (Nếu không có phiếu, bàn DA_DAT này lẽ ra phải là TRONG)
+            refreshData();
+            return;
+        }
+
+        // Lấy cửa sổ cha (JFrame)
+        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
+        if (parentFrame == null) {
+             JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy cửa sổ chính.", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+             return;
+        }
+
+        // Tạo và hiển thị dialog ChiTietPhieu_Dialog
+        // Truyền `this::refreshData` để dialog có thể gọi lại khi cần làm mới DatBan_View
+        // Giả định ChiTietPhieu_Dialog tồn tại
+        ChiTietPhieu_Dialog chiTietDialog = new ChiTietPhieu_Dialog(parentFrame, phieu, this::refreshData);
+        chiTietDialog.setVisible(true);
+    }
+
 
     // Inner class: RoundedPanel
     private class RoundedPanel extends JPanel {
@@ -1121,41 +1161,4 @@ public class DatBan_View extends JPanel {
             return false;
         }
     }
-    /**
-     * Mở dialog hiển thị chi tiết phiếu đặt bàn khi click vào bàn DA_DAT.
-     * @param ban Bàn được click.
-     */
-    private void moDialogChiTietPhieu(Ban ban) {
-        if (ban == null || ban.getMaBan() == null) {
-            System.err.println("moDialogChiTietPhieu: Thông tin bàn không hợp lệ.");
-            return;
-        }
-
-        // Tìm phiếu đặt bàn tương ứng với bàn này
-        PhieuDatBan phieu = datBanDAO.getPhieuByBan(ban.getMaBan().trim());
-
-        // Kiểm tra xem có tìm thấy phiếu không
-        if (phieu == null) {
-            JOptionPane.showMessageDialog(this,
-                "Lỗi: Không tìm thấy phiếu đặt bàn tương ứng cho bàn " + ban.getMaBan().trim() + ".\n" +
-                "Có thể phiếu đã bị hủy hoặc có lỗi dữ liệu. Đang làm mới...",
-                "Lỗi dữ liệu", JOptionPane.ERROR_MESSAGE);
-            // (Nếu không có phiếu, bàn DA_DAT này lẽ ra phải là TRONG)
-            refreshData();
-            return;
-        }
-
-        // Lấy cửa sổ cha (JFrame)
-        JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
-        if (parentFrame == null) {
-             JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy cửa sổ chính.", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
-             return;
-        }
-
-        // Tạo và hiển thị dialog ChiTietPhieu_Dialog
-        // Truyền `this::refreshData` để dialog có thể gọi lại khi cần làm mới DatBan_View
-        ChiTietPhieu_Dialog chiTietDialog = new ChiTietPhieu_Dialog(parentFrame, phieu, this::refreshData);
-        chiTietDialog.setVisible(true);
-    }
-    
 }

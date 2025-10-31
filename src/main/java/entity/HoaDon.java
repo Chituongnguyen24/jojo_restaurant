@@ -4,148 +4,172 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class HoaDon {
-    private String maHoaDon;
-    private KhachHang khachHang;
+    private String maHD;
     private NhanVien nhanVien;
+    private KhachHang khachHang;
     private Ban ban;
-    private PhieuDatBan phieuDatBan;
-    private KhuyenMai khuyenMai;
-    private Thue thue;
-    private LocalDate ngayLap;
+    private LocalDate ngayLapHoaDon;
     private LocalDateTime gioVao;
     private LocalDateTime gioRa;
-    private String phuongThuc;
+    private String phuongThucThanhToan;
+    private KhuyenMai khuyenMai;
+    private Thue thue;
+    private PhieuDatBan phieuDatBan;
+    private double tongTienTruocThue;
+    private double tongGiamGia;
     private boolean daThanhToan;
 
     public HoaDon() {
     }
 
-	public HoaDon(String maHoaDon, KhachHang khachHang, NhanVien nhanVien, Ban ban, PhieuDatBan phieuDatBan, KhuyenMai khuyenMai,
-			Thue thue, LocalDate ngayLap, LocalDateTime gioVao, LocalDateTime gioRa, String phuongThuc,
-			boolean daThanhToan) {
-		this.maHoaDon = maHoaDon;
-		this.khachHang = khachHang;
-		this.nhanVien = nhanVien;
+    public HoaDon(String maHD) {
+        this.maHD = maHD;
+    }
+
+    public HoaDon(String maHD, NhanVien nhanVien, KhachHang khachHang, Ban ban, LocalDate ngayLapHoaDon, LocalDateTime gioVao, LocalDateTime gioRa, String phuongThucThanhToan, KhuyenMai khuyenMai, Thue thue, PhieuDatBan phieuDatBan, double tongTienTruocThue, double tongGiamGia, boolean daThanhToan) {
+        this.maHD = maHD;
+        this.nhanVien = nhanVien;
+        this.khachHang = khachHang;
         this.ban = ban;
-		this.phieuDatBan = phieuDatBan;
-		this.khuyenMai = khuyenMai;
-		this.thue = thue;
-		this.ngayLap = ngayLap;
-		this.gioVao = gioVao;
-		this.gioRa = gioRa;
-		this.phuongThuc = phuongThuc;
-		this.daThanhToan = daThanhToan;
-	}
+        this.ngayLapHoaDon = ngayLapHoaDon;
+        this.gioVao = gioVao;
+        this.gioRa = gioRa;
+        this.phuongThucThanhToan = phuongThucThanhToan;
+        this.khuyenMai = khuyenMai;
+        this.thue = thue;
+        this.phieuDatBan = phieuDatBan;
+        this.tongTienTruocThue = tongTienTruocThue;
+        this.tongGiamGia = tongGiamGia;
+        this.daThanhToan = daThanhToan;
+    }
 
-	public HoaDon(String maHoaDon, KhachHang khachHang, NhanVien nhanVien, PhieuDatBan phieuDatBan) {
-		this.maHoaDon = maHoaDon;
-		this.khachHang = khachHang;
-		this.nhanVien = nhanVien;
-		this.phieuDatBan = phieuDatBan;
-	}
+    public String getMaHD() {
+        return maHD;
+    }
 
-	
+    public void setMaHD(String maHD) {
+        this.maHD = maHD;
+    }
 
-	public String getMaHoaDon() {
-		return maHoaDon;
-	}
+    public NhanVien getNhanVien() {
+        return nhanVien;
+    }
 
-	public void setMaHoaDon(String maHoaDon) {
-		this.maHoaDon = maHoaDon;
-	}
+    public void setNhanVien(NhanVien nhanVien) {
+        this.nhanVien = nhanVien;
+    }
 
-	public KhachHang getKhachHang() {
-		return khachHang;
-	}
+    public KhachHang getKhachHang() {
+        return khachHang;
+    }
 
-	public void setKhachHang(KhachHang khachHang) {
-		this.khachHang = khachHang;
-	}
+    public void setKhachHang(KhachHang khachHang) {
+        this.khachHang = khachHang;
+    }
 
-	public NhanVien getNhanVien() {
-		return nhanVien;
-	}
+    public Ban getBan() {
+        return ban;
+    }
 
-	public void setNhanVien(NhanVien nhanVien) {
-		this.nhanVien = nhanVien;
-	}
+    public void setBan(Ban ban) {
+        this.ban = ban;
+    }
 
-	public Ban getBan() {
-		return ban;
-	}
+    public LocalDate getNgayLapHoaDon() {
+        return ngayLapHoaDon;
+    }
 
-	public void setBan(Ban ban) {
-		this.ban = ban;
-	}
+    public void setNgayLapHoaDon(LocalDate ngayLapHoaDon) {
+        this.ngayLapHoaDon = ngayLapHoaDon;
+    }
 
-	public PhieuDatBan getPhieuDatBan() {
-		return phieuDatBan;
-	}
+    public LocalDateTime getGioVao() {
+        return gioVao;
+    }
 
-	public void setPhieuDatBan(PhieuDatBan phieuDatBan) {
-		this.phieuDatBan = phieuDatBan;
-	}
+    public void setGioVao(LocalDateTime gioVao) {
+        this.gioVao = gioVao;
+    }
 
-	public KhuyenMai getKhuyenMai() {
-		return khuyenMai;
-	}
+    public LocalDateTime getGioRa() {
+        return gioRa;
+    }
 
-	public void setKhuyenMai(KhuyenMai khuyenMai) {
-		this.khuyenMai = khuyenMai;
-	}
+    public void setGioRa(LocalDateTime gioRa) {
+        this.gioRa = gioRa;
+    }
 
-	public Thue getThue() {
-		return thue;
-	}
+    public String getPhuongThucThanhToan() {
+        return phuongThucThanhToan;
+    }
 
-	public void setThue(Thue thue) {
-		this.thue = thue;
-	}
+    public void setPhuongThucThanhToan(String phuongThucThanhToan) {
+        this.phuongThucThanhToan = phuongThucThanhToan;
+    }
 
-	public LocalDate getNgayLap() {
-		return ngayLap;
-	}
+    public KhuyenMai getKhuyenMai() {
+        return khuyenMai;
+    }
 
-	public void setNgayLap(LocalDate ngayLap) {
-		this.ngayLap = ngayLap;
-	}
+    public void setKhuyenMai(KhuyenMai khuyenMai) {
+        this.khuyenMai = khuyenMai;
+    }
 
-	public LocalDateTime getGioVao() {
-		return gioVao;
-	}
+    public Thue getThue() {
+        return thue;
+    }
 
-	public void setGioVao(LocalDateTime gioVao) {
-		this.gioVao = gioVao;
-	}
+    public void setThue(Thue thue) {
+        this.thue = thue;
+    }
 
-	public LocalDateTime getGioRa() {
-		return gioRa;
-	}
+    public PhieuDatBan getPhieuDatBan() {
+        return phieuDatBan;
+    }
 
-	public void setGioRa(LocalDateTime gioRa) {
-		this.gioRa = gioRa;
-	}
+    public void setPhieuDatBan(PhieuDatBan phieuDatBan) {
+        this.phieuDatBan = phieuDatBan;
+    }
 
-	public String getPhuongThuc() {
-		return phuongThuc;
-	}
+    public double getTongTienTruocThue() {
+        return tongTienTruocThue;
+    }
 
-	public void setPhuongThuc(String phuongThuc) {
-		this.phuongThuc = phuongThuc;
-	}
+    public void setTongTienTruocThue(double tongTienTruocThue) {
+        this.tongTienTruocThue = tongTienTruocThue;
+    }
 
-	public boolean isDaThanhToan() {
-		return daThanhToan;
-	}
+    public double getTongGiamGia() {
+        return tongGiamGia;
+    }
 
-	public void setDaThanhToan(boolean daThanhToan) {
-		this.daThanhToan = daThanhToan;
-	}
+    public void setTongGiamGia(double tongGiamGiam) {
+        this.tongGiamGia = tongGiamGiam;
+    }
 
-	@Override
-	public String toString() {
-		return "HoaDon [maHoaDon=" + maHoaDon + ", khachHang=" + khachHang + ", nhanVien=" + nhanVien + ", ban=" + ban + ", phieuDatBan="
-				+ phieuDatBan + ", khuyenMai=" + khuyenMai + ", thue=" + thue + ", ngayLap=" + ngayLap + ", gioVao="
-				+ gioVao + ", gioRa=" + gioRa + ", phuongThuc=" + phuongThuc + ", daThanhToan=" + daThanhToan + "]";
-	}
+    public boolean isDaThanhToan() {
+        return daThanhToan;
+    }
+
+    public void setDaThanhToan(boolean daThanhToan) {
+        this.daThanhToan = daThanhToan;
+    }
+
+    @Override
+    public String toString() {
+        return maHD;
+    }
+
+    @Override
+    public int hashCode() {
+        return maHD.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        HoaDon other = (HoaDon) obj;
+        return maHD.equals(other.maHD);
+    }
 }

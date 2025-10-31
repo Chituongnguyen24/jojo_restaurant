@@ -18,7 +18,6 @@ public class ThucDon_View extends JPanel {
     private JPanel panelDanhSach;
     private MonAn_DAO monAnDAO = new MonAn_DAO();
     
-    //màu cho nút thêm
     private static final Color COLOR_BUTTON_ADD = new Color(28, 132, 221);
     private static final Color COLOR_WHITE = Color.WHITE;
 
@@ -116,6 +115,11 @@ public class ThucDon_View extends JPanel {
         lblGia.setFont(new Font("Segoe UI", Font.BOLD, 14));
         lblGia.setForeground(new Color(220, 0, 0));
 
+        // THÊM: Hiển thị Loại món ăn
+        JLabel lblLoaiMon = new JLabel("Loại: " + (mon.getLoaiMonAn() != null ? mon.getLoaiMonAn() : "-"));
+        lblLoaiMon.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblLoaiMon.setForeground(new Color(100, 100, 100));
+
         JLabel lblTrangThai = new JLabel(mon.isTrangThai() ? "Có sẵn" : "Hết món");
         lblTrangThai.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         lblTrangThai.setForeground(mon.isTrangThai() ? new Color(0, 128, 0) : Color.RED);
@@ -124,6 +128,7 @@ public class ThucDon_View extends JPanel {
         infoPanel.add(Box.createVerticalGlue()); 
         infoPanel.add(lblGia);
         infoPanel.add(Box.createVerticalStrut(5));
+        infoPanel.add(lblLoaiMon); // HIỂN THỊ LOẠI MÓN
         infoPanel.add(lblTrangThai);
 
         panel.add(infoPanel, BorderLayout.CENTER);
@@ -167,7 +172,6 @@ public class ThucDon_View extends JPanel {
         }
 
         if (icon == null || icon.getIconWidth() == -1) {
-            //dặt tên ảnh placeholder
             icon = new ImageIcon("images/mon an/placeholder.png"); 
         }
 

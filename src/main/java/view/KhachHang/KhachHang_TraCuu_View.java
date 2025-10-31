@@ -206,7 +206,7 @@ public class KhachHang_TraCuu_View extends JPanel {
 
     private JPanel createTableSection() {
         // Cột: Mã KH, Tên KH, SĐT, Email, Điểm TL, Hạng, Là TV
-        String[] cols = {"Mã KH", "Tên khách hàng", "SĐT", "Email", "Điểm tích lũy", "Hạng", "Phân loại"};
+        String[] cols = {"Mã KH", "Tên khách hàng", "SĐT", "Email", "Ngày sinh", "Điểm tích lũy", "Hạng", "Phân loại"};
         model = new DefaultTableModel(cols, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -267,9 +267,9 @@ public class KhachHang_TraCuu_View extends JPanel {
 
         // Áp dụng Cell Renderer
         table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer); // Mã KH
-        table.getColumnModel().getColumn(4).setCellRenderer(rightRenderer); // Điểm tích lũy
-        table.getColumnModel().getColumn(5).setCellRenderer(centerRenderer); // Hạng
-        table.getColumnModel().getColumn(6).setCellRenderer(centerRenderer); // Phân loại (Thành viên/Thường)
+        table.getColumnModel().getColumn(5).setCellRenderer(rightRenderer); // Điểm tích lũy
+        table.getColumnModel().getColumn(6).setCellRenderer(centerRenderer); // Hạng
+        table.getColumnModel().getColumn(7).setCellRenderer(centerRenderer); // Phân loại (Thành viên/Thường)
         
         // Renderer đặc biệt cho cột Hạng và Phân loại
         DefaultTableCellRenderer roleRenderer = new DefaultTableCellRenderer() {
@@ -282,7 +282,7 @@ public class KhachHang_TraCuu_View extends JPanel {
                     setHorizontalAlignment(CENTER);
                     String text = value.toString();
                     
-                    if (column == 5) { // Cột Hạng
+                    if (column == 6) { // Cột Hạng
                         // Logic màu cho Hạng (Đồng, Bạc, Vàng)
                         if (text.equals("Vàng")) {
                              c.setForeground(RED_ORANGE.darker());
@@ -292,7 +292,7 @@ public class KhachHang_TraCuu_View extends JPanel {
                              c.setForeground(SUCCESS_GREEN.darker());
                         } 
                         c.setFont(c.getFont().deriveFont(Font.BOLD));
-                    } else if (column == 6) { // Cột Phân loại
+                    } else if (column == 7) { // Cột Phân loại
                         if (text.equals("Thành viên")) {
                             c.setForeground(PRIMARY_BLUE.darker()); // Màu xanh dương cho thành viên
                         } else {
@@ -305,15 +305,16 @@ public class KhachHang_TraCuu_View extends JPanel {
             }
         };
         
-        table.getColumnModel().getColumn(5).setCellRenderer(roleRenderer); // Hạng
-        table.getColumnModel().getColumn(6).setCellRenderer(roleRenderer); // Phân loại
+        table.getColumnModel().getColumn(6).setCellRenderer(roleRenderer); // Hạng
+        table.getColumnModel().getColumn(7).setCellRenderer(roleRenderer); // Phân loại
 
         // Điều chỉnh độ rộng cột
         table.getColumnModel().getColumn(0).setPreferredWidth(80); // Mã KH
         table.getColumnModel().getColumn(2).setPreferredWidth(100); // SĐT
-        table.getColumnModel().getColumn(4).setPreferredWidth(100); // Điểm TL
-        table.getColumnModel().getColumn(5).setPreferredWidth(80); // Hạng
-        table.getColumnModel().getColumn(6).setPreferredWidth(120); // Phân loại
+        table.getColumnModel().getColumn(4).setPreferredWidth(100); // Ngày sinh
+        table.getColumnModel().getColumn(5).setPreferredWidth(100); // Điểm TL
+        table.getColumnModel().getColumn(6).setPreferredWidth(80); // Hạng
+        table.getColumnModel().getColumn(7).setPreferredWidth(120); // Phân loại
     }
 
     // ====== Load + filter dữ liệu ======
@@ -348,10 +349,10 @@ public class KhachHang_TraCuu_View extends JPanel {
         
         // --- LỌC DỮ LIỆU ĐỂ HIỂN THỊ (Logic chính) ---
         List<KhachHang> filtered = dsKH.stream().filter(kh -> {
-            String ten = safeLower(kh.getTenKhachHang());
-            String sdt = safeLower(kh.getSdt());
+            String ten = safeLower(kh.getTenKH()); // SỬA: getTenKH
+            String sdt = safeLower(kh.getSoDienThoai()); // SỬA: getSoDienThoai
             String email = safeLower(kh.getEmail());
-            String ma = safeLower(kh.getMaKhachHang());
+            String ma = safeLower(kh.getMaKH()); // SỬA: getMaKH
             String hang = khachHangDAO.xepHangKhachHang(kh.getDiemTichLuy()); 
 
             boolean matchKeyword = keyword.isEmpty()
@@ -372,12 +373,14 @@ public class KhachHang_TraCuu_View extends JPanel {
         for (KhachHang kh : filtered) {
             String loai = kh.isLaThanhVien() ? "Thành viên" : "Khách thường";
             String hang = khachHangDAO.xepHangKhachHang(kh.getDiemTichLuy()); 
+            String ngaySinhStr = kh.getNgaySinh() != null ? kh.getNgaySinh().toString() : "-";
             
             model.addRow(new Object[]{
-                    kh.getMaKhachHang(),
-                    kh.getTenKhachHang(),
-                    kh.getSdt(),
+                    kh.getMaKH(),
+                    kh.getTenKH(),
+                    kh.getSoDienThoai(),
                     kh.getEmail(),
+                    ngaySinhStr, // MỚI
                     kh.getDiemTichLuy(),
                     hang,  
                     loai

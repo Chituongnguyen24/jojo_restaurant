@@ -16,21 +16,10 @@ import view.NhanVien.NhanVien_TraCuu_View;
 import view.NhanVien.NhanVien_View;
 import view.NhanVien.ThongKe_View;
 import view.ThucDon.*;
+import view.HoaDon.Thue_TraCuu_View;
+import view.HoaDon.KhuyenMai_View;
+import view.HoaDon.KhuyenMai_TraCuu_View;
 
-/**
- * TrangChu_View - refactor logic role-checking
- *
- * Mục đích:
- * - Ứng dụng chỉ có 2 actor (Quản lý và Tiếp tân), nên điều kiện dạng (isManager || isReceptionist)
- *   là thừa ở nhiều chỗ. Thay bằng logic rõ ràng: xác định 1 role duy nhất và:
- *     - menusCommon: những menu cả hai role đều thấy.
- *     - menusManagerOnly: chỉ hiển thị cho Quản lý.
- *     - menusReceptionistOnly: chỉ hiển thị cho Tiếp tân.
- *
- * - Điều này làm code rõ ràng hơn, dễ bảo trì và tránh các biểu thức boolean thừa.
- *
- * - File này chỉ thay đổi luồng hiển thị menu / panel; phần nội dung card panel giữ nguyên.
- */
 public class TrangChu_View extends JPanel {
 
     private final JPanel contentPanel;
@@ -64,7 +53,6 @@ public class TrangChu_View extends JPanel {
         this.mainFrame = frame;
         setLayout(new BorderLayout());
 
-        // determine role (normalize input)
         Role role = determineRole(tk, vaiTro);
 
         JPanel headerPanel = createHeaderPanel(tk, role);
@@ -92,7 +80,7 @@ public class TrangChu_View extends JPanel {
         } else if (vaiTro != null && !vaiTro.trim().isEmpty()) {
             src = vaiTro.trim();
         }
-        if (src == null) return Role.RECEPTIONIST; // default to receptionist if unknown (safer)
+        if (src == null) return Role.RECEPTIONIST;
         src = src.toLowerCase();
         if (src.contains("quản") || src.contains("quan") || src.contains("nvql") || src.contains("manager")) {
             return Role.MANAGER;
@@ -119,7 +107,7 @@ public class TrangChu_View extends JPanel {
         JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         userPanel.setOpaque(false);
 
-        String userName = (tk != null && tk.getTenDangNhap() != null) ? tk.getTenDangNhap() : "Người dùng";
+        String userName = (tk != null && tk.getTenDangNhap() != null) ? tk.getTenDangNhap().trim() : "Người dùng";
         JLabel userLabel = new JLabel("Xin chào, " + userName + " (" + roleLabel + ")");
         userLabel.setFont(new Font("Arial", Font.PLAIN, 13));
         userPanel.add(userLabel);
@@ -151,7 +139,7 @@ public class TrangChu_View extends JPanel {
         Font menuFont = new Font("Arial", Font.BOLD, 14);
         Font menuItemFont = new Font("Arial", Font.PLAIN, 14);
 
-        // Hệ thống menu (luôn có)
+        // Hệ thống menu
         JMenu menuHeThong = new JMenu("Hệ thống");
         menuHeThong.setFont(menuFont);
         JMenuItem mDangXuat = new JMenuItem("Đăng xuất");
@@ -161,11 +149,16 @@ public class TrangChu_View extends JPanel {
         JMenuItem mDoiMatKhau = new JMenuItem("Đổi mật khẩu");
         mDoiMatKhau.setFont(menuItemFont);
 
-        
+        // FIX LỖI MÃ NHÂN VIÊN: Lấy MaNV trực tiếp từ TaiKhoan
         mDoiMatKhau.addActionListener(e -> {
-            String maNVForDialog = (tk != null && tk.getMaNV() != null && !tk.getMaNV().trim().isEmpty())
-                    ? tk.getMaNV()
-                    : (tk != null ? tk.getTenDangNhap() : "");
+            String maNVForDialog = (tk != null && tk.getNhanVien() != null) 
+                    ? tk.getNhanVien().getMaNhanVien().trim() // Sử dụng MaNV nếu có
+                    : (tk != null ? tk.getTenDangNhap().trim() : ""); // Fallback sang Tên đăng nhập
+
+            if (maNVForDialog.isEmpty()) {
+                JOptionPane.showMessageDialog(mainFrame, "Không tìm thấy thông tin đăng nhập.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             DoiMatKhau_View.showDialog(mainFrame, maNVForDialog);
         });
 
@@ -179,10 +172,7 @@ public class TrangChu_View extends JPanel {
         menuHeThong.add(mThoat);
         menuBar.add(menuHeThong);
 
-        // --- Common menus (both Manager and Receptionist) ---
-        // These are menus available to both roles (no need for isManager || isReceptionist)
-        
-
+        // --- Common menus ---
         JMenu menuKH = new JMenu("Khách hàng");
         menuKH.setFont(menuFont);
         JMenuItem mQLKH = new JMenuItem("Quản lý khách hàng");
@@ -326,7 +316,7 @@ public class TrangChu_View extends JPanel {
         contentPanel.add(new HoaDon_TraCuu_View(), CARD_TRA_CUU_HOADON);
         contentPanel.add(new MonAn_TraCuu_View(), CARD_TRA_CUU_MON_AN);
         contentPanel.add(new KhachHang_TraCuu_View(), CARD_TRA_CUU_KH);
-        contentPanel.add(new MonAn_View(), CARD_QUAN_LY_DAT_MON);
+        contentPanel.add(new DatMonAn_View(), CARD_QUAN_LY_DAT_MON);
         contentPanel.add(new HoaDon_View(), CARD_QUAN_LY_HOADON);
         contentPanel.add(new KhuyenMai_TraCuu_View(),CARD_TRA_CUU_KHUYENMAI);
         contentPanel.add(new KhachHang_View(), CARD_QUAN_LY_KH);

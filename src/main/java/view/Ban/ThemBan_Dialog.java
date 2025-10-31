@@ -2,12 +2,14 @@ package view.Ban;
 
 import dao.Ban_DAO;
 import entity.Ban;
+import entity.KhuVuc; // Import KhuVuc
 import enums.LoaiBan;
 import enums.TrangThaiBan;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Map;
+import java.util.Vector;
 
 public class ThemBan_Dialog extends JDialog {
 
@@ -17,7 +19,7 @@ public class ThemBan_Dialog extends JDialog {
 
     private JTextField txtMaBan;
     private JSpinner spinSoCho;
-    private JComboBox<LoaiBan> cmbLoaiBan;
+    private JComboBox<String> cmbLoaiBan; // SỬA: Dùng String để lấy giá trị raw DB
     private JComboBox<String> cmbKhuVuc;
 
     private static final Color COLOR_PRIMARY = new Color(0, 123, 255);
@@ -30,7 +32,6 @@ public class ThemBan_Dialog extends JDialog {
         this.banDAO = new Ban_DAO();
         this.onRefreshCallback = onRefreshCallback;
         
-        //lấy danh sách khu vực để điền vào ComboBox
         this.khuVucMap = banDAO.getDanhSachKhuVuc();
 
         initComponents();
@@ -66,13 +67,19 @@ public class ThemBan_Dialog extends JDialog {
         spinSoCho.setFont(FONT_FIELD);
         mainPanel.add(spinSoCho, gbc);
 
-        // Loại bàn
+        // Loại bàn (SỬA: Dùng String raw DB, hiển thị tên Enum)
         gbc.gridx = 0; gbc.gridy = 2;
         gbc.weightx = 0;
         mainPanel.add(createLabel("Loại bàn:"), gbc);
         gbc.gridx = 1; gbc.gridy = 2;
         gbc.weightx = 1.0;
-        cmbLoaiBan = new JComboBox<>(LoaiBan.values());
+        
+        // Lấy giá trị String tương ứng với Enum (VD: THUONG, VIP, SANTHUONG, SANVUON)
+        String[] loaiBanValues = new String[LoaiBan.values().length];
+        for (int i = 0; i < LoaiBan.values().length; i++) {
+            loaiBanValues[i] = LoaiBan.values()[i].name();
+        }
+        cmbLoaiBan = new JComboBox<>(loaiBanValues); 
         cmbLoaiBan.setFont(FONT_FIELD);
         mainPanel.add(cmbLoaiBan, gbc);
 
@@ -82,7 +89,8 @@ public class ThemBan_Dialog extends JDialog {
         mainPanel.add(createLabel("Khu vực:"), gbc);
         gbc.gridx = 1; gbc.gridy = 3;
         gbc.weightx = 1.0;
-        //Tên Khu Vực
+        
+        // Tên Khu Vực
         cmbKhuVuc = new JComboBox<>(khuVucMap.values().toArray(new String[0])); 
         cmbKhuVuc.setFont(FONT_FIELD);
         mainPanel.add(cmbKhuVuc, gbc);
@@ -121,18 +129,21 @@ public class ThemBan_Dialog extends JDialog {
     private void themBan() {
         String maBan = txtMaBan.getText().trim();
         int soCho = (int) spinSoCho.getValue();
-        LoaiBan loaiBan = (LoaiBan) cmbLoaiBan.getSelectedItem();
         
-        //tenKhuVuc từ ComboBox
+        // Lấy mã LoaiBan raw DB (String)
+        String loaiBanString = (String) cmbLoaiBan.getSelectedItem();
+        
+        // Lấy Tên Khu Vực
         String tenKhuVuc = (String) cmbKhuVuc.getSelectedItem();
-        //tìm maKhuVuc tương ứng
+        
+        // Tìm Mã Khu Vực tương ứng
         String maKhuVuc = khuVucMap.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(tenKhuVuc))
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
 
-        //kiểm tra dữ liệu
+        // kiểm tra dữ liệu
         if (maBan.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Mã bàn không được để trống!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
@@ -142,13 +153,15 @@ public class ThemBan_Dialog extends JDialog {
             return;
         }
 
-        //tạo Ban mới
+        // Tạo Entity KhuVuc và Ban mới
+        KhuVuc khuVuc = new KhuVuc(maKhuVuc);
+        
         Ban newBan = new Ban(
             maBan,
             soCho,
-            loaiBan,
-            maKhuVuc,
-            TrangThaiBan.TRONG
+            khuVuc, // ĐÃ SỬA: Sử dụng Entity KhuVuc
+            loaiBanString, // ĐÃ SỬA: Sử dụng String LoaiBan
+            TrangThaiBan.TRONG.name() // ĐÃ SỬA: Sử dụng String TrangThai
         );
 
         boolean success = banDAO.themBan(newBan);
