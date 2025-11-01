@@ -8,6 +8,7 @@ public class KhachHang {
     private String soDienThoai;
     private String email;
     private LocalDate ngaySinh;
+    private Boolean gioiTinh;
     private int diemTichLuy;
     private boolean laThanhVien;
 
@@ -18,12 +19,13 @@ public class KhachHang {
         this.maKH = maKH;
     }
 
-    public KhachHang(String maKH, String tenKH, String soDienThoai, String email, LocalDate ngaySinh, int diemTichLuy, boolean laThanhVien) {
+    public KhachHang(String maKH, String tenKH, String soDienThoai, String email, LocalDate ngaySinh, Boolean gioiTinh, int diemTichLuy, boolean laThanhVien) {
         this.maKH = maKH;
         this.tenKH = tenKH;
         this.soDienThoai = soDienThoai;
         this.email = email;
         this.ngaySinh = ngaySinh;
+        this.gioiTinh= gioiTinh;
         this.diemTichLuy = diemTichLuy;
         this.laThanhVien = laThanhVien;
     }
@@ -101,4 +103,12 @@ public class KhachHang {
         KhachHang other = (KhachHang) obj;
         return maKH.equals(other.maKH);
     }
+
+	public Boolean getGioiTinh() {
+		return gioiTinh;
+	}
+
+	public void setGioiTinh(Boolean gioiTinh) {
+		this.gioiTinh = gioiTinh;
+	}
 }

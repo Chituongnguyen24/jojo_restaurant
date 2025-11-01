@@ -12,13 +12,10 @@ import view.HoaDon.*;
 import view.KhachHang.*;
 import view.Login.DangNhap_View;
 import view.Login.DoiMatKhau_View;
-import view.NhanVien.NhanVien_TraCuu_View;
 import view.NhanVien.NhanVien_View;
 import view.NhanVien.ThongKe_View;
 import view.ThucDon.*;
-import view.HoaDon.Thue_TraCuu_View;
 import view.HoaDon.KhuyenMai_View;
-import view.HoaDon.KhuyenMai_TraCuu_View;
 
 public class TrangChu_View extends JPanel {
 
@@ -313,23 +310,23 @@ public class TrangChu_View extends JPanel {
         
         contentPanel.add(new HeThong_View(), CARD_HOME);
         contentPanel.add(new DatBan_View(), CARD_QUAN_LY_DAT_BAN);
-        contentPanel.add(new HoaDon_TraCuu_View(), CARD_TRA_CUU_HOADON);
-        contentPanel.add(new MonAn_TraCuu_View(), CARD_TRA_CUU_MON_AN);
-        contentPanel.add(new KhachHang_TraCuu_View(), CARD_TRA_CUU_KH);
+//        contentPanel.add(new HoaDon_TraCuu_View(), CARD_TRA_CUU_HOADON);
+//        contentPanel.add(new MonAn_TraCuu_View(), CARD_TRA_CUU_MON_AN);
+//        contentPanel.add(new KhachHang_TraCuu_View(), CARD_TRA_CUU_KH);
         contentPanel.add(new DatMonAn_View(), CARD_QUAN_LY_DAT_MON);
         contentPanel.add(new HoaDon_View(), CARD_QUAN_LY_HOADON);
-        contentPanel.add(new KhuyenMai_TraCuu_View(),CARD_TRA_CUU_KHUYENMAI);
+//        contentPanel.add(new KhuyenMai_TraCuu_View(),CARD_TRA_CUU_KHUYENMAI);
         contentPanel.add(new KhachHang_View(), CARD_QUAN_LY_KH);
-        contentPanel.add(new KhachHang_DiemTichLuy_View(), CARD_DIEM_KH);
+//        contentPanel.add(new KhachHang_DiemTichLuy_View(), CARD_DIEM_KH);
 
         if (role == Role.MANAGER) {
            
             contentPanel.add(new Ban_View(), CARD_QUAN_LY_BAN);
             contentPanel.add(new ThucDon_View(), CARD_QUAN_LY_THUC_DON);
-            contentPanel.add(new Thue_TraCuu_View(),CARD_TRA_CUU_THUE);
+//            contentPanel.add(new Thue_TraCuu_View(),CARD_TRA_CUU_THUE);
             contentPanel.add(new KhuyenMai_View(),CARD_QUAN_LY_KHUYENMAI);
             contentPanel.add(new NhanVien_View(), CARD_QUAN_LY_NHANVIEN);
-            contentPanel.add(new NhanVien_TraCuu_View(), CARD_TRA_CUU_NV);
+//            contentPanel.add(new NhanVien_TraCuu_View(), CARD_TRA_CUU_NV);
             contentPanel.add(new ThongKe_View(), CARD_THONGKE);
         } 
     }

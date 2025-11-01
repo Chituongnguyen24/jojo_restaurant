@@ -279,4 +279,31 @@ public class Ban_DAO {
         }
         return null;
     }
+    public String getMaBanTuDong() {
+        String newID = "B01"; 
+        String sql = "SELECT TOP 1 maBan FROM Ban WHERE maBan LIKE 'B[0-9]%' OR maBan LIKE 'B[0-9][0-9]%' ORDER BY maBan DESC";
+
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            if (rs.next()) {
+                String lastID = rs.getString("maBan").trim();
+                // Lấy phần số: chỉ xem xét các mã bắt đầu bằng B
+                if (lastID.startsWith("B")) {
+                     String numPart = lastID.substring(1); 
+                     try {
+                         int num = Integer.parseInt(numPart);
+                         num++; 
+                         newID = "B" + String.format("%02d", num); // Format B01, B02, ... B10
+                     } catch (NumberFormatException e) {
+                         // Nếu không parse được, dùng mã mặc định
+                     }
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return newID;
+    }
 }

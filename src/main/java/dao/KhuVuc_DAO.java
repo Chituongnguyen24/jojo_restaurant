@@ -52,4 +52,24 @@ public class KhuVuc_DAO {
         }
         return null;
     }
+    
+    public String getMaKhuVucTheoTen(String tenKhuVuc) {
+        // SQL Server TRIM() là an toàn, nhưng Java trim() là bắt buộc
+        String sql = "SELECT maKhuVuc FROM KHUVUC WHERE tenKhuVuc = ?"; 
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+            
+            // Truyền tên khu vực vào câu lệnh
+            stmt.setString(1, tenKhuVuc.trim());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    // Trả về mã khu vực (trim để loại bỏ khoảng trắng dư thừa do kiểu NCHAR)
+                    return rs.getString("maKhuVuc").trim(); 
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

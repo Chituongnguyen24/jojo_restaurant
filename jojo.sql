@@ -6,12 +6,12 @@ GO
 DROP DATABASE IF EXISTS [PTUD-JOJO-Restaurant]
 GO
 CREATE DATABASE [PTUD-JOJO-Restaurant]
- CONTAINMENT = NONE
- ON PRIMARY
+ CONTAINMENT = NONE
+ ON PRIMARY
 ( NAME = N'PTUD-JOJO-Restaurant', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\PTUD-JOJO-Restaurant.mdf' , SIZE = 8192KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
- LOG ON
+ LOG ON
 ( NAME = N'PTUD-JOJO-Restaurant_log', FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL16.SQLEXPRESS\MSSQL\DATA\PTUD-JOJO-Restaurant_log.ldf' , SIZE = 8192KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
- WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
+ WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
 GO
 
 USE [PTUD-JOJO-Restaurant];
@@ -19,7 +19,7 @@ GO
 
 /*
 -- =================================================================================
--- PHẦN 2: TẠO CÁC BẢNG (VẪN GIỮ CẤU TRÚC FLOAT VÀ SMALLDATETIME ĐÃ CHỌN)
+-- PHẦN 2: TẠO CÁC BẢNG (ĐÃ THÊM GioiTinh VÀO KHACHHANG)
 -- =================================================================================
 */
 SET ANSI_NULLS ON
@@ -36,15 +36,16 @@ CREATE TABLE [dbo].[KHUVUC](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 
--- 2. Bảng KHACHHANG
+-- 2. Bảng KHACHHANG (ĐÃ SỬA: Thêm GioiTinh)
 CREATE TABLE [dbo].[KHACHHANG](
 	[MaKH] [nchar](10) PRIMARY KEY NOT NULL,
 	[TenKH] [nvarchar](50) NOT NULL,
 	[SoDienThoai] [varchar](11) NOT NULL,
 	[Email] [varchar](100) NULL,
 	[NgaySinh] [date] NULL,
-    [DiemTichLuy] [int] NOT NULL,
-    [LaThanhVien] [bit] NOT NULL
+    [GioiTinh] [bit] NULL, 
+    [DiemTichLuy] [int] NOT NULL,
+    [LaThanhVien] [bit] NOT NULL
 ) ON [PRIMARY]
 GO
 
@@ -94,7 +95,7 @@ CREATE TABLE [dbo].[MONAN](
 	[donGia] [float] NOT NULL, 
 	[trangThai] [bit] NOT NULL,
 	[imagePath] [nvarchar](max) NULL,
-    [loaiMonAn] [nvarchar](50) NULL
+    [loaiMonAn] [nvarchar](50) NULL
 ) ON [PRIMARY]
 GO
 
@@ -131,7 +132,7 @@ CREATE TABLE [dbo].[PHIEUDATBAN](
 	[maBan] [nchar](10) NOT NULL,
 	[soNguoi] [int] NOT NULL,
 	[ghiChu] [nvarchar](max) NULL,
-    [trangThaiPhieu] [nvarchar](20) NOT NULL, -- Đã đến, Không đến, Chưa đến
+    [trangThaiPhieu] [nvarchar](20) NOT NULL, -- Đã đến, Không đến, Chưa đến
 	CONSTRAINT [FK_PDB_KH] FOREIGN KEY([maKhachHang]) REFERENCES [dbo].[KHACHHANG] ([MaKH]),
 	CONSTRAINT [FK_PDB_NV] FOREIGN KEY([maNV]) REFERENCES [dbo].[NHANVIEN] ([maNhanVien]),
 	CONSTRAINT [FK_PDB_BAN] FOREIGN KEY([maBan]) REFERENCES [dbo].[BAN] ([maBan]),
@@ -266,18 +267,19 @@ INSERT INTO [dbo].[BAN] ([maBan], [soCho], [maKhuVuc], [loaiBan], [trangThai]) V
 GO
 
 -- 2 & 3 & 4. KHACHHANG & NHANVIEN & TAIKHOAN (Giữ nguyên)
-INSERT INTO [dbo].[KHACHHANG] ([MaKH], [TenKH], [SoDienThoai], [Email], [NgaySinh], [DiemTichLuy], [LaThanhVien]) VALUES
-(N'KH00000000', N'Khách vãng lai', N'0000000000', NULL, NULL, 0, 0), 
-(N'KH25000001', N'Trần Văn Nam', N'0987654321', N'nam.tran@email.com', '1990-05-15', 150, 1),
-(N'KH25000002', N'Nguyễn Thị Hoa', N'0986543210', N'hoa.nguyen@email.com', '1995-10-25', 85, 1), 
-(N'KH25000003', N'Lê Văn Long', N'0975432109', N'long.le@email.com', '1985-12-01', 0, 0),
-(N'KH25000004', N'Phạm Thị Mai', N'0914321098', N'mai.pham@email.com', '1988-03-08', 250, 1), 
-(N'KH25000005', N'Đặng Hoàng Quân', N'0933210987', N'quan.dang@email.com', '1992-07-20', 410, 1),
-(N'KH25000006', N'Vũ Bích Thảo', N'0942109876', N'thao.vu@email.com', '1998-09-10', 520, 1), 
-(N'KH25000007', N'Hồ Minh Tâm', N'0981098765', N'tam.ho@email.com', '1975-01-01', 800, 1),
-(N'KH25000008', N'Ngô Gia Bảo', '0979876543', N'bao.ngo@email.com', '2000-02-29', 30, 1), 
-(N'KH25000009', N'Đinh Yến Nhi', '0968765432', N'nhi.dinh@email.com', '2001-11-11', 0, 0),
-(N'KH25000010', N'Lý Gia Hân', '0918765432', N'han.ly@email.com', '1980-04-05', 480, 1)
+INSERT INTO [dbo].[KHACHHANG] ([MaKH], [TenKH], [SoDienThoai], [Email], [NgaySinh], [GioiTinh], [DiemTichLuy], [LaThanhVien]) VALUES
+--                                                                                    (Ngày sinh)   (Giới tính) (Điểm TL) (TV)
+(N'KH00000000', N'Khách vãng lai', N'0000000000', NULL, NULL, NULL, 0, 0), 
+(N'KH25000001', N'Trần Văn Nam', N'0987654321', N'nam.tran@email.com', '1990-05-15', 1, 150, 1),
+(N'KH25000002', N'Nguyễn Thị Hoa', N'0986543210', N'hoa.nguyen@email.com', '1995-10-25', 0, 85, 1), 
+(N'KH25000003', N'Lê Văn Long', N'0975432109', N'long.le@email.com', '1985-12-01', 1, 0, 0),
+(N'KH25000004', 'Phạm Thị Mai', N'0914321098', N'mai.pham@email.com', '1988-03-08', 0, 250, 1), 
+(N'KH25000005', N'Đặng Hoàng Quân', N'0933210987', N'quan.dang@email.com', '1992-07-20', 1, 410, 1),
+(N'KH25000006', N'Vũ Bích Thảo', N'0942109876', N'thao.vu@email.com', '1998-09-10', 0, 520, 1), 
+(N'KH25000007', N'Hồ Minh Tâm', N'0981098765', N'tam.ho@email.com', '1975-01-01', 1, 800, 1),
+(N'KH25000008', N'Ngô Gia Bảo', '0979876543', N'bao.ngo@email.com', '2000-02-29', 1, 30, 1), 
+(N'KH25000009', 'Đinh Yến Nhi', '0968765432', N'nhi.dinh@email.com', '2001-11-11', 0, 0, 0),
+(N'KH25000010', 'Lý Gia Hân', '0918765432', N'han.ly@email.com', '1980-04-05', 0, 480, 1)
 GO
 INSERT INTO [dbo].[NHANVIEN] ([maNhanVien], [hoTen], [ngaySinh], [NgayVaoLam], [SoCCCD], [GioiTinh], [SoDienThoai], [Email], [ChucVu], [TrangThai]) VALUES
 (N'NVQL001', N'Nguyễn Văn An', '1985-01-01', '2018-01-10', N'079085001234', 1, N'0901234567', N'an.nvql@jojo.com', N'NVQL', N'Đang làm'), 
@@ -288,17 +290,17 @@ INSERT INTO [dbo].[NHANVIEN] ([maNhanVien], [hoTen], [ngaySinh], [NgayVaoLam], [
 (N'NVTT001', N'Đỗ Gia Hân', '2000-09-10', '2023-01-05', N'079100001239', 0, N'0906789012', N'han.nvtt@jojo.com', N'NVTT', N'Đang làm'),
 (N'NVTT002', N'Võ Quốc Khánh', '1997-04-05', '2023-03-15', N'079097001240', 1, N'0907890123', N'khanh.nvtt@jojo.com', N'NVTT', N'Đang làm'), 
 (N'NVTT003', N'Bùi Thị Lan', '1999-06-01', '2023-06-20', N'079099001241', 0, N'0908901234', N'lan.nvtt@jojo.com', N'NVTT', N'Đang làm'),
-(N'NVTT004', N'Lý Hùng Mạnh', '1996-10-28', '2023-09-01', N'079096001242', 1, N'0909012345', N'manh.nvtt@jojo.com', N'NVTT', N'Đang làm'), 
+(N'NVTT004', 'Lý Hùng Mạnh', '1996-10-28', '2023-09-01', N'079096001242', 1, N'0909012345', N'manh.nvtt@jojo.com', N'NVTT', N'Đang làm'), 
 (N'NVTT005', N'Trịnh Ngọc Oanh', '2002-12-05', '2024-01-15', N'079102001243', 0, N'0912112233', N'oanh.nvtt@jojo.com', N'NVTT', N'Đang làm'),
 (N'NVTT006', N'Đinh Công Tráng', '1994-08-22', '2024-03-01', N'079094001244', 1, N'0912345678', N'trang.nvtt@jojo.com', N'NVTT', N'Đang làm'), 
 (N'NVTT007', N'Mai Anh Thư', '1996-01-10', '2024-05-10', N'079096001245', 0, N'0987123456', N'thu.nvtt@jojo.com', N'NVTT', N'Đang làm'),
 (N'NVTT008', N'Trần Hoàng Phúc', '1999-03-15', '2024-07-20', N'079099001246', 1, N'0905556677', N'phuc.nvtt@jojo.com', N'NVTT', N'Đang làm'), 
 (N'NVTT009', N'Lê Thị Kiều', '2001-05-30', '2024-10-01', N'079101001247', 0, N'0977889900', N'kieu.nvtt@jojo.com', N'NVTT', N'Đang làm'),
-(N'NVTT010', N'Giang A Pháo', '1993-11-18', '2025-01-10', N'079093001248', 1, N'0966554433', N'phao.nvtt@jojo.com', N'NVTT', N'Đang làm')
+(N'NVTT010', 'Giang A Pháo', '1993-11-18', '2025-01-10', N'079093001248', 1, N'0966554433', N'phao.nvtt@jojo.com', N'NVTT', N'Đang làm')
 GO
 SET IDENTITY_INSERT [dbo].[TAIKHOAN] ON
 INSERT INTO [dbo].[TAIKHOAN] ([userID], [tenDangNhap], [matKhau], [vaiTro], [trangThai], [maNhanVien]) VALUES
-(1, N'1', N'1', N'NVQL', 1, N'NVQL001'), 
+(1, N'1', N'1', N'NVQL', 1, N'NVQL001'), 
 (2, N'annguyen', N'123456', N'NVQL', 1, N'NVQL001'), 
 (3, N'bichtran', N'123456', N'NVQL', 1, N'NVQL002'), 
 (4, N'minhcuong', N'123456', N'NVQL', 1, N'NVQL003'),
@@ -332,7 +334,7 @@ INSERT INTO [dbo].[PHIEUDATBAN] ([maPhieu], [thoiGianDenHen], [thoiGianNhanBan],
 (N'PDB000004', '2025-10-28 18:30', NULL, NULL, N'KH25000007', N'NVTT004', N'ST01', 4, N'Khách không đến nhận bàn', N'Không đến'),
 (N'PDB000005', '2025-10-30 11:30', '2025-10-30 11:45', '2025-10-30 13:00', N'KH00000000', N'NVTT005', N'B007', 6, NULL, N'Đã đến'),
 -- PHIẾU TRONG TƯƠNG LAI (Tháng 11)
-(N'PDB000006', '2025-11-01 18:00', NULL, NULL, N'KH25000003', N'NVTT006', N'VIP03', 15, N'Họp mặt đối tác', N'Chưa đến'), 
+(N'PDB000006', '2025-11-01 18:00', NULL, NULL, N'KH25000003', N'NVTT006', N'VIP03', 15, N'Họp mặt đối tác', N'Chưa đến'), 
 (N'PDB000007', '2025-11-05 10:00', NULL, NULL, N'KH25000008', N'NVTT007', N'SV03', 2, N'Ưu tiên bàn gần cây xanh', N'Chưa đến'),
 (N'PDB000008', '2025-11-15 19:00', NULL, NULL, N'KH25000010', N'NVTT008', N'B203', 6, N'Khách đặt trước món', N'Chưa đến'),
 (N'PDB000009', '2025-11-20 18:00', NULL, NULL, N'KH25000005', N'NVTT009', N'SV01', 4, NULL, N'Chưa đến'),
@@ -423,5 +425,5 @@ GO
 -- =================================================================================
 USE [master]
 GO
-ALTER DATABASE [PTUD-JOJO-Restaurant] SET READ_WRITE 
+ALTER DATABASE [PTUD-JOJO-Restaurant] SET READ_WRITE 
 GO

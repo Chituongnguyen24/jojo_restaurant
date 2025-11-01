@@ -13,24 +13,23 @@ public class MonAn_DAO {
      * Hàm trợ giúp để tạo đối tượng MonAn từ ResultSet
      */
     private MonAn createMonAnFromResultSet(ResultSet rs) throws SQLException {
-        // Cần đảm bảo rằng cột "loaiMonAn" tồn tại trong ResultSet
         return new MonAn(
-            rs.getString("maMonAn"),
+            rs.getString("maMonAn").trim(),
             rs.getString("tenMonAn"),
             rs.getDouble("donGia"),
             rs.getBoolean("trangThai"),
             rs.getString("imagePath"),
-            rs.getString("loaiMonAn") // === THÊM MỚI: LoaiMonAn ===
+            rs.getString("loaiMonAn") // Đảm bảo constructor MonAn có 6 tham số
         );
     }
 
     /**
-     * Lấy tất cả món ăn
+     * Lấy tất cả món ăn (Chỉ lấy món có trạng thái đang bán)
      */
     public List<MonAn> getAllMonAn() {
         List<MonAn> ds = new ArrayList<>();
-        // === CẬP NHẬT SQL: Thêm imagePath và loaiMonAn ===
-        String sql = "SELECT maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn FROM MonAn"; 
+        // Lấy tất cả, bao gồm cả các món đã vô hiệu hóa (trangThai = 0)
+        String sql = "SELECT maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn FROM MonAn ORDER BY maMonAn"; 
 
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql);
@@ -49,12 +48,11 @@ public class MonAn_DAO {
      * Lấy món ăn theo mã
      */
      public MonAn getMonAnTheoMa(String maMonAn) {
-        // === CẬP NHẬT SQL: Thêm imagePath và loaiMonAn ===
         String sql = "SELECT maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn FROM MonAn WHERE maMonAn = ?";
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
             
-            stmt.setString(1, maMonAn);
+            stmt.setString(1, maMonAn.trim());
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return createMonAnFromResultSet(rs);
@@ -70,7 +68,6 @@ public class MonAn_DAO {
      * Cập nhật thông tin món ăn (dùng trong ChinhSuaMonAn_Dialog)
      */
     public boolean updateMonAn(MonAn monAn) {
-        // === CẬP NHẬT SQL: Thêm imagePath và loaiMonAn ===
         String sql = "UPDATE MonAn SET tenMonAn = ?, donGia = ?, trangThai = ?, imagePath = ?, loaiMonAn = ? WHERE maMonAn = ?";
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
@@ -79,8 +76,8 @@ public class MonAn_DAO {
             stmt.setDouble(2, monAn.getDonGia());
             stmt.setBoolean(3, monAn.isTrangThai());
             stmt.setString(4, monAn.getImagePath());
-            stmt.setString(5, monAn.getLoaiMonAn()); // === THÊM MỚI ===
-            stmt.setString(6, monAn.getMaMonAn());  
+            stmt.setString(5, monAn.getLoaiMonAn()); 
+            stmt.setString(6, monAn.getMaMonAn().trim());  
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -90,14 +87,14 @@ public class MonAn_DAO {
     }
 
     /**
-     * Xóa món ăn (dùng trong ChinhSuaMonAn_Dialog)
+     * Vô hiệu hóa món ăn (Thay thế cho delete, cập nhật trạng thái thành Hết món)
      */
-    public boolean deleteMonAn(String maMonAn) {
-        String sql = "DELETE FROM MonAn WHERE maMonAn = ?";
+    public boolean disableMonAn(String maMonAn) {
+        String sql = "UPDATE MonAn SET trangThai = 0 WHERE maMonAn = ?";
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
-            stmt.setString(1, maMonAn);
+            stmt.setString(1, maMonAn.trim());
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
@@ -106,20 +103,19 @@ public class MonAn_DAO {
     }
     
     /**
-     * Thêm món ăn mới (quan trọng nếu bạn có chức năng thêm)
+     * Thêm món ăn mới 
      */
     public boolean themMonAn(MonAn monAn) {
-        // === CẬP NHẬT SQL: Thêm imagePath và loaiMonAn ===
         String sql = "INSERT INTO MonAn (maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn) VALUES (?, ?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
-            stmt.setString(1, monAn.getMaMonAn());
+            stmt.setString(1, monAn.getMaMonAn().trim());
             stmt.setString(2, monAn.getTenMonAn());
             stmt.setDouble(3, monAn.getDonGia());
             stmt.setBoolean(4, monAn.isTrangThai());
             stmt.setString(5, monAn.getImagePath());
-            stmt.setString(6, monAn.getLoaiMonAn()); // === THÊM MỚI ===
+            stmt.setString(6, monAn.getLoaiMonAn()); 
 
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -127,20 +123,21 @@ public class MonAn_DAO {
         }
         return false;
     }
+    
     /**
      * Tạo mã món ăn tự động
      */
     public String getMaMonAnTuDong() {
         String newID = "MA0001"; 
-        String sql = "SELECT TOP 1 maMonAn FROM MonAn ORDER BY maMonAn DESC";
+        String sql = "SELECT TOP 1 maMonAn FROM MonAn WHERE maMonAn LIKE 'MA[0-9][0-9][0-9][0-9]' ORDER BY maMonAn DESC";
 
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement stmt = con.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
             if (rs.next()) {
-                String lastID = rs.getString("maMonAn");
-                String numPart = lastID.trim().substring(2); 
+                String lastID = rs.getString("maMonAn").trim();
+                String numPart = lastID.substring(2); 
                 int num = Integer.parseInt(numPart);
                 num++; 
                 newID = String.format("MA%04d", num);
@@ -148,7 +145,7 @@ public class MonAn_DAO {
         } catch (SQLException e) {
             e.printStackTrace();
         } catch (NumberFormatException | StringIndexOutOfBoundsException e) {
-            e.printStackTrace();
+             e.printStackTrace();
         }
         return newID;
     }
@@ -158,14 +155,22 @@ public class MonAn_DAO {
      */
     public List<MonAn> searchMonAn(String keyword, String trangThaiFilter, String loaiMonAnFilter) {
         List<MonAn> ds = new ArrayList<>();
-        StringBuilder sqlBuilder = new StringBuilder("SELECT maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn FROM MonAn WHERE tenMonAn LIKE ?");
+        
+        // Bỏ điều kiện lọc bằng tên món ăn, cho phép tìm kiếm rỗng
+        StringBuilder sqlBuilder = new StringBuilder("SELECT maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn FROM MonAn WHERE 1=1");
         List<Object> params = new ArrayList<>();
-        params.add("%" + keyword + "%"); 
 
+        // Lọc theo Từ khóa (Tên món ăn)
+        if (keyword != null && !keyword.isEmpty()) {
+            sqlBuilder.append(" AND tenMonAn LIKE ?");
+            params.add("%" + keyword + "%"); 
+        }
+
+        // Lọc theo Trạng thái
         Boolean trangThaiValue = null;
         if ("Còn bán".equals(trangThaiFilter)) {
             trangThaiValue = true;
-        } else if ("Hết".equals(trangThaiFilter)) {
+        } else if ("Hết món".equals(trangThaiFilter) || "Hết".equals(trangThaiFilter)) {
             trangThaiValue = false;
         }
 
@@ -174,7 +179,7 @@ public class MonAn_DAO {
             params.add(trangThaiValue); 
         }
         
-        // === LỌC THEO LOẠI MÓN ĂN ===
+        // LỌC THEO LOẠI MÓN ĂN
         if (loaiMonAnFilter != null && !loaiMonAnFilter.equalsIgnoreCase("Tất cả")) {
             sqlBuilder.append(" AND loaiMonAn = ?");
             params.add(loaiMonAnFilter);
@@ -211,7 +216,8 @@ public class MonAn_DAO {
              ResultSet rs = stmt.executeQuery(sql)) {
             
             while (rs.next()) {
-                loaiMonAnList.add(rs.getString("loaiMonAn"));
+                // Đảm bảo trim() nếu loaiMonAn là NCHAR
+                loaiMonAnList.add(rs.getString("loaiMonAn").trim()); 
             }
         } catch (SQLException e) {
             e.printStackTrace();

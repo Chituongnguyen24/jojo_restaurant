@@ -7,17 +7,21 @@ public enum TrangThaiBan {
     CO_KHACH("Có khách", new Color(239, 68, 68)),
     TRONG("Trống", new Color(34, 197, 94));
 
-    private final String value;
     private final Color color;
+	private String tenHienThi;
 
-    TrangThaiBan(String value, Color color) {
-        this.value = value;
+    TrangThaiBan(String tenHienThi, Color color) {
+        this.tenHienThi = tenHienThi;
         this.color = color;
+    }
+    
+    public String getTenHienThi() {
+        return this.tenHienThi;
     }
 
     @Override
     public String toString() {
-        return this.value;
+        return this.tenHienThi;
     }
 
 
@@ -29,7 +33,7 @@ public enum TrangThaiBan {
 
 
         for (TrangThaiBan ttb : TrangThaiBan.values()) {
-           if (ttb.value.equalsIgnoreCase(trimmedText)) {
+           if (ttb.tenHienThi.equalsIgnoreCase(trimmedText)) {
                 return ttb;
             }
              if (ttb.name().equalsIgnoreCase(trimmedText)) {  

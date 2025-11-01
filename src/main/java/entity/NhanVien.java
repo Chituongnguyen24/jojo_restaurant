@@ -13,7 +13,7 @@ public class NhanVien {
     private String email;
     private String chucVu;
     private String trangThai;
-    private TaiKhoan taiKhoan; // THUỘC TÍNH MỚI: Liên kết với TaiKhoan
+    private TaiKhoan taiKhoan; 
 
     public NhanVien() {
     }
@@ -22,7 +22,6 @@ public class NhanVien {
         this.maNhanVien = maNhanVien;
     }
 
-    // Constructor 11 tham số (Đã bổ sung TaiKhoan)
     public NhanVien(String maNhanVien, String hoTen, LocalDate ngaySinh, LocalDate ngayVaoLam, String soCCCD, Boolean gioiTinh, String soDienThoai, String email, String chucVu, String trangThai, TaiKhoan taiKhoan) {
         this.maNhanVien = maNhanVien;
         this.hoTen = hoTen;
