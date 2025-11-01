@@ -359,4 +359,9 @@ public class PhieuDatBan_DAO {
         }
         return result;
     }
+    
+    public KhachHang getKhachHangVangLai() {
+        return khachHangDAO.getKhachHangById("KH00000000");
+    }
+    
 }

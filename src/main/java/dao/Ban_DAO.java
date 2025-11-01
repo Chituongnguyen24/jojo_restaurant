@@ -306,4 +306,28 @@ public class Ban_DAO {
         }
         return newID;
     }
+    public List<Ban> getBanTrongPhuHop(int soCho, String maKhuVuc) {
+        List<Ban> ds = new ArrayList<>();
+        String sql = "SELECT * FROM Ban WHERE soCho >= ? AND trangThai = ? AND maKhuVuc LIKE ?";
+        
+        // Nếu chọn "Tất cả khu vực", dùng %
+        String finalMaKV = (maKhuVuc == null || maKhuVuc.equals("Tất cả")) ? "%" : maKhuVuc;
+
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setInt(1, soCho);
+            stmt.setString(2, TrangThaiBan.TRONG.toString());
+            stmt.setString(3, finalMaKV);
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    ds.add(createBanFromResultSet(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+    }
 }

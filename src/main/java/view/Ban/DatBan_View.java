@@ -5,6 +5,7 @@ import dao.PhieuDatBan_DAO;
 import entity.Ban;
 import entity.PhieuDatBan;
 import enums.TrangThaiBan;
+import enums.LoaiBan;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -27,9 +28,10 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.awt.geom.RoundRectangle2D;
+import java.util.Calendar;
 
 import com.toedter.calendar.JDateChooser; 
-
 
 public class DatBan_View extends JPanel implements ActionListener {
 
@@ -56,27 +58,26 @@ public class DatBan_View extends JPanel implements ActionListener {
     private String khuVucHienTai;
     private List<PhieuDatBan> danhSachPhieuDatDangHoatDong;
 
-    // --- Hằng số UI ---
-    private static final Color MAU_NEN = new Color(248, 249, 250);
-    private static final Color MAU_TRANG = Color.WHITE;
-    private static final Color MAU_CHU_CHINH = new Color(33, 37, 41);
-    private static final Color MAU_CHU_PHU = new Color(108, 117, 125);
+    // --- Hằng số UI (Đồng bộ với Ban_View) ---
+    private static final Color BG_VIEW = new Color(251, 248, 241); // Nền be #FBF8F1
+    private static final Color COLOR_WHITE = Color.WHITE;
     private static final Color MAU_VIEN = new Color(222, 226, 230);
-    private static final Color MAU_CAM_CHINH = new Color(255, 138, 0);
-    private static final Color MAU_CAM_NHE = new Color(255, 243, 224);
-    private static final Color MAU_XANH_LA = new Color(40, 167, 69);
-    private static final Color MAU_DO = new Color(220, 53, 69);
-    private static final Color MAU_VANG = new Color(255, 193, 7);
+    private static final Color COLOR_TITLE = new Color(30, 30, 30);
+    
+    private static final Color MAU_CAM_CHINH = new Color(255, 152, 0); // Orange
+    private static final Color MAU_XANH_LA = new Color(76, 175, 80); // Green
+    private static final Color MAU_DO = new Color(244, 67, 54); // Red
+    private static final Color MAU_XANH_DUONG = new Color(34, 139, 230); // Blue
+    private static final Color MAU_XAM_NHE = new Color(108, 117, 125); // Gray
 
-    private static final Color MAU_TRANGTHAI_TRONG = new Color(40, 167, 69);
-    private static final Color MAU_TRANGTHAI_CO_KHACH = new Color(220, 53, 69);
-    private static final Color MAU_TRANGTHAI_DA_DAT = new Color(255, 193, 7);
+    private static final Color MAU_TRANGTHAI_TRONG = MAU_XANH_LA;
+    private static final Color MAU_TRANGTHAI_CO_KHACH = MAU_DO;
+    private static final Color MAU_TRANGTHAI_DA_DAT = MAU_CAM_CHINH;
 
-    private static final Font FONT_TIEUDE_LON = new Font("Segoe UI", Font.BOLD, 24);
-    private static final Font FONT_TIEUDE_CHINH = new Font("Segoe UI", Font.BOLD, 16);
+    private static final Font FONT_TIEUDE_LON = new Font("Segoe UI", Font.BOLD, 26);
+    private static final Font FONT_TIEUDE_CHINH = new Font("Segoe UI", Font.BOLD, 18);
     private static final Font FONT_TIEUDE_NHO = new Font("Segoe UI", Font.BOLD, 14);
-    private static final Font FONT_CHU = new Font("Segoe UI", Font.PLAIN, 13);
-    private static final Font FONT_CHU_NHO = new Font("Segoe UI", Font.PLAIN, 12);
+    private static final Font FONT_CHU = new Font("Segoe UI", Font.PLAIN, 14);
     
     private Timer clockTimer; 
 
@@ -87,253 +88,323 @@ public class DatBan_View extends JPanel implements ActionListener {
         tenKhuVuc = new ArrayList<>();
         danhSachPhieuDatDangHoatDong = new ArrayList<>();
 
+        khoiTaoComponents();
         thietLapGiaoDien();
         ganSuKien(); 
         taiDuLieuVaHienThiBanDau();
     }
-    
-    // =================================================================================
-    // == PHẦN TÁI CẤU TRÚC GIAO DIỆN CHÍNH
-    // =================================================================================
 
-    private void thietLapGiaoDien() {
-        setLayout(new BorderLayout());
-        setBackground(MAU_NEN);
+    private void khoiTaoComponents() {
+        // Initialize filter components
+        txtSearchPDB = new JTextField(15);
+        txtSearchPDB.setToolTipText("Mã PDB, SĐT hoặc Tên khách");
 
-        JPanel pnlHeader = taoPanelHeader();
-        add(pnlHeader, BorderLayout.NORTH);
-        
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        splitPane.setDividerLocation(0.65);
-        splitPane.setResizeWeight(0.65);
-        splitPane.setBorder(null);
+        cboSoKhach = createStyledComboBox();
+        for (int i : new Integer[]{1, 2, 3, 4, 5, 6, 8, 10, 12, 15}) {
+            cboSoKhach.addItem(i);
+        }
 
-        // Cột Trái: Chứa ComboBox lọc Khu vực và Lưới Bàn
-        JPanel pnlLuuTruBan = taoPanelLuuTruBan();
-        JScrollPane scrollLuoiBan = new JScrollPane(pnlLuuTruBan);
-        scrollLuoiBan.setBorder(null);
-        scrollLuoiBan.getVerticalScrollBar().setUnitIncrement(16);
-        
-        // Cột Phải: Panel Chức năng Đặt/Tra cứu
-        JPanel pnlChucNangDatBan = taoPanelChucNangDatBan();
+        cboFilterKhuVuc = createStyledComboBox();
 
-        splitPane.setLeftComponent(scrollLuoiBan);
-        splitPane.setRightComponent(pnlChucNangDatBan);
-
-        add(splitPane, BorderLayout.CENTER);
-    }
-    
-    private JPanel taoPanelLuuTruBan() {
-        JPanel pnlTong = new JPanel(new BorderLayout(0, 10));
-        pnlTong.setBackground(MAU_TRANG);
-        pnlTong.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        // Thanh chọn Khu vực và Thống kê nhỏ
-        JPanel pnlFilterBan = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
-        pnlFilterBan.setOpaque(false);
-        
-        cboFilterKhuVuc = new JComboBox<>();
-        cboFilterKhuVuc.setFont(FONT_CHU);
-        cboFilterKhuVuc.setPreferredSize(new Dimension(200, 30));
-
-        pnlFilterBan.add(new JLabel("Khu vực:"));
-        pnlFilterBan.add(cboFilterKhuVuc);
-
-        // Lưới Bàn
-        pnlLuoiBan = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15)); 
-        pnlLuoiBan.setBackground(MAU_TRANG);
-        pnlLuoiBan.setOpaque(false);
-
-        pnlTong.add(pnlFilterBan, BorderLayout.NORTH);
-        pnlTong.add(pnlLuoiBan, BorderLayout.CENTER);
-        
-        return pnlTong;
-    }
-    
-    private JPanel taoPanelChucNangDatBan() {
-        JPanel pnlDatBan = new JPanel(new BorderLayout(0, 10));
-        pnlDatBan.setBackground(MAU_TRANG);
-        pnlDatBan.setBorder(new EmptyBorder(20, 20, 20, 20));
-
-        // 1. Panel Bộ lọc và Tra cứu (NORTH)
-        JPanel pnlFilter = taoPanelFilter();
-        
-        // 2. Panel Danh sách bàn trống và PhieuDat (CENTER)
-        JPanel pnlDanhSach = taoPanelDanhSach();
-
-        // 3. Panel Form nhập liệu và Button (SOUTH)
-        JPanel pnlForm = taoPanelFormVaButton();
-        
-        pnlDatBan.add(pnlFilter, BorderLayout.NORTH);
-        pnlDatBan.add(pnlDanhSach, BorderLayout.CENTER);
-        pnlDatBan.add(pnlForm, BorderLayout.SOUTH);
-        
-        return pnlDatBan;
-    }
-    
-    private JPanel taoPanelFilter() {
-        JPanel pnlFilter = new JPanel(new BorderLayout(0, 15));
-        pnlFilter.setOpaque(false);
-        
-        // Hàng 1: Bộ lọc chính (Số khách, Ngày, Giờ)
-        JPanel pnlInput = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
-        pnlInput.setOpaque(false);
-        
-        cboSoKhach = new JComboBox<>(new Integer[]{1, 2, 3, 4, 5, 6, 8, 10, 12, 15});
-        cboSoKhach.setFont(FONT_CHU);
-        cboSoKhach.setPreferredSize(new Dimension(80, 30));
-        
         datePicker = new JDateChooser(new Date());
         datePicker.setDateFormatString("dd/MM/yyyy");
-        datePicker.setFont(FONT_CHU);
-        datePicker.setPreferredSize(new Dimension(120, 30));
-        
-        SpinnerDateModel modelGio = new SpinnerDateModel(new Date(), null, null, java.util.Calendar.MINUTE);
+
+        SpinnerDateModel modelGio = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);
         spinnerGioDat = new JSpinner(modelGio);
         JSpinner.DateEditor editorGio = new JSpinner.DateEditor(spinnerGioDat, "HH:mm");
         spinnerGioDat.setEditor(editorGio);
-        spinnerGioDat.setFont(FONT_CHU);
-        spinnerGioDat.setPreferredSize(new Dimension(80, 30));
 
-        pnlInput.add(new JLabel("Số lượng khách:"));
-        pnlInput.add(cboSoKhach);
-        pnlInput.add(new JLabel("Ngày đặt:"));
-        pnlInput.add(datePicker);
-        pnlInput.add(new JLabel("Giờ đặt:"));
-        pnlInput.add(spinnerGioDat);
-        
-        // Hàng 2: Tra cứu phiếu đặt bàn
-        JPanel pnlSearch = new JPanel(new BorderLayout(10, 0));
-        pnlSearch.setOpaque(false);
-
-        txtSearchPDB = new JTextField(20);
-        txtSearchPDB.setFont(FONT_CHU);
-        txtSearchPDB.setBorder(new LineBorder(MAU_VIEN, 1));
-        
-        btnSearchPDB = taoStyledButton("Tìm kiếm đặt bàn", MAU_CAM_CHINH.darker(), MAU_TRANG);
-        btnSearchPDB.setPreferredSize(new Dimension(150, 35));
-
-        pnlSearch.add(txtSearchPDB, BorderLayout.CENTER);
-        pnlSearch.add(btnSearchPDB, BorderLayout.EAST);
-        
-        pnlFilter.add(pnlInput, BorderLayout.NORTH);
-        pnlFilter.add(pnlSearch, BorderLayout.SOUTH);
-
-        return pnlFilter;
-    }
-    
-    private JPanel taoPanelDanhSach() {
-        JPanel pnlDanhSach = new JPanel(new BorderLayout());
-        pnlDanhSach.setOpaque(false);
-        pnlDanhSach.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, MAU_VIEN));
-
-        JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(FONT_TIEUDE_NHO);
-
-        // Tab 1: Danh sách bàn trống phù hợp
-        String[] colsBanTrong = {"Mã Bàn", "Khu Vực", "Loại Bàn", "Số Chỗ"};
-        modelBanTrong = new DefaultTableModel(colsBanTrong, 0);
-        tblBanTrong = new JTable(modelBanTrong);
-        JScrollPane scrollBanTrong = new JScrollPane(tblBanTrong);
-        tabbedPane.addTab("Chọn bàn trống phù hợp", scrollBanTrong);
-        
-        // Tab 2: Danh sách phiếu đặt bàn chờ xử lý
-        String[] colsPhieuDat = {"Mã PDB", "Giờ Hẹn", "Khách hàng", "Bàn", "Trạng Thái"};
-        modelPhieuDat = new DefaultTableModel(colsPhieuDat, 0);
-        tblPhieuDat = new JTable(modelPhieuDat);
-        JScrollPane scrollPhieuDat = new JScrollPane(tblPhieuDat);
-        tabbedPane.addTab("Danh sách đơn đặt bàn", scrollPhieuDat);
-        
-        pnlDanhSach.add(tabbedPane, BorderLayout.CENTER);
-        
-        return pnlDanhSach;
-    }
-    
-    private JPanel taoPanelFormVaButton() {
-        JPanel pnlForm = new JPanel(new BorderLayout(0, 15));
-        pnlForm.setOpaque(false);
-        pnlForm.setBorder(new EmptyBorder(10, 0, 0, 0));
-
-        // Form nhập liệu
-        JPanel pnlInput = new JPanel(new GridLayout(3, 2, 10, 8));
-        pnlInput.setOpaque(false);
-        
-        txtTenKhach = taoStyledTextField("Họ và tên khách hàng");
-        txtSdtKhach = taoStyledTextField("Số điện thoại (tra cứu)");
-        txtGhiChu = taoStyledTextField("Ghi chú (yêu cầu)");
-        
-        pnlInput.add(new JLabel("Họ tên khách:"));
-        pnlInput.add(txtTenKhach);
-        pnlInput.add(new JLabel("SĐT/Mã KH:"));
-        pnlInput.add(txtSdtKhach);
-        pnlInput.add(new JLabel("Ghi chú:"));
-        pnlInput.add(txtGhiChu);
+        // Form components
+        txtTenKhach = createStyledTextField("Họ và tên khách hàng");
+        txtSdtKhach = createStyledTextField("Số điện thoại (tra cứu)");
+        txtGhiChu = createStyledTextField("Ghi chú (yêu cầu)");
 
         // Buttons
-        JPanel pnlButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        pnlButtons.setOpaque(false);
+        btnSearchPDB = new RoundedButton("Tìm kiếm PDB", MAU_XANH_DUONG, COLOR_WHITE);
+        btnSearchPDB.setPreferredSize(new Dimension(150, 35));
 
-        btnHuyDatBan = taoStyledButton("Hủy", MAU_DO, MAU_TRANG);
-        btnDatBan = taoStyledButton("Đặt bàn/Ghi nhận", MAU_XANH_LA, MAU_TRANG);
-        
-        pnlButtons.add(btnHuyDatBan);
-        pnlButtons.add(btnDatBan);
-        
-        pnlForm.add(pnlInput, BorderLayout.NORTH);
-        pnlForm.add(pnlButtons, BorderLayout.SOUTH);
-        
-        return pnlForm;
+        btnDatBan = new RoundedButton("Đặt bàn/Ghi nhận", MAU_XANH_LA, COLOR_WHITE);
+
+        btnHuyDatBan = new RoundedButton("Hủy", MAU_DO, COLOR_WHITE);
+
+        btnRefresh = new RoundedButton("🔄 Làm mới", new Color(255, 243, 224), MAU_CAM_CHINH);
+        btnRefresh.setPreferredSize(new Dimension(150, 35));
+
+        // Labels for stats and clock
+        lblThongKeBan = new JLabel("Đang tải...");
+        lblThongKeBan.setFont(FONT_CHU);
+        lblThongKeBan.setForeground(MAU_XAM_NHE);
+
+        lblDateTime = new JLabel();
+        lblDateTime.setFont(FONT_CHU);
+        lblDateTime.setForeground(MAU_XAM_NHE);
+
+        // Clock timer
+        clockTimer = new Timer(1000, e -> {
+            SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd/MM/yyyy HH:mm:ss");
+            lblDateTime.setText(sdf.format(new Date()));
+        });
+        clockTimer.start();
     }
     
-    // --- UI Helper Methods (Đã sửa) ---
-
+    private void ganSuKien() {
+        btnDatBan.addActionListener(this);
+        btnHuyDatBan.addActionListener(this);
+        btnSearchPDB.addActionListener(this);
+        btnRefresh.addActionListener(this);
+        
+        cboFilterKhuVuc.addActionListener(e -> {
+            khuVucHienTai = (String)cboFilterKhuVuc.getSelectedItem();
+            capNhatHienThiLuoiBan();
+            capNhatThongKeBan();
+        });
+        
+        ActionListener filterActionListener = e -> {
+            // Cần triển khai logic lọc bàn trống (chưa có trong code cũ)
+            // capNhatTableBanTrongPhuHop();
+        };
+        cboSoKhach.addActionListener(filterActionListener);
+        datePicker.getDateEditor().addPropertyChangeListener(new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if ("date".equals(evt.getPropertyName())) {
+                    // capNhatTableBanTrongPhuHop();
+                }
+            }
+        });
+        spinnerGioDat.addChangeListener(e -> {
+            // capNhatTableBanTrongPhu Hop();
+        });
+    }
+    
+    private void thietLapGiaoDien() {
+        setLayout(new BorderLayout());
+        setBackground(BG_VIEW);
+        
+        JPanel pnlHeader = taoPanelHeader();
+        add(pnlHeader, BorderLayout.NORTH);
+        
+        JSplitPane pnlContent = taoPanelNoiDungChinh(); 
+        add(pnlContent, BorderLayout.CENTER);
+    }
+    
     private JPanel taoPanelHeader() {
-        JPanel pnlHeader = new JPanel(new BorderLayout(15, 0));
-        pnlHeader.setBackground(MAU_TRANG);
-        pnlHeader.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createMatteBorder(0, 0, 2, 0, MAU_VIEN),
-            BorderFactory.createEmptyBorder(20, 30, 20, 30)
-        ));
-
+        JPanel panelHeaderWrapper = new JPanel(new BorderLayout(0, 15));
+        panelHeaderWrapper.setBackground(BG_VIEW);
+        panelHeaderWrapper.setBorder(new EmptyBorder(20, 30, 0, 30));
+        
+        // Title and stats/clock on left
         JPanel pnlLeft = new JPanel();
         pnlLeft.setLayout(new BoxLayout(pnlLeft, BoxLayout.Y_AXIS));
         pnlLeft.setOpaque(false);
 
         JLabel lblTitle = new JLabel("Quản lý đặt bàn");
         lblTitle.setFont(FONT_TIEUDE_LON);
-        lblTitle.setForeground(MAU_CHU_CHINH);
-
-        lblThongKeBan = new JLabel("Đang tải...");
-        lblThongKeBan.setFont(FONT_CHU);
-        lblThongKeBan.setForeground(MAU_CHU_PHU);
-        
-        lblDateTime = new JLabel();
-        clockTimer = new Timer(1000, e -> {
-            SimpleDateFormat sdf = new SimpleDateFormat("EEEE, dd/MM/yyyy HH:mm:ss");
-            lblDateTime.setText(sdf.format(new Date()));
-        });
-        clockTimer.start();
+        lblTitle.setForeground(COLOR_TITLE);
 
         pnlLeft.add(lblTitle);
         pnlLeft.add(Box.createVerticalStrut(5));
         pnlLeft.add(lblThongKeBan);
         pnlLeft.add(lblDateTime);
 
+        // Right: Refresh button
         JPanel pnlRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlRight.setOpaque(false);
-
-        btnRefresh = taoStyledButton("🔄 Làm mới", MAU_CAM_NHE, MAU_CAM_CHINH);
-        btnRefresh.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(MAU_CAM_CHINH, 1, true),
-            BorderFactory.createEmptyBorder(8, 15, 8, 15)
-        ));
-        
         pnlRight.add(btnRefresh);
 
-        pnlHeader.add(pnlLeft, BorderLayout.WEST);
-        pnlHeader.add(pnlRight, BorderLayout.EAST);
+        // Combine left and right in a subpanel
+        JPanel pnlTitleBar = new JPanel(new BorderLayout());
+        pnlTitleBar.setBackground(BG_VIEW);
+        pnlTitleBar.add(pnlLeft, BorderLayout.WEST);
+        pnlTitleBar.add(pnlRight, BorderLayout.EAST);
+        
+        panelHeaderWrapper.add(pnlTitleBar, BorderLayout.NORTH);
+        
+        JPanel pnlLoc = taoPanelTimKiem();
+        panelHeaderWrapper.add(pnlLoc, BorderLayout.CENTER);
+        
+        return panelHeaderWrapper;
+    }
+    
+    private JPanel taoPanelTimKiem() {
+        JPanel pnlSearch = new RoundedPanel(15, COLOR_WHITE, new FlowLayout(FlowLayout.LEFT, 20, 10));
+        pnlSearch.setBorder(new EmptyBorder(10, 15, 10, 15));
 
-        return pnlHeader;
+        JComponent[] filterComponents = {txtSearchPDB, (JComponent) cboSoKhach, (JComponent) cboFilterKhuVuc, datePicker, (JComponent) spinnerGioDat};
+        for (JComponent comp : filterComponents) {
+            if (comp instanceof JTextField) {
+                ((JTextField) comp).setFont(FONT_CHU);
+                ((JTextField) comp).setBackground(COLOR_WHITE);
+            } else if (comp instanceof JComboBox) {
+                ((JComboBox<?>) comp).setFont(FONT_CHU);
+                ((JComboBox<?>) comp).setBackground(COLOR_WHITE);
+            } else if (comp instanceof JDateChooser) {
+                ((JDateChooser) comp).setFont(FONT_CHU);
+            } else if (comp instanceof JSpinner) {
+                ((JSpinner) comp).setFont(FONT_CHU);
+            }
+            comp.setBorder(BorderFactory.createCompoundBorder(
+                new LineBorder(MAU_VIEN, 1),
+                new EmptyBorder(5, 10, 5, 10)
+            ));
+        }
+
+        pnlSearch.add(new JLabel("Tìm kiếm PDB:"));
+        pnlSearch.add(txtSearchPDB);
+        pnlSearch.add(new JLabel("Số khách:"));
+        pnlSearch.add(cboSoKhach);
+        pnlSearch.add(new JLabel("Khu vực:"));
+        pnlSearch.add(cboFilterKhuVuc);
+        pnlSearch.add(new JLabel("Ngày đặt:"));
+        pnlSearch.add(datePicker);
+        pnlSearch.add(new JLabel("Giờ đặt:"));
+        pnlSearch.add(spinnerGioDat);
+        
+        return pnlSearch;
+    }
+    
+    private JSplitPane taoPanelNoiDungChinh() {
+        
+        JPanel pnlListContainer = taoPanelDanhSachBan();
+        JPanel pnlCRUD = taoPanelCRUDForm();
+        
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, pnlListContainer, pnlCRUD);
+        splitPane.setDividerLocation(800); 
+        splitPane.setResizeWeight(0.7);
+        splitPane.setBorder(null);
+        splitPane.setBackground(BG_VIEW);
+
+        return splitPane;
+    }
+    
+    private JPanel taoPanelDanhSachBan() {
+        JPanel pnlWrapper = new JPanel(new BorderLayout());
+        pnlWrapper.setOpaque(false);
+        pnlWrapper.setBorder(new EmptyBorder(10, 30, 30, 10));
+
+        JLabel lblMapTitle = new JLabel("Sơ đồ bàn - Chọn bàn để thao tác");
+        lblMapTitle.setFont(FONT_TIEUDE_CHINH);
+        lblMapTitle.setForeground(COLOR_TITLE);
+        pnlWrapper.add(lblMapTitle, BorderLayout.NORTH);
+
+        // Legend (chú thích màu)
+        JPanel pnlFilterBan = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
+        pnlFilterBan.setOpaque(false);
+        pnlFilterBan.setBorder(new EmptyBorder(10, 0, 10, 0));
+        
+        pnlFilterBan.add(taoMucChuThich("Trống", MAU_TRANGTHAI_TRONG));
+        pnlFilterBan.add(taoMucChuThich("Đã đặt", MAU_TRANGTHAI_DA_DAT));
+        pnlFilterBan.add(taoMucChuThich("Có khách", MAU_TRANGTHAI_CO_KHACH));
+        
+        pnlWrapper.add(pnlFilterBan, BorderLayout.SOUTH);
+
+        pnlLuoiBan = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 15)); 
+        pnlLuoiBan.setBackground(BG_VIEW);
+        pnlLuoiBan.setBorder(new EmptyBorder(15, 15, 15, 15));
+        pnlLuoiBan.setOpaque(false);
+        
+        JPanel tableContentWrapper = new JPanel(new BorderLayout());
+        tableContentWrapper.setOpaque(false);
+        tableContentWrapper.add(pnlLuoiBan, BorderLayout.NORTH);
+
+        JScrollPane scroll = new JScrollPane(tableContentWrapper);
+        scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
+
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        scroll.setBackground(BG_VIEW);
+        scroll.getViewport().setBackground(BG_VIEW);
+
+        pnlWrapper.add(scroll, BorderLayout.CENTER); 
+        
+        return pnlWrapper;
+    }
+    
+    private JPanel taoPanelCRUDForm() {
+        RoundedPanel pnlForm = new RoundedPanel(20, COLOR_WHITE, new BorderLayout());
+        pnlForm.setPreferredSize(new Dimension(350, 450));
+        pnlForm.setBorder(new EmptyBorder(20, 20, 20, 20));
+
+        JLabel lblFormTitle = new JLabel("Chức năng Đặt/Tra cứu");
+        lblFormTitle.setFont(FONT_TIEUDE_CHINH); 
+        lblFormTitle.setForeground(COLOR_TITLE);
+        pnlForm.add(lblFormTitle, BorderLayout.NORTH);
+
+        // Giữ nguyên Tabbed Pane cho tables
+        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(FONT_TIEUDE_NHO);
+
+        // Tab 1: Danh sách bàn trống phù hợp
+        String[] colsBanTrong = {"Mã Bàn", "Khu Vực", "Loại Bàn", "Số Chỗ"};
+        modelBanTrong = new DefaultTableModel(colsBanTrong, 0) {
+             @Override
+             public boolean isCellEditable(int row, int column) { return false; }
+        };
+        tblBanTrong = taoStyledTable(modelBanTrong);
+        JScrollPane scrollBanTrong = new JScrollPane(tblBanTrong);
+        scrollBanTrong.setBorder(new LineBorder(MAU_VIEN, 1));
+        tabbedPane.addTab("Bàn trống phù hợp", scrollBanTrong);
+        
+        // Tab 2: Danh sách phiếu đặt bàn chờ xử lý
+        String[] colsPhieuDat = {"Mã PDB", "Giờ Hẹn", "Khách hàng", "Bàn", "Trạng Thái"};
+        modelPhieuDat = new DefaultTableModel(colsPhieuDat, 0) {
+             @Override
+             public boolean isCellEditable(int row, int column) { return false; }
+        };
+        tblPhieuDat = taoStyledTable(modelPhieuDat);
+        JScrollPane scrollPhieuDat = new JScrollPane(tblPhieuDat);
+        scrollPhieuDat.setBorder(new LineBorder(MAU_VIEN, 1));
+        tabbedPane.addTab("Đơn đặt bàn", scrollPhieuDat);
+
+        pnlForm.add(tabbedPane, BorderLayout.CENTER);
+        
+        // Form nhập liệu và Buttons
+        JPanel pnlInput = new JPanel(new GridLayout(3, 2, 10, 10));
+        pnlInput.setOpaque(false);
+        pnlInput.setBorder(new EmptyBorder(15, 0, 15, 0));
+
+        pnlInput.add(taoFormLabel("Họ tên khách:"));
+        pnlInput.add(txtTenKhach);
+
+        pnlInput.add(taoFormLabel("SĐT/Mã KH:"));
+        pnlInput.add(txtSdtKhach);
+
+        pnlInput.add(taoFormLabel("Ghi chú:"));
+        pnlInput.add(txtGhiChu);
+        
+        JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        pnlButton.setOpaque(false);
+        
+        pnlButton.add(btnHuyDatBan);
+        pnlButton.add(btnDatBan);
+
+        JPanel pnlBottom = new JPanel(new BorderLayout());
+        pnlBottom.setOpaque(false);
+        pnlBottom.add(pnlInput, BorderLayout.NORTH);
+        pnlBottom.add(pnlButton, BorderLayout.SOUTH);
+        
+        pnlForm.add(pnlBottom, BorderLayout.SOUTH);
+        
+        return pnlForm;
+    }
+ 
+    private JLabel taoFormLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        label.setForeground(COLOR_TITLE);
+        return label;
+    }
+    
+    private JTextField createInputText(boolean editable) {
+        JTextField field = new JTextField();
+        field.setEditable(editable);
+        field.setFont(FONT_CHU);
+        field.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(MAU_VIEN, 1),
+            new EmptyBorder(5, 10, 5, 10)
+        ));
+        return field;
     }
     
     private JPanel taoMucChuThich(String text, Color color) {
@@ -345,122 +416,126 @@ public class DatBan_View extends JPanel implements ActionListener {
             public Dimension getPreferredSize() { return new Dimension(14, 14); }
             @Override
             protected void paintComponent(Graphics g) {
-                g.setColor(getBackground());
-                g.fillOval(0, 0, getWidth(), getHeight());
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(color);
+                g2.fillOval(0, 0, getWidth(), getHeight());
+                g2.dispose();
             }
         };
-        circle.setBackground(color);
-        circle.setOpaque(false);
 
         JLabel label = new JLabel(text);
         label.setFont(FONT_CHU);
-        label.setForeground(MAU_CHU_CHINH);
+        label.setForeground(COLOR_TITLE);
 
         item.add(circle);
         item.add(label);
         return item;
     }
     
-    private JTextField taoStyledTextField(String placeholder) {
-        JTextField field = new JTextField();
-        field.setFont(FONT_CHU);
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(MAU_VIEN, 1, true),
-            new EmptyBorder(5, 10, 5, 10)
-        ));
+    private JTextField createStyledTextField(String placeholder) {
+        JTextField field = createInputText(true);
         field.setToolTipText(placeholder);
         return field;
     }
+
+    private <T> JComboBox<T> createStyledComboBox() {
+        JComboBox<T> cbo = new JComboBox<>();
+        cbo.setFont(FONT_CHU);
+        cbo.setBackground(COLOR_WHITE);
+        cbo.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(MAU_VIEN, 1),
+            new EmptyBorder(5, 5, 5, 5)
+        ));
+        return cbo;
+    }
     
-    private JButton taoStyledButton(String text, Color bgColor, Color fgColor) {
-        JButton btn = new JButton(text);
-        btn.setFont(FONT_TIEUDE_NHO);
-        btn.setBackground(bgColor);
-        btn.setForeground(fgColor);
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(150, 35));
-        btn.setBorder(new EmptyBorder(5, 10, 5, 10)); 
-        return btn;
+    private JTable taoStyledTable(DefaultTableModel model) {
+        JTable table = new JTable(model);
+        table.setRowHeight(35);
+        table.setFont(FONT_CHU);
+        table.setSelectionBackground(new Color(230, 240, 255));
+        table.setGridColor(MAU_VIEN);
+        
+        table.getTableHeader().setFont(FONT_TIEUDE_NHO);
+        table.getTableHeader().setBackground(new Color(248, 249, 250));
+        table.getTableHeader().setForeground(COLOR_TITLE);
+        table.getTableHeader().setPreferredSize(new Dimension(table.getTableHeader().getWidth(), 40));
+        
+        return table;
     }
 
     private JPanel taoTheBan(Ban ban) {
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBackground(MAU_TRANG);
-        card.setBorder(BorderFactory.createLineBorder(MAU_VIEN, 2, true));
-        card.setPreferredSize(new Dimension(180, 200));
+        RoundedPanel card = new RoundedPanel(25, COLOR_WHITE, new BorderLayout(15, 0));
+        card.setBorder(new EmptyBorder(10, 10, 10, 15));
+        card.setPreferredSize(new Dimension(320, 110)); 
         card.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        Color mauVien, mauNen, mauChu;
-        String trangThaiText, iconEmoji;
-        
-        String trangThaiString = ban.getTrangThai() != null ? ban.getTrangThai().trim() : TrangThaiBan.TRONG.toString();
-
-        if (TrangThaiBan.TRONG.toString().equals(trangThaiString)) {
-            mauVien = MAU_TRANGTHAI_TRONG;
-            mauNen = new Color(232, 245, 233);
-            mauChu = MAU_TRANGTHAI_TRONG.darker();
-            trangThaiText = "Trống";
-            iconEmoji = "✓";
-        } else if (TrangThaiBan.CO_KHACH.toString().equals(trangThaiString)) {
-            mauVien = MAU_TRANGTHAI_CO_KHACH;
-            mauNen = new Color(255, 235, 238);
-            mauChu = MAU_TRANGTHAI_CO_KHACH.darker();
-            trangThaiText = "Có khách";
-            iconEmoji = "👥";
-        } else { // DA_DAT
-            mauVien = MAU_TRANGTHAI_DA_DAT;
-            mauNen = new Color(255, 248, 225);
-            mauChu = MAU_TRANGTHAI_DA_DAT.darker();
-            trangThaiText = "Đã đặt";
-            iconEmoji = "📅";
-        }
-
-        card.setBorder(BorderFactory.createLineBorder(mauVien, 2));
+        TrangThaiBan ttb = TrangThaiBan.fromString(ban.getTrangThai());
+        Color mauVien = ttb.getColor(); 
 
         JLabel lblIcon = new JLabel("🪑");
+        lblIcon.setPreferredSize(new Dimension(90, 90));
         lblIcon.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
-        lblIcon.setForeground(MAU_CHU_PHU);
-        lblIcon.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblIcon.setForeground(MAU_XAM_NHE);
+        lblIcon.setOpaque(false);
+        card.add(lblIcon, BorderLayout.WEST);
 
-        JLabel lblName = new JLabel(ban.getMaBan() != null ? ban.getMaBan().trim() : "N/A");
-        lblName.setFont(FONT_TIEUDE_CHINH);
-        lblName.setForeground(MAU_CHU_CHINH);
-        lblName.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel infoPanel = new JPanel();
+        infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
+        infoPanel.setOpaque(false); 
 
-        JLabel lblInfo = new JLabel(String.format("%s • %d chỗ", ban.getLoaiBan(), ban.getSoCho()));
-        lblInfo.setFont(FONT_CHU_NHO);
-        lblInfo.setForeground(MAU_CHU_PHU);
-        lblInfo.setAlignmentX(Component.CENTER_ALIGNMENT);
+        String loaiBanRaw = ban.getLoaiBan();
+        String loaiBanTen;
+        try {
+            loaiBanTen = LoaiBan.fromString(loaiBanRaw).getTenHienThi();
+        } catch (IllegalArgumentException e) {
+            loaiBanTen = loaiBanRaw;
+        }
 
-        JPanel pnlStatus = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        pnlStatus.setBackground(mauNen);
-        pnlStatus.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
-        pnlStatus.setAlignmentX(Component.CENTER_ALIGNMENT);
+        if (loaiBanTen.equalsIgnoreCase("Bàn VIP")) {
+            loaiBanTen = "VIP";
+        }
+        JLabel lblName = new JLabel(String.format("%s (%s)", ban.getMaBan().trim(), loaiBanTen));
+        lblName.setFont(new Font("Segoe UI", Font.BOLD, 16));
+        lblName.setForeground(COLOR_TITLE);
 
-        JLabel lblStatusText = new JLabel(trangThaiText);
-        lblStatusText.setFont(new Font("Segoe UI", Font.BOLD, 11));
-        lblStatusText.setForeground(mauChu);
+        JLabel lblCapacity = new JLabel(ban.getSoCho() + " chỗ");
+        lblCapacity.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblCapacity.setForeground(new Color(220, 0, 0));
 
-        pnlStatus.add(new JLabel(iconEmoji));
-        pnlStatus.add(lblStatusText);
+        JLabel lblTrangThai = new JLabel(ttb.getTenHienThi());
+        lblTrangThai.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        lblTrangThai.setForeground(ttb.getColor());
+        
+        infoPanel.add(lblName);
+        infoPanel.add(Box.createVerticalGlue()); 
+        infoPanel.add(lblCapacity);
+        infoPanel.add(Box.createVerticalStrut(5));
+        infoPanel.add(lblTrangThai);
 
-        card.add(Box.createVerticalStrut(10));
-        card.add(lblIcon);
-        card.add(Box.createVerticalStrut(8));
-        card.add(lblName);
-        card.add(Box.createVerticalStrut(4));
-        card.add(lblInfo);
-        card.add(Box.createVerticalStrut(10));
-        card.add(pnlStatus);
-        card.add(Box.createVerticalStrut(10));
+        card.add(infoPanel, BorderLayout.CENTER);
 
         card.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getButton() != MouseEvent.BUTTON1 || ban == null) return;
-                JOptionPane.showMessageDialog(null, "Đã click vào bàn: " + ban.getMaBan());
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    JOptionPane.showMessageDialog(null, "Đã chọn bàn: " + ban.getMaBan().trim() + " - " + ttb.getTenHienThi());
+                }
+            }
+            
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                card.setBackground(new Color(245, 245, 245));
+                card.setBorderColor(new Color(100, 150, 255));
+                card.repaint();
+            }
+            
+            @Override
+            public void mouseExited(MouseEvent e) {
+                card.setBackground(COLOR_WHITE);
+                card.setBorderColor(mauVien); 
+                card.repaint();
             }
         });
 
@@ -468,7 +543,7 @@ public class DatBan_View extends JPanel implements ActionListener {
     }
     
     // =================================================================================
-    // == PHẦN XỬ LÝ DỮ LIỆU VÀ LOGIC
+    // == PHẦN XỬ LÝ DỮ LIỆU VÀ LOGIC (GIỮ NGUYÊN)
     // =================================================================================
     
     private void taiDuLieuVaHienThiBanDau() {
@@ -479,7 +554,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         
         if (!tenKhuVuc.isEmpty()) {
             khuVucHienTai = tenKhuVuc.get(0);
-            cboFilterKhuVuc.setSelectedItem(khuVucHienTai);
+            cboFilterKhuVuc.setSelectedItem("Tất cả"); // Mặc định là Tất cả
         } else {
              khuVucHienTai = "Không có dữ liệu";
         }
@@ -564,7 +639,7 @@ public class DatBan_View extends JPanel implements ActionListener {
 
     private void capNhatHienThiLuoiBan() {
         pnlLuoiBan.removeAll();
-        int totalTables = 0;
+        int tablesFound = 0;
 
         if (danhSachBanTheoKhuVuc != null) {
             for (Map.Entry<String, List<Ban>> entry : danhSachBanTheoKhuVuc.entrySet()) {
@@ -575,15 +650,21 @@ public class DatBan_View extends JPanel implements ActionListener {
                     if (dsBan != null) {
                         for (Ban ban : dsBan) {
                             pnlLuoiBan.add(taoTheBan(ban));
-                            totalTables++;
+                            tablesFound++;
                         }
                     }
                 }
             }
         }
 
-        if (totalTables == 0) {
-            pnlLuoiBan.add(new JLabel("Không có bàn nào để hiển thị trong khu vực này."));
+        if (tablesFound == 0) {
+            pnlLuoiBan.setLayout(new FlowLayout(FlowLayout.CENTER));
+            JLabel nTL = new JLabel("Không có bàn nào để hiển thị trong khu vực này.");
+            nTL.setFont(FONT_CHU); 
+            nTL.setForeground(COLOR_TITLE); 
+            pnlLuoiBan.add(nTL);
+        } else {
+             pnlLuoiBan.setLayout(new FlowLayout(FlowLayout.LEFT, 15, 15));
         }
 
         pnlLuoiBan.revalidate();
@@ -592,12 +673,12 @@ public class DatBan_View extends JPanel implements ActionListener {
     
     private void capNhatThongKeBan() {
         int total = 0, trong = 0, daDat = 0, coKhach = 0;
-        String filterKV = khuVucHienTai;
+        String filterKV = (String) cboFilterKhuVuc.getSelectedItem();
 
         if (danhSachBanTheoKhuVuc != null) {
             for (Map.Entry<String, List<Ban>> entry : danhSachBanTheoKhuVuc.entrySet()) {
                 String tenKV = entry.getKey();
-                if ("Tất cả".equals(filterKV) || filterKV.equals(tenKV)) {
+                if ("Tất cả".equals(filterKV) || filterKV != null && filterKV.equals(tenKV)) {
                     List<Ban> dsBan = entry.getValue();
                     if (dsBan != null) {
                         for (Ban ban : dsBan) {
@@ -630,7 +711,6 @@ public class DatBan_View extends JPanel implements ActionListener {
     private void capNhatTablePhieuDat() {
         modelPhieuDat.setRowCount(0);
 
-        // Khắc phục lỗi format LocalDateTime bằng cách chuyển đổi an toàn sang Date
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm dd/MM/yyyy");
 
         if (danhSachPhieuDatDangHoatDong != null) {
@@ -639,25 +719,18 @@ public class DatBan_View extends JPanel implements ActionListener {
                 if ("Chưa đến".equals(trangThai) || "Đã đến".equals(trangThai)) {
                     
                     String thoiGianHienThi = "N/A";
-                    Object thoiGianObj = phieu.getThoiGianDenHen();
+                    LocalDateTime ldt = phieu.getThoiGianDenHen(); 
                     
-                    if (thoiGianObj != null) {
-                        if (thoiGianObj instanceof LocalDateTime) {
-                            // Chuyển LocalDateTime sang Date
-                            LocalDateTime ldt = (LocalDateTime) thoiGianObj;
-                            Date date = Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
-                            thoiGianHienThi = sdf.format(date);
-                        } else if (thoiGianObj instanceof Date) {
-                            // Nếu là java.util.Date/Timestamp
-                            thoiGianHienThi = sdf.format((Date) thoiGianObj);
-                        }
+                    if (ldt != null) {
+                        Date date = Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
+                        thoiGianHienThi = sdf.format(date);
                     }
                     
                     modelPhieuDat.addRow(new Object[]{
                         phieu.getMaPhieu(),
                         thoiGianHienThi,
                         phieu.getKhachHang() != null ? phieu.getKhachHang().getTenKH() : "Khách lẻ",
-                        phieu.getBan() != null ? phieu.getBan().getMaBan() : "N/A",
+                        phieu.getBan() != null ? phieu.getBan().getMaBan().trim() : "N/A",
                         phieu.getTrangThaiPhieu()
                     });
                 }
@@ -668,37 +741,6 @@ public class DatBan_View extends JPanel implements ActionListener {
     // =================================================================================
     // == PHẦN XỬ LÝ SỰ KIỆN
     // =================================================================================
-    
-    private void ganSuKien() {
-        btnDatBan.addActionListener(this);
-        btnHuyDatBan.addActionListener(this);
-        btnSearchPDB.addActionListener(this);
-        btnRefresh.addActionListener(this);
-        
-        // Sự kiện ComboBox Khu vực
-        cboFilterKhuVuc.addActionListener(e -> chuyenKhuVuc((String)cboFilterKhuVuc.getSelectedItem()));
-        
-        // Sự kiện Lọc bàn trống
-        ActionListener filterActionListener = e -> {
-            // Logic lọc bàn trống (Chưa triển khai)
-            // capNhatTableBanTrongPhuHop();
-        };
-        cboSoKhach.addActionListener(filterActionListener);
-        
-        // Listener cho JDateChooser
-        datePicker.getDateEditor().addPropertyChangeListener(new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if ("date".equals(evt.getPropertyName())) {
-                    // capNhatTableBanTrongPhuHop();
-                }
-            }
-        });
-        
-        spinnerGioDat.addChangeListener(e -> {
-            // capNhatTableBanTrongPhu Hop();
-        });
-    }
 
     @Override
     public void actionPerformed(ActionEvent e) {
@@ -729,6 +771,87 @@ public class DatBan_View extends JPanel implements ActionListener {
     
     private void timKiemPhieuDat() {
         String keyword = txtSearchPDB.getText().trim();
-        JOptionPane.showMessageDialog(this, "Đang tìm kiếm với từ khóa: " + keyword);
+        JOptionPane.showMessageDialog(this, "Đang tìm kiếm Phiếu Đặt Bàn với từ khóa: " + keyword);
+        // Cần triển khai logic tìm kiếm và hiển thị kết quả lên table modelPhieuDat
+    }
+    
+    // =================================================================================
+    // == LỚP HỖ TRỢ UI ĐỒNG BỘ
+    // =================================================================================
+
+    private class RoundedPanel extends JPanel {
+        private int cornerRadius;
+        private Color borderColor = MAU_VIEN; // Mặc định
+        private Color bgColor;
+
+        public RoundedPanel(int radius, Color color, LayoutManager layout) {
+            super(layout);
+            this.cornerRadius = radius;
+            this.bgColor = color;
+            setOpaque(false);
+        }
+        
+        public void setBorderColor(Color color) {
+            this.borderColor = color;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(bgColor);
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth()-1, getHeight()-1, cornerRadius, cornerRadius));
+            g2.dispose();
+            super.paintComponent(g); 
+        }
+        
+        @Override
+        protected void paintBorder(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2.setColor(this.borderColor); 
+            g2.setStroke(new BasicStroke(1)); 
+            g2.draw(new RoundRectangle2D.Double(0, 0, getWidth()-1, getHeight()-1, cornerRadius, cornerRadius));
+            g2.dispose();
+        }
+    }
+    
+    private class RoundedButton extends JButton {
+        private int doBoGoc;
+        private Color bg;
+        
+        public RoundedButton(String text, Color bgColor, Color fg) {
+            super(text);
+            this.bg = bgColor;
+            this.doBoGoc = 20;
+            setBackground(bgColor);
+            setContentAreaFilled(false); 
+            setFocusPainted(false); 
+            setBorderPainted(false);
+            setBorder(new EmptyBorder(12, 24, 12, 24)); 
+            setFont(new Font("Segoe UI", Font.BOLD, 14));
+            setForeground(fg);
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            setPreferredSize(new Dimension(100, 35));
+        }
+
+        @Override 
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            Color currentColor = getBackground();
+            if (getModel().isPressed()) { 
+                currentColor = getBackground().darker();
+            } else if (getModel().isRollover()) {
+                currentColor = getBackground().brighter(); 
+            } 
+            g2.setColor(currentColor);
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), doBoGoc, doBoGoc));
+            
+            super.paintComponent(g);
+            g2.dispose(); 
+        }
     }
 }
