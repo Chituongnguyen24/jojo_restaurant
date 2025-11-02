@@ -1,7 +1,5 @@
 package entity;
 
-import java.util.Objects;
-
 public class KhuVuc {
     private String maKhuVuc;
     private String tenKhuVuc;
@@ -56,19 +54,19 @@ public class KhuVuc {
 
     @Override
     public String toString() {
-        return tenKhuVuc != null ? tenKhuVuc : (maKhuVuc != null ? maKhuVuc.trim() : "N/A");
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        KhuVuc khuVuc = (KhuVuc) o;
-        return Objects.equals(maKhuVuc, khuVuc.maKhuVuc);
+        return tenKhuVuc;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(maKhuVuc);
+        return maKhuVuc.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        KhuVuc other = (KhuVuc) obj;
+        return maKhuVuc.equals(other.maKhuVuc);
     }
 }

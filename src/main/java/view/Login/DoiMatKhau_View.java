@@ -516,6 +516,7 @@ public class DoiMatKhau_View extends JDialog {
             return;
         }
 
+        // Lấy TaiKhoan theo maNhanVien (maNV)
         TaiKhoan tk = taiKhoanDAO.findByMaNV(maNV);
         if (tk == null) {
             showError("Không tìm thấy tài khoản.");
@@ -532,7 +533,8 @@ public class DoiMatKhau_View extends JDialog {
         }
 
         String newPassStr = String.valueOf(newPass);
-        boolean updated = taiKhoanDAO.updateMatKhau(maNV, newPassStr);
+        // maNV lấy từ TaiKhoan (tk.getNhanVien().getMaNhanVien())
+        boolean updated = taiKhoanDAO.updateMatKhau(tk.getNhanVien().getMaNhanVien(), newPassStr);
 
         Arrays.fill(oldPass, '\0');
         Arrays.fill(newPass, '\0');

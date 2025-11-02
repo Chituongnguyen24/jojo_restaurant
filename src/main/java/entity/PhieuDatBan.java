@@ -1,39 +1,39 @@
 package entity;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter; 
 
 public class PhieuDatBan {
     private String maPhieu;
-    private LocalDateTime thoiGianDat; 
+    private LocalDateTime thoiGianDenHen;
+    private LocalDateTime thoiGianNhanBan;
+    private LocalDateTime thoiGianTraBan;
     private KhachHang khachHang;
     private NhanVien nhanVien;
     private Ban ban;
-    private int soNguoi; 
-    private double tienCoc;
-    private String ghiChu; 
+    private int soNguoi;
+    private String ghiChu;
+    private String trangThaiPhieu;
 
     public PhieuDatBan() {
     }
 
-    public PhieuDatBan(String maPhieu, LocalDateTime thoiGianDat, KhachHang khachHang, NhanVien nhanVien, Ban ban,
-            int soNguoi, double tienCoc, String ghiChu) {
+    public PhieuDatBan(String maPhieu) {
         this.maPhieu = maPhieu;
-        this.thoiGianDat = thoiGianDat;
+    }
+
+    public PhieuDatBan(String maPhieu, LocalDateTime thoiGianDenHen, LocalDateTime thoiGianNhanBan, LocalDateTime thoiGianTraBan, KhachHang khachHang, NhanVien nhanVien, Ban ban, int soNguoi, String ghiChu, String trangThaiPhieu) {
+        this.maPhieu = maPhieu;
+        this.thoiGianDenHen = thoiGianDenHen;
+        this.thoiGianNhanBan = thoiGianNhanBan;
+        this.thoiGianTraBan = thoiGianTraBan;
         this.khachHang = khachHang;
         this.nhanVien = nhanVien;
         this.ban = ban;
         this.soNguoi = soNguoi;
-        this.tienCoc = tienCoc;
         this.ghiChu = ghiChu;
+        this.trangThaiPhieu = trangThaiPhieu;
     }
-    
 
-    public PhieuDatBan(String maPhieu) {
-		super();
-		this.maPhieu = maPhieu;
-	}
-    
     public String getMaPhieu() {
         return maPhieu;
     }
@@ -42,12 +42,28 @@ public class PhieuDatBan {
         this.maPhieu = maPhieu;
     }
 
-    public LocalDateTime getThoiGianDat() {
-        return thoiGianDat;
+    public LocalDateTime getThoiGianDenHen() {
+        return thoiGianDenHen;
     }
 
-    public void setThoiGianDat(LocalDateTime thoiGianDat) {
-        this.thoiGianDat = thoiGianDat;
+    public void setThoiGianDenHen(LocalDateTime thoiGianDenHen) {
+        this.thoiGianDenHen = thoiGianDenHen;
+    }
+
+    public LocalDateTime getThoiGianNhanBan() {
+        return thoiGianNhanBan;
+    }
+
+    public void setThoiGianNhanBan(LocalDateTime thoiGianNhanBan) {
+        this.thoiGianNhanBan = thoiGianNhanBan;
+    }
+
+    public LocalDateTime getThoiGianTraBan() {
+        return thoiGianTraBan;
+    }
+
+    public void setThoiGianTraBan(LocalDateTime thoiGianTraBan) {
+        this.thoiGianTraBan = thoiGianTraBan;
     }
 
     public KhachHang getKhachHang() {
@@ -74,14 +90,6 @@ public class PhieuDatBan {
         this.ban = ban;
     }
 
-    public double getTienCoc() {
-        return tienCoc;
-    }
-
-    public void setTienCoc(double tienCoc) {
-        this.tienCoc = tienCoc;
-    }
-    
     public int getSoNguoi() {
         return soNguoi;
     }
@@ -98,18 +106,29 @@ public class PhieuDatBan {
         this.ghiChu = ghiChu;
     }
 
+    public String getTrangThaiPhieu() {
+        return trangThaiPhieu;
+    }
 
-    public String getThoiGianDatFormatted() {
-        if (this.thoiGianDat != null) {
-            return this.thoiGianDat.format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
-        }
-        return "N/A";
+    public void setTrangThaiPhieu(String trangThaiPhieu) {
+        this.trangThaiPhieu = trangThaiPhieu;
     }
 
     @Override
     public String toString() {
-        return "PhieuDatBan [maPhieu=" + maPhieu + ", thoiGianDat=" + thoiGianDat + ", khachHang=" + khachHang
-                + ", nhanVien=" + nhanVien + ", ban=" + ban + ", soNguoi=" + soNguoi + ", tienCoc=" + tienCoc
-                + ", ghiChu=" + ghiChu + "]";
+        return maPhieu;
+    }
+
+    @Override
+    public int hashCode() {
+        return maPhieu.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        PhieuDatBan other = (PhieuDatBan) obj;
+        return maPhieu.equals(other.maPhieu);
     }
 }

@@ -1,101 +1,104 @@
 package entity;
 
 import java.time.LocalDate;
-import java.util.Objects;
 
 public class KhuyenMai {
     private String maKM;
-    private String tenKM;
-    private double giaTri;
-    private LocalDate ngayBatDau;
-    private LocalDate ngayKetThuc;
-    private String trangThai;
+    private String moTa;
+    private LocalDate ngayApDung;
+    private LocalDate ngayHetHan;
+    private double mucKM;
+    private Boolean trangThaiKM;
+    private String loaiKM;
 
-    public KhuyenMai(String maKM, String tenKM, double giaTri, LocalDate ngayBatDau, LocalDate ngayKetThuc, String trangThai) {
-        this.maKM = maKM;
-        this.tenKM = tenKM;
-        this.giaTri = giaTri;
-        this.ngayBatDau = ngayBatDau;
-        this.ngayKetThuc = ngayKetThuc;
-        this.trangThai = trangThai;
+    public KhuyenMai() {
     }
 
     public KhuyenMai(String maKM) {
         this.maKM = maKM;
     }
 
-    public KhuyenMai() {
-	}
+    public KhuyenMai(String maKM, String moTa, LocalDate ngayApDung, LocalDate ngayHetHan, double mucKM, Boolean trangThaiKM, String loaiKM) {
+        this.maKM = maKM;
+        this.moTa = moTa;
+        this.ngayApDung = ngayApDung;
+        this.ngayHetHan = ngayHetHan;
+        this.mucKM = mucKM;
+        this.trangThaiKM = trangThaiKM;
+        this.loaiKM = loaiKM;
+    }
 
-	
+    public String getMaKM() {
+        return maKM;
+    }
 
-     public String getMaKM() {
-		return maKM;
-	}
+    public void setMaKM(String maKM) {
+        this.maKM = maKM;
+    }
 
-	public void setMaKM(String maKM) {
-		this.maKM = maKM;
-	}
+    public String getMoTa() {
+        return moTa;
+    }
 
-	public String getTenKM() {
-		return tenKM;
-	}
+    public void setMoTa(String moTa) {
+        this.moTa = moTa;
+    }
 
-	public void setTenKM(String tenKM) {
-		this.tenKM = tenKM;
-	}
+    public LocalDate getNgayApDung() {
+        return ngayApDung;
+    }
 
-	public double getGiaTri() {
-		return giaTri;
-	}
+    public void setNgayApDung(LocalDate ngayApDung) {
+        this.ngayApDung = ngayApDung;
+    }
 
-	public void setGiaTri(double giaTri) {
-		this.giaTri = giaTri;
-	}
+    public LocalDate getNgayHetHan() {
+        return ngayHetHan;
+    }
 
-	public LocalDate getNgayBatDau() {
-		return ngayBatDau;
-	}
+    public void setNgayHetHan(LocalDate ngayHetHan) {
+        this.ngayHetHan = ngayHetHan;
+    }
 
-	public void setNgayBatDau(LocalDate ngayBatDau) {
-		this.ngayBatDau = ngayBatDau;
-	}
+    public double getMucKM() {
+        return mucKM;
+    }
 
-	public LocalDate getNgayKetThuc() {
-		return ngayKetThuc;
-	}
+    public void setMucKM(double mucKM) {
+        this.mucKM = mucKM;
+    }
 
-	public void setNgayKetThuc(LocalDate ngayKetThuc) {
-		this.ngayKetThuc = ngayKetThuc;
-	}
+    public Boolean getTrangThaiKM() {
+        return trangThaiKM;
+    }
 
-	public String getTrangThai() {
-		return trangThai;
-	}
+    public void setTrangThaiKM(Boolean trangThaiKM) {
+        this.trangThaiKM = trangThaiKM;
+    }
 
-	public void setTrangThai(String trangThai) {
-		this.trangThai = trangThai;
-	}
+    public String getLoaiKM() {
+        return loaiKM;
+    }
 
-	 @Override
-     public String toString() {
-         if ("KM00000000".equals(maKM)) {
-             return tenKM != null ? tenKM : "Không áp dụng";
-         }
-         String cleanMaKM = maKM != null ? maKM.trim() : "";
-         return cleanMaKM + " - " + (tenKM != null ? tenKM : "");
-     }
+    public void setLoaiKM(String loaiKM) {
+        this.loaiKM = loaiKM;
+    }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        KhuyenMai khuyenMai = (KhuyenMai) o;
-        return Objects.equals(maKM, khuyenMai.maKM);
+    public String toString() {
+        return moTa + " (" + maKM + ")";
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(maKM);
+        return maKM.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        KhuyenMai other = (KhuyenMai) obj;
+        return maKM.equals(other.maKM);
     }
 }

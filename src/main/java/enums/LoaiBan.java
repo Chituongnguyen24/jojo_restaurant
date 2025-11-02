@@ -16,19 +16,16 @@ public enum LoaiBan {
         return tenHienThi;
     }
 
-    // Hàm map từ chuỗi DB hoặc người dùng sang enum
-    public static LoaiBan fromTenHienThi(String ten) {
+    public static LoaiBan fromString(String ten) {
         if (ten == null) {
             throw new IllegalArgumentException("Tên LoaiBan không được null");
         }
         switch (ten.trim().toUpperCase()) {
-            // === SỬA LỖI: THÊM case "THƯỜNG" VÀO ĐÂY ===
             case "THUONG":
             case "BAN_THUONG":
             case "BÀN THƯỜNG":
-            case "THƯỜNG": // Thêm dòng này
+            case "THƯỜNG": 
                 return THUONG;
-            // ======================================
             case "VIP":
             case "BAN_VIP":
             case "BÀN VIP":

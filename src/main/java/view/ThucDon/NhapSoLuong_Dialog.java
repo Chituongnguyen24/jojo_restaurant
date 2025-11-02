@@ -1,7 +1,6 @@
 package view.ThucDon;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.geom.RoundRectangle2D;
@@ -90,7 +89,7 @@ public class NhapSoLuong_Dialog extends JDialog {
         add(pnlButtons, BorderLayout.SOUTH);
 
         // ===== SỰ KIỆN =====
-        btnDat.addActionListener(e -> dat());
+        btnDat.addActionListener(this::dat);
         btnHuy.addActionListener(e -> dispose()); // Chỉ cần đóng, ketQua vẫn là null
         getRootPane().setDefaultButton(btnDat);
     }
@@ -98,7 +97,7 @@ public class NhapSoLuong_Dialog extends JDialog {
     /**
      * Xử lý sự kiện khi nhấn nút "Đặt"
      */
-    private void dat() {
+    private void dat(ActionEvent e) {
         int soLuong = (int) spnSoLuong.getValue();
         String ghiChu = txtGhiChu.getText().trim();
         // Lưu kết quả vào biến

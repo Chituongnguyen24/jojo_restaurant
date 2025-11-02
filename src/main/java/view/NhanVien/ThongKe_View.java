@@ -2,9 +2,9 @@ package view.NhanVien;
 
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
-import dao.Ban_DAO;
+import dao.Ban_DAO; // Cần Khai báo Ban_DAO
 import dao.HoaDon_DAO;
-import dao.KhachHang_DAO;
+import dao.KhachHang_DAO; // Cần Khai báo KhachHang_DAO
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -14,13 +14,16 @@ import java.awt.event.MouseEvent;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.Map;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 
 /**
- * ThongKe_View - FIXED: Charts now update correctly when applying custom date filter
+ * ThongKe_View - FIXED: Logic xử lý filter ngày tháng và gọi DAO đã được tối ưu hóa.
  */
 public class ThongKe_View extends JPanel {
 
     private final HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
+    // Giữ lại Ban_DAO và KhachHang_DAO vì chúng được dùng để lấy dữ liệu thống kê
     private final Ban_DAO banDAO = new Ban_DAO();
     private final KhachHang_DAO khachHangDAO = new KhachHang_DAO();
 
@@ -48,6 +51,7 @@ public class ThongKe_View extends JPanel {
         contentPanel.setBackground(new Color(250, 248, 243));
         add(contentPanel, BorderLayout.CENTER);
 
+        // Load ban đầu: Tải dữ liệu "Tất cả"
         loadStatistics(null, null);
     }
 
@@ -69,6 +73,7 @@ public class ThongKe_View extends JPanel {
         });
         cboLoaiThongKe.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cboLoaiThongKe.setPreferredSize(new Dimension(120, 30));
+        cboLoaiThongKe.setSelectedIndex(0); // Mặc định là "Tất cả"
         cboLoaiThongKe.addActionListener(e -> onLoaiThongKeChanged());
         panel.add(cboLoaiThongKe);
 
@@ -103,6 +108,7 @@ public class ThongKe_View extends JPanel {
         btnApDung.setBorderPainted(false);
         btnApDung.setCursor(new Cursor(Cursor.HAND_CURSOR));
         btnApDung.addActionListener(e -> applyFilter());
+        btnApDung.setEnabled(false); // Ban đầu vô hiệu hóa
         panel.add(btnApDung);
 
         btnHienTai = new JButton("Làm mới");
@@ -117,39 +123,34 @@ public class ThongKe_View extends JPanel {
             cboLoaiThongKe.setSelectedIndex(0);
             dateFrom.setDate(null);
             dateTo.setDate(new Date());
-            setDateChooserEnabled(dateFrom, true);
-            setDateChooserEnabled(dateTo, true);
+            setDateChooserEnabled(dateFrom, false); // Vô hiệu hóa
+            setDateChooserEnabled(dateTo, false);   // Vô hiệu hóa
+            btnApDung.setEnabled(false);
             loadStatistics(null, null);
         });
         panel.add(btnHienTai);
 
+        // Vô hiệu hóa ban đầu, chỉ "Tùy chọn" mới kích hoạt
         SwingUtilities.invokeLater(() -> {
-            setDateChooserEnabled(dateFrom, true);
-            setDateChooserEnabled(dateTo, true);
+            setDateChooserEnabled(dateFrom, false);
+            setDateChooserEnabled(dateTo, false);
         });
 
         return panel;
     }
 
+    // SỬA: Cố định việc vô hiệu hóa JDateChooser
     private void setDateChooserEnabled(JDateChooser chooser, boolean enabled) {
         if (chooser == null) return;
         
         chooser.setEnabled(enabled);
         
         try {
-            Component editorComponent = chooser.getDateEditor().getUiComponent();
-            if (editorComponent != null) {
-                editorComponent.setEnabled(enabled);
-                editorComponent.setFocusable(enabled);
-            }
-        } catch (Exception ignored) {
-        }
-
-        try {
-            if (chooser.getDateEditor() instanceof JTextFieldDateEditor) {
-                JTextFieldDateEditor ed = (JTextFieldDateEditor) chooser.getDateEditor();
-                ed.setEditable(enabled);
-            }
+            JTextFieldDateEditor ed = (JTextFieldDateEditor) chooser.getDateEditor();
+            ed.setEditable(enabled);
+            ed.setFocusable(enabled);
+            // Thay đổi màu nền để thể hiện trạng thái (đẹp hơn)
+            ed.setBackground(enabled ? Color.WHITE : new Color(240, 240, 240));
         } catch (Exception ignored) {
         }
 
@@ -158,117 +159,106 @@ public class ThongKe_View extends JPanel {
                 Component btn = chooser.getCalendarButton();
                 if (btn != null) {
                     btn.setEnabled(enabled);
+                    btn.setFocusable(enabled);
                 }
             } catch (Exception ignored) {
             }
         });
     }
 
+    // SỬA: Logic thay đổi ComboBox để xử lý "Tùy chọn" và tự động tải dữ liệu cho các mốc cố định
     private void onLoaiThongKeChanged() {
         String selected = (String) cboLoaiThongKe.getSelectedItem();
         boolean isCustom = "Tùy chọn".equals(selected);
 
-        if (isCustom) {
-            setDateChooserEnabled(dateFrom, true);
-            setDateChooserEnabled(dateTo, true);
-            dateFrom.setDate(null);
-            dateTo.setDate(new Date());
-        } else {
-            setDateChooserEnabled(dateFrom, true);
-            setDateChooserEnabled(dateTo, true);
-            
-            Calendar endCal = Calendar.getInstance();
-            endCal.set(Calendar.HOUR_OF_DAY, 23);
-            endCal.set(Calendar.MINUTE, 59);
-            endCal.set(Calendar.SECOND, 59);
-            endCal.set(Calendar.MILLISECOND, 999);
-            Date endDate = endCal.getTime();
+        setDateChooserEnabled(dateFrom, isCustom);
+        setDateChooserEnabled(dateTo, isCustom);
+        btnApDung.setEnabled(isCustom);
 
-            Date startDate = null;
-            Calendar startCal = Calendar.getInstance();
-            startCal.set(Calendar.HOUR_OF_DAY, 0);
-            startCal.set(Calendar.MINUTE, 0);
-            startCal.set(Calendar.SECOND, 0);
-            startCal.set(Calendar.MILLISECOND, 0);
+        Calendar endCal = Calendar.getInstance();
+        endCal.set(Calendar.HOUR_OF_DAY, 23);
+        endCal.set(Calendar.MINUTE, 59);
+        endCal.set(Calendar.SECOND, 59);
+        endCal.set(Calendar.MILLISECOND, 999);
+        Date endDate = endCal.getTime();
 
-            switch (selected) {
-                case "Hôm nay":
-                    startDate = startCal.getTime();
-                    break;
-                case "Tuần này":
-                    startCal.set(Calendar.DAY_OF_WEEK, startCal.getFirstDayOfWeek());
-                    startDate = startCal.getTime();
-                    break;
-                case "Tháng này":
-                    startCal.set(Calendar.DAY_OF_MONTH, 1);
-                    startDate = startCal.getTime();
-                    break;
-                case "Năm này":
-                    startCal.set(Calendar.DAY_OF_YEAR, 1);
-                    startDate = startCal.getTime();
-                    break;
-                case "Tất cả":
-                    break;
-            }
+        Date startDate = null;
+        Calendar startCal = Calendar.getInstance();
+        startCal.set(Calendar.HOUR_OF_DAY, 0);
+        startCal.set(Calendar.MINUTE, 0);
+        startCal.set(Calendar.SECOND, 0);
+        startCal.set(Calendar.MILLISECOND, 0);
 
-            dateFrom.setDate(startDate);
-            dateTo.setDate("Tất cả".equals(selected) ? new Date() : endDate);
-
-            if (!"Tất cả".equals(selected)) {
-                loadStatistics(startDate, endDate);
-            } else {
+        switch (selected) {
+            case "Hôm nay":
+                startDate = startCal.getTime();
+                break;
+            case "Tuần này":
+                startCal.set(Calendar.DAY_OF_WEEK, startCal.getFirstDayOfWeek());
+                startDate = startCal.getTime();
+                break;
+            case "Tháng này":
+                startCal.set(Calendar.DAY_OF_MONTH, 1);
+                startDate = startCal.getTime();
+                break;
+            case "Năm này":
+                startCal.set(Calendar.DAY_OF_YEAR, 1);
+                startDate = startCal.getTime();
+                break;
+            case "Tất cả":
+                dateFrom.setDate(null);
+                dateTo.setDate(new Date());
                 loadStatistics(null, null);
-            }
+                return; // Thoát vì đã load xong
+            case "Tùy chọn":
+                dateFrom.setDate(null); // Cho phép người dùng chọn lại
+                dateTo.setDate(new Date()); 
+                return; // Thoát vì cần nút áp dụng
         }
+        
+        // Cập nhật JDateChooser cho các mốc cố định
+        dateFrom.setDate(startDate);
+        dateTo.setDate(endDate); 
+
+        // Tự động tải thống kê cho các mốc cố định
+        loadStatistics(startDate, endDate);
     }
 
+    // SỬA: Logic applyFilter() để chỉ dùng khi chọn 'Tùy chọn'
     private void applyFilter() {
+        if (!"Tùy chọn".equals(cboLoaiThongKe.getSelectedItem())) {
+             JOptionPane.showMessageDialog(this,
+                "Chức năng 'Áp dụng' chỉ dùng cho bộ lọc 'Tùy chọn'.",
+                "Thông báo",
+                JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
         Date from = dateFrom.getDate();
         Date to = dateTo.getDate();
 
-        if ("Tùy chọn".equals(cboLoaiThongKe.getSelectedItem())) {
-            if (from == null || to == null) {
-                JOptionPane.showMessageDialog(this,
-                        "Vui lòng chọn cả ngày bắt đầu và ngày kết thúc.",
-                        "Thiếu thông tin",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            Calendar calFrom = Calendar.getInstance();
-            calFrom.setTime(from);
-            calFrom.set(Calendar.HOUR_OF_DAY, 0);
-            calFrom.set(Calendar.MINUTE, 0);
-            calFrom.set(Calendar.SECOND, 0);
-            calFrom.set(Calendar.MILLISECOND, 0);
-            from = calFrom.getTime();
-
-            Calendar calTo = Calendar.getInstance();
-            calTo.setTime(to);
-            calTo.set(Calendar.HOUR_OF_DAY, 23);
-            calTo.set(Calendar.MINUTE, 59);
-            calTo.set(Calendar.SECOND, 59);
-            calTo.set(Calendar.MILLISECOND, 999);
-            to = calTo.getTime();
-
-            if (from.after(to)) {
-                JOptionPane.showMessageDialog(this,
-                        "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc!",
-                        "Lỗi",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            
-            // === FIX: Call loadStatistics with the correct dates ===
-            loadStatistics(from, to);
-        } else {
-            // For preset options, apply the dates from dateFrom/dateTo
-            if (from != null && to != null) {
-                loadStatistics(from, to);
-            } else {
-                onLoaiThongKeChanged();
-            }
+        if (from == null || to == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng chọn cả ngày bắt đầu và ngày kết thúc.",
+                    "Thiếu thông tin",
+                    JOptionPane.WARNING_MESSAGE);
+            return;
         }
+
+        // Đảm bảo thời gian là 00:00:00.000 (from) và 23:59:59.999 (to)
+        from = getStartOfDay(from);
+        to = getEndOfDay(to);
+        
+        if (from.after(to)) {
+            JOptionPane.showMessageDialog(this,
+                    "Ngày bắt đầu phải trước hoặc bằng ngày kết thúc!",
+                    "Lỗi",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        // Gọi loadStatistics với ngày tùy chọn
+        loadStatistics(from, to);
     }
 
     private void loadStatistics(Date from, Date to) {
@@ -278,9 +268,12 @@ public class ThongKe_View extends JPanel {
         topPanel.setBackground(new Color(250, 248, 243));
         topPanel.setBorder(new EmptyBorder(20, 20, 10, 20));
 
+        // Gọi các phương thức DAO đã được bổ sung
         double tongDoanhThu = hoaDonDAO.getTongDoanhThu(from, to);
         int tongDonHang = hoaDonDAO.getTongDonHang(from, to);
-        int tongKhach = khachHangDAO.getSoLuongKhachDaDatHang(from, to);
+        
+        // Giả định KhachHang_DAO đã có phương thức này
+        int tongKhach = khachHangDAO.getSoLuongKhachDaDatHang(from, to); 
         double trungBinhDon = (tongDonHang > 0) ? (tongDoanhThu / tongDonHang) : 0;
 
         topPanel.add(createStatCard("Tổng doanh thu", String.format("%s đ", VN_FORMAT.format(tongDoanhThu)), "", new Color(255, 140, 0)));
@@ -294,7 +287,7 @@ public class ThongKe_View extends JPanel {
         chartPanel.setBackground(new Color(250, 248, 243));
         chartPanel.setBorder(new EmptyBorder(10, 20, 20, 20));
 
-        // === FIX: Pass from/to dates to charts ===
+        // Tạo lại biểu đồ với ngày tháng mới
         chartPanel.add(new BarChartPanel(from, to));
         chartPanel.add(new PieChartPanel(from, to));
 
@@ -332,7 +325,7 @@ public class ThongKe_View extends JPanel {
     }
 
     // -------------------------
-    // Inner class: BarChartPanel (Java2D)
+    // Inner class: BarChartPanel (Java2D) - Giữ nguyên logic vẽ, thay đổi logic tải data
     // -------------------------
     private class BarChartPanel extends JPanel {
         private final Map<String, Double> data;
@@ -347,16 +340,15 @@ public class ThongKe_View extends JPanel {
             setBackground(Color.WHITE);
             setPreferredSize(new Dimension(700, 360));
             
-            // === FIX: Use the provided dates directly ===
             Map<String, Double> doanhThuData;
             if (from == null && to == null) {
-                // Default: last 7 days
+                // Mặc định cho "Tất cả" hoặc lần load đầu tiên: 7 ngày gần nhất
                 doanhThuData = hoaDonDAO.getDoanhThuTheoKhoangThoiGian(
                     getStartOfDay(getPreviousDate(6)), 
                     getEndOfDay(new Date())
                 );
             } else {
-                // Use provided dates
+                // Sử dụng ngày tháng được truyền vào
                 doanhThuData = hoaDonDAO.getDoanhThuTheoKhoangThoiGian(from, to);
             }
 
@@ -487,7 +479,7 @@ public class ThongKe_View extends JPanel {
     }
 
     // -------------------------
-    // Inner class: PieChartPanel (Java2D)
+    // Inner class: PieChartPanel (Java2D) - Giữ nguyên logic vẽ, thay đổi logic tải data
     // -------------------------
     private class PieChartPanel extends JPanel {
         private final Map<String, Integer> data;
@@ -505,7 +497,7 @@ public class ThongKe_View extends JPanel {
             setBackground(Color.WHITE);
             setPreferredSize(new Dimension(560, 360));
             
-            // === FIX: Use the provided dates directly ===
+            // Giả định Ban_DAO đã có phương thức getSoBanTheoKhuVuc(Date from, Date to)
             Map<String, Integer> raw = banDAO.getSoBanTheoKhuVuc(from, to);
             
             if (raw == null || raw.isEmpty()) {
@@ -595,7 +587,7 @@ public class ThongKe_View extends JPanel {
         }
     }
 
-    // Date helpers
+    // Date helpers - Giữ nguyên
     private Date getPreviousDate(int daysAgo) {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_YEAR, -daysAgo);

@@ -1,81 +1,92 @@
 package entity;
 
 public class MonAn {
-	private String maMonAn;
-	private String tenMonAn;
-	private double donGia;
-	private boolean trangThai;
-	
-	// === THÊM TRƯỜNG NÀY ===
-	private String imagePath; 
-	// =======================
+    private String maMonAn;
+    private String tenMonAn;
+    private double donGia;
+    private boolean trangThai;
+    private String imagePath;
+    private String loaiMonAn;
 
-	// Constructors
-	public MonAn() {
-		super();
-	}
+    public MonAn() {
+    }
 
-	public MonAn(String maMonAn) {
-		super();
-		this.maMonAn = maMonAn;
-	}
-	
-	// === CẬP NHẬT CONSTRUCTOR ĐẦY ĐỦ ===
-	public MonAn(String maMonAn, String tenMonAn, double donGia, boolean trangThai, String imagePath) {
-		super();
-		this.maMonAn = maMonAn;
-		this.tenMonAn = tenMonAn;
-		this.donGia = donGia;
-		this.trangThai = trangThai;
-		this.imagePath = imagePath; // Thêm vào
-	}
+    public MonAn(String maMonAn) {
+        this.maMonAn = maMonAn;
+    }
 
-	// Getters and Setters
-	public String getMaMonAn() {
-		return maMonAn;
-	}
+    public MonAn(String maMonAn, String tenMonAn, double donGia, boolean trangThai, String imagePath, String loaiMonAn) {
+        this.maMonAn = maMonAn;
+        this.tenMonAn = tenMonAn;
+        this.donGia = donGia;
+        this.trangThai = trangThai;
+        this.imagePath = imagePath;
+        this.loaiMonAn = loaiMonAn;
+    }
 
-	public void setMaMonAn(String maMonAn) {
-		this.maMonAn = maMonAn;
-	}
+    public String getMaMonAn() {
+        return maMonAn;
+    }
 
-	public String getTenMonAn() {
-		return tenMonAn;
-	}
+    public void setMaMonAn(String maMonAn) {
+        this.maMonAn = maMonAn;
+    }
 
-	public void setTenMonAn(String tenMonAn) {
-		this.tenMonAn = tenMonAn;
-	}
+    public String getTenMonAn() {
+        return tenMonAn;
+    }
 
-	public double getDonGia() {
-		return donGia;
-	}
+    public void setTenMonAn(String tenMonAn) {
+        this.tenMonAn = tenMonAn;
+    }
 
-	public void setDonGia(double donGia) {
-		this.donGia = donGia;
-	}
+    public double getDonGia() {
+        return donGia;
+    }
 
-	public boolean isTrangThai() {
-		return trangThai;
-	}
+    public void setDonGia(double donGia) {
+        this.donGia = donGia;
+    }
 
-	public void setTrangThai(boolean trangThai) {
-		this.trangThai = trangThai;
-	}
-	
-	// === THÊM GETTER VÀ SETTER CHO imagePath ===
-	public String getImagePath() {
-		return imagePath;
-	}
+    public boolean isTrangThai() {
+        return trangThai;
+    }
 
-	public void setImagePath(String imagePath) {
-		this.imagePath = imagePath;
-	}
-	// ======================================
+    public void setTrangThai(boolean trangThai) {
+        this.trangThai = trangThai;
+    }
 
-	@Override
-	public String toString() {
-		return "MonAn [maMonAn=" + maMonAn + ", tenMonAn=" + tenMonAn + ", donGia=" + donGia + ", trangThai=" + trangThai
-				+ ", imagePath=" + imagePath + "]"; // Thêm imagePath
-	}
+    public String getImagePath() {
+        return imagePath;
+    }
+
+    public void setImagePath(String imagePath) {
+        this.imagePath = imagePath;
+    }
+
+    public String getLoaiMonAn() {
+        return loaiMonAn;
+    }
+
+    public void setLoaiMonAn(String loaiMonAn) {
+        this.loaiMonAn = loaiMonAn;
+    }
+
+    @Override
+    public String toString() {
+        return tenMonAn;
+    }
+
+    @Override
+    public int hashCode() {
+        return maMonAn.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        MonAn other = (MonAn) obj;
+        return maMonAn.equals(other.maMonAn);
+    }
 }

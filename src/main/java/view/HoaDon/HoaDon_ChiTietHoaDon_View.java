@@ -1,9 +1,10 @@
 package view.HoaDon;
 
 import dao.HoaDon_DAO;
+import dao.KhachHang_DAO; // Thêm KhachHang_DAO để lấy tên KH
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
-
+import entity.KhachHang; 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -17,25 +18,31 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
     private JTable tableChiTiet;
     private DefaultTableModel modelChiTiet;
     private HoaDon_DAO hoaDonDAO;
+    private KhachHang_DAO khachHangDAO; // Thêm
 
     public HoaDon_ChiTietHoaDon_View(Frame owner, HoaDon hoaDon) {
-        super(owner, "Chi tiết Hóa đơn: " + hoaDon.getMaHoaDon(), true);
+        super(owner, "Chi tiết Hóa đơn: " + hoaDon.getMaHD(), true);
         this.hoaDonDAO = new HoaDon_DAO();
+        this.khachHangDAO = new KhachHang_DAO(); // Khởi tạo
 
         setSize(550, 450);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout());
         getContentPane().setBackground(new Color(250, 246, 238));
 
+        // Lấy KH đầy đủ để hiển thị tên
+        KhachHang kh = hoaDon.getKhachHang() != null ? khachHangDAO.getKhachHangById(hoaDon.getKhachHang().getMaKH()) : null;
+        String tenKH = (kh != null && kh.getTenKH() != null) ? kh.getTenKH() : "Khách lẻ";
+
         JPanel infoPanel = new JPanel(new GridLayout(3, 2, 10, 5));
         infoPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
         infoPanel.setOpaque(false);
         infoPanel.add(new JLabel("Mã Hóa Đơn:"));
-        infoPanel.add(new JLabel(hoaDon.getMaHoaDon()));
+        infoPanel.add(new JLabel(hoaDon.getMaHD()));
         infoPanel.add(new JLabel("Khách Hàng:"));
-        infoPanel.add(new JLabel(hoaDon.getKhachHang() != null && hoaDon.getKhachHang().getTenKhachHang() != null ? hoaDon.getKhachHang().getTenKhachHang() : "Khách lẻ"));
+        infoPanel.add(new JLabel(tenKH));
         infoPanel.add(new JLabel("Ngày Lập:"));
-        infoPanel.add(new JLabel(hoaDon.getNgayLap().toString()));
+        infoPanel.add(new JLabel(hoaDon.getNgayLapHoaDon() != null ? hoaDon.getNgayLapHoaDon().toString() : "N/A")); // Dùng NgayLapHoaDon
         add(infoPanel, BorderLayout.NORTH);
 
         String[] columnNames = {"STT", "Tên Món Ăn", "Số Lượng", "Đơn Giá", "Thành Tiền"};
@@ -73,7 +80,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         buttonPanel.add(btnClose);
         add(buttonPanel, BorderLayout.SOUTH);
 
-        loadChiTietData(hoaDon.getMaHoaDon());
+        loadChiTietData(hoaDon.getMaHD());
     }
 
     private void loadChiTietData(String maHoaDon) {
@@ -81,12 +88,18 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(maHoaDon);
         int stt = 1;
         for (ChiTietHoaDon ct : chiTietList) {
+            
+            // Giả định Entity ChiTietHoaDon có phương thức tinhThanhTien() và getDonGiaBan()
+            // và Entity MonAn có getTenMonAn()
+            double donGia = ct.getDonGiaBan(); 
+            double thanhTien = ct.getSoLuong() * donGia;
+
             modelChiTiet.addRow(new Object[]{
                     stt++,
                     ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "N/A",
                     ct.getSoLuong(),
-                    ct.getDonGia(),
-                    ct.tinhThanhTien()
+                    donGia,
+                    thanhTien
             });
         }
     }

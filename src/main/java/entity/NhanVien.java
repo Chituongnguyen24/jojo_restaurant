@@ -3,119 +3,142 @@ package entity;
 import java.time.LocalDate;
 
 public class NhanVien {
-
-    private static final String SDT_REGEX = "^0\\d{9}$";
-    private static final String EMAIL_REGEX = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
-    
-    private String maNV;
-    private String tenNhanVien;
-    private boolean gioiTinh;
-    private String sdt;
-    private String email;
+    private String maNhanVien;
+    private String hoTen;
     private LocalDate ngaySinh;
-    private TaiKhoan taiKhoan;
+    private LocalDate ngayVaoLam;
+    private String soCCCD;
+    private Boolean gioiTinh;
+    private String soDienThoai;
+    private String email;
+    private String chucVu;
+    private String trangThai;
+    private TaiKhoan taiKhoan; 
 
-    public NhanVien() {}
-    
-    public NhanVien(String maNV) {
-		super();
-		this.maNV = maNV;
-	}
-
-	public NhanVien(String maNV, String tenNhanVien, boolean gioiTinh, LocalDate ngaySinh, String sdt, String email, TaiKhoan taiKhoan) {
-        this.maNV = maNV;
-        setTenNhanVien(tenNhanVien);
-        setGioiTinh(gioiTinh);
-        setNgaySinh(ngaySinh);
-        setSdt(sdt);
-        setEmail(email);
-        setTaiKhoan(taiKhoan);
+    public NhanVien() {
     }
 
-    public String getMaNV() {
-        return maNV;
-    }
-    
-    public boolean isGioiTinh() {
-        return gioiTinh;
+    public NhanVien(String maNhanVien) {
+        this.maNhanVien = maNhanVien;
     }
 
-    public TaiKhoan getTaiKhoan() {
-        return taiKhoan;
-    }
-    
-    public String getTenNhanVien() {
-        return tenNhanVien;
+    public NhanVien(String maNhanVien, String hoTen, LocalDate ngaySinh, LocalDate ngayVaoLam, String soCCCD, Boolean gioiTinh, String soDienThoai, String email, String chucVu, String trangThai, TaiKhoan taiKhoan) {
+        this.maNhanVien = maNhanVien;
+        this.hoTen = hoTen;
+        this.ngaySinh = ngaySinh;
+        this.ngayVaoLam = ngayVaoLam;
+        this.soCCCD = soCCCD;
+        this.gioiTinh = gioiTinh;
+        this.soDienThoai = soDienThoai;
+        this.email = email;
+        this.chucVu = chucVu;
+        this.trangThai = trangThai;
+        this.taiKhoan = taiKhoan;
     }
 
-    public String getSdt() {
-        return sdt;
+    public String getMaNhanVien() {
+        return maNhanVien;
     }
 
-    public String getEmail() {
-        return email;
+    public void setMaNhanVien(String maNhanVien) {
+        this.maNhanVien = maNhanVien;
+    }
+
+    public String getHoTen() {
+        return hoTen;
+    }
+
+    public void setHoTen(String hoTen) {
+        this.hoTen = hoTen;
     }
 
     public LocalDate getNgaySinh() {
         return ngaySinh;
     }
 
-    public void setMaNV(String maNV) {
-        if (maNV == null || maNV.trim().isEmpty()) {
-            throw new IllegalArgumentException("Mã nhân viên không được để trống.");
-        }
-        this.maNV = maNV;
+    public void setNgaySinh(LocalDate ngaySinh) {
+        this.ngaySinh = ngaySinh;
     }
-    
-    public void setTenNhanVien(String tenNhanVien) {
-        if (tenNhanVien == null || tenNhanVien.trim().isEmpty()) {
-            throw new IllegalArgumentException("Tên nhân viên không được để trống.");
-        }
-        this.tenNhanVien = tenNhanVien;
+
+    public LocalDate getNgayVaoLam() {
+        return ngayVaoLam;
     }
-    
-    public void setSdt(String sdt) {
-        if (sdt == null || !sdt.matches(SDT_REGEX)) {
-            throw new IllegalArgumentException("Số điện thoại không hợp lệ (phải là 10 số, bắt đầu bằng 0).");
-        }
-        this.sdt = sdt;
+
+    public void setNgayVaoLam(LocalDate ngayVaoLam) {
+        this.ngayVaoLam = ngayVaoLam;
+    }
+
+    public String getSoCCCD() {
+        return soCCCD;
+    }
+
+    public void setSoCCCD(String soCCCD) {
+        this.soCCCD = soCCCD;
+    }
+
+    public Boolean getGioiTinh() {
+        return gioiTinh;
+    }
+
+    public void setGioiTinh(Boolean gioiTinh) {
+        this.gioiTinh = gioiTinh;
+    }
+
+    public String getSoDienThoai() {
+        return soDienThoai;
+    }
+
+    public void setSoDienThoai(String soDienThoai) {
+        this.soDienThoai = soDienThoai;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public void setEmail(String email) {
-        if (email != null && !email.trim().isEmpty()) {
-            if (!email.matches(EMAIL_REGEX)) {
-                throw new IllegalArgumentException("Email không đúng định dạng.");
-            }
-        }
         this.email = email;
     }
-    
-    public void setNgaySinh(LocalDate ngaySinh) {
-        if (ngaySinh == null) {
-            throw new IllegalArgumentException("Ngày sinh không được để trống.");
-        }
-        if (ngaySinh.isAfter(LocalDate.now())) {
-            throw new IllegalArgumentException("Ngày sinh không thể là ngày ở tương lai.");
-        }
-        if (ngaySinh.isAfter(LocalDate.now().minusYears(18))) {
-            throw new IllegalArgumentException("Nhân viên phải đủ 18 tuổi.");
-        }
-        this.ngaySinh = ngaySinh;
+
+    public String getChucVu() {
+        return chucVu;
+    }
+
+    public void setChucVu(String chucVu) {
+        this.chucVu = chucVu;
+    }
+
+    public String getTrangThai() {
+        return trangThai;
+    }
+
+    public void setTrangThai(String trangThai) {
+        this.trangThai = trangThai;
     }
     
-    public void setGioiTinh(boolean gioiTinh) {
-        this.gioiTinh = gioiTinh;
+    public TaiKhoan getTaiKhoan() {
+        return taiKhoan;
     }
-    
+
     public void setTaiKhoan(TaiKhoan taiKhoan) {
         this.taiKhoan = taiKhoan;
     }
 
-	@Override
-	public String toString() {
-		return "NhanVien [maNV=" + maNV + ", tenNhanVien=" + tenNhanVien + ", gioiTinh=" + gioiTinh + ", sdt=" + sdt
-				+ ", email=" + email + ", ngaySinh=" + ngaySinh + ", taiKhoan=" + taiKhoan + "]";
-	}
+    @Override
+    public String toString() {
+        return hoTen + " (" + maNhanVien + ")";
+    }
 
-   
+    @Override
+    public int hashCode() {
+        return maNhanVien.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        NhanVien other = (NhanVien) obj;
+        return maNhanVien.equals(other.maNhanVien);
+    }
 }

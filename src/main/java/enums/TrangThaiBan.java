@@ -7,17 +7,21 @@ public enum TrangThaiBan {
     CO_KHACH("Có khách", new Color(239, 68, 68)),
     TRONG("Trống", new Color(34, 197, 94));
 
-    private final String value;
     private final Color color;
+	private String tenHienThi;
 
-    TrangThaiBan(String value, Color color) {
-        this.value = value;
+    TrangThaiBan(String tenHienThi, Color color) {
+        this.tenHienThi = tenHienThi;
         this.color = color;
+    }
+    
+    public String getTenHienThi() {
+        return this.tenHienThi;
     }
 
     @Override
     public String toString() {
-        return this.value;
+        return this.tenHienThi;
     }
 
 
@@ -29,12 +33,10 @@ public enum TrangThaiBan {
 
 
         for (TrangThaiBan ttb : TrangThaiBan.values()) {
-            // 1. Kiểm tra khớp với giá trị hiển thị (có dấu, ví dụ: "Trống") - không phân biệt hoa/thường
-            if (ttb.value.equalsIgnoreCase(trimmedText)) {
+           if (ttb.tenHienThi.equalsIgnoreCase(trimmedText)) {
                 return ttb;
             }
-            // 2. Kiểm tra khớp với tên hằng số enum (không dấu, ví dụ: "TRONG") - không phân biệt hoa/thường
-            if (ttb.name().equalsIgnoreCase(trimmedText)) {  
+             if (ttb.name().equalsIgnoreCase(trimmedText)) {  
                 return ttb;
             }
         }

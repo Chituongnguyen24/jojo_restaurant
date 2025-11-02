@@ -1,6 +1,6 @@
 package view.ThucDon;
 
-import dao.DatBan_DAO;
+import dao.PhieuDatBan_DAO; // Đã đổi DatBan_DAO thành PhieuDatBan_DAO
 import dao.MonAn_DAO;
 import entity.MonAn;
 import entity.PhieuDatBan;
@@ -24,7 +24,7 @@ import java.util.List;
 public class ChonMon_Dialog extends JDialog {
     // DAOs
     private MonAn_DAO monAnDAO;
-    private DatBan_DAO datBanDAO;
+    private PhieuDatBan_DAO phieuDatBanDAO; // Đã đổi DatBan_DAO thành PhieuDatBan_DAO
 
     // Entity
     private PhieuDatBan phieuDatBan;
@@ -61,7 +61,7 @@ public class ChonMon_Dialog extends JDialog {
         // Khởi tạo
         this.phieuDatBan = phieuDatBan;
         this.monAnDAO = new MonAn_DAO();
-        this.datBanDAO = new DatBan_DAO();
+        this.phieuDatBanDAO = new PhieuDatBan_DAO(); // Khởi tạo PhieuDatBan_DAO
         this.dsMonAn = new ArrayList<>();
 
         // Thiết lập UI
@@ -165,15 +165,9 @@ public class ChonMon_Dialog extends JDialog {
 
         for (MonAn mon : dsMonAn) {
             if (mon == null) continue;
-            // Nếu entity dùng isTrangThai() hoặc getTrangThai() thay đổi theo model, sửa tương ứng
-            boolean trangThai = true;
-            try {
-                trangThai = mon.isTrangThai();
-            } catch (Exception ex) {
-                // fallback assume true
-                trangThai = true;
-            }
-            if (!trangThai) continue;
+            
+            // Dùng isTrangThai() của MonAn Entity
+            if (!mon.isTrangThai()) continue; 
 
             String ten = mon.getTenMonAn() != null ? mon.getTenMonAn().toLowerCase() : "";
             boolean matchSearch = ten.contains(searchText);
@@ -251,7 +245,8 @@ public class ChonMon_Dialog extends JDialog {
 
             boolean success = false;
             try {
-                success = datBanDAO.addOrUpdateChiTiet(
+                // SỬA: Dùng phieuDatBanDAO
+                success = phieuDatBanDAO.addOrUpdateChiTiet( 
                     phieuDatBan.getMaPhieu(),
                     maMonAn,
                     soLuong,
