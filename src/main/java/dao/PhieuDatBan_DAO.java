@@ -36,9 +36,8 @@ public class PhieuDatBan_DAO {
         String ghiChu = rs.getString("ghiChu");
         String trangThaiPhieu = rs.getString("trangThaiPhieu");
         
-        // Dùng constructor 10 tham số (Entity mới)
         PhieuDatBan phieu = new PhieuDatBan(maPhieu, thoiGianDenHen, thoiGianNhanBan, thoiGianTraBan, 
-                                             kh, nv, ban, soNguoi, ghiChu, trangThaiPhieu); 
+                                            kh, nv, ban, soNguoi, ghiChu, trangThaiPhieu); 
         return phieu;
     }
 
@@ -46,7 +45,7 @@ public class PhieuDatBan_DAO {
         List<PhieuDatBan> dsPDB = new ArrayList<>();
         String sql = "SELECT * FROM PHIEUDATBAN ORDER BY thoiGianDenHen DESC";
         
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             
@@ -61,7 +60,7 @@ public class PhieuDatBan_DAO {
 
     public PhieuDatBan getPhieuDatBanById(String maPhieu) {
         String sql = "SELECT * FROM PHIEUDATBAN WHERE maPhieu = ?";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu);
@@ -77,8 +76,9 @@ public class PhieuDatBan_DAO {
     }
     
     public PhieuDatBan getPhieuByBan(String maBan) {
-        String sql = "SELECT TOP 1 * FROM PHIEUDATBAN WHERE maBan = ? AND trangThaiPhieu = N'Chưa đến' ORDER BY thoiGianDenHen ASC";
-        try (Connection conn = ConnectDB.getConnection();
+        // Sửa: Lấy phiếu "Chưa đến" HOẶC "Đã đến" (để xử lý CO_KHACH)
+        String sql = "SELECT TOP 1 * FROM PHIEUDATBAN WHERE maBan = ? AND (trangThaiPhieu = N'Chưa đến' OR trangThaiPhieu = N'Đã đến') ORDER BY thoiGianDenHen DESC";
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maBan);
@@ -94,16 +94,15 @@ public class PhieuDatBan_DAO {
     }
 
     public boolean insertPhieuDatBan(PhieuDatBan phieu) {
-        // SỬA SQL: Chỉ còn 8 cột (loại bỏ tienCoc)
         String sql = "INSERT INTO PHIEUDATBAN (maPhieu, thoiGianDenHen, maKhachHang, maNV, maBan, soNguoi, ghiChu, trangThaiPhieu) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, phieu.getMaPhieu());
             pstmt.setTimestamp(2, Timestamp.valueOf(phieu.getThoiGianDenHen()));
-            pstmt.setString(3, phieu.getKhachHang().getMaKH()); // SỬA: getMaKH
-            pstmt.setString(4, phieu.getNhanVien().getMaNhanVien()); // SỬA: getMaNhanVien
+            pstmt.setString(3, phieu.getKhachHang().getMaKH()); 
+            pstmt.setString(4, phieu.getNhanVien().getMaNhanVien()); 
             pstmt.setString(5, phieu.getBan().getMaBan());
             pstmt.setInt(6, phieu.getSoNguoi());
             pstmt.setString(7, phieu.getGhiChu());
@@ -118,10 +117,9 @@ public class PhieuDatBan_DAO {
     }
 
     public boolean updatePhieuDatBan(PhieuDatBan phieu) {
-        // SQL không có tienCoc
         String sql = "UPDATE PHIEUDATBAN SET thoiGianDenHen = ?, thoiGianNhanBan = ?, thoiGianTraBan = ?, maKhachHang = ?, maNV = ?, maBan = ?, soNguoi = ?, ghiChu = ?, trangThaiPhieu = ? WHERE maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setTimestamp(1, Timestamp.valueOf(phieu.getThoiGianDenHen()));
@@ -136,8 +134,8 @@ public class PhieuDatBan_DAO {
             else
                 pstmt.setNull(3, Types.TIMESTAMP);
             
-            pstmt.setString(4, phieu.getKhachHang().getMaKH()); // SỬA: getMaKH
-            pstmt.setString(5, phieu.getNhanVien().getMaNhanVien()); // SỬA: getMaNhanVien
+            pstmt.setString(4, phieu.getKhachHang().getMaKH()); 
+            pstmt.setString(5, phieu.getNhanVien().getMaNhanVien()); 
             pstmt.setString(6, phieu.getBan().getMaBan());
             pstmt.setInt(7, phieu.getSoNguoi());
             pstmt.setString(8, phieu.getGhiChu());
@@ -156,7 +154,7 @@ public class PhieuDatBan_DAO {
         String sqlDeleteCT = "DELETE FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         String sqlDeletePDB = "DELETE FROM PHIEUDATBAN WHERE maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getConnection()) {
+        try (Connection conn = ConnectDB.getInstance().getConnection()) {
             conn.setAutoCommit(false);
             
             try (PreparedStatement ps1 = conn.prepareStatement(sqlDeleteCT);
@@ -182,28 +180,39 @@ public class PhieuDatBan_DAO {
         }
     }
     
+    // ===== HÀM ĐÃ SỬA LỖI LOGIC =====
     public String generateNewID() {
-        String newID = "PDB00001";
-        String sql = "SELECT TOP 1 maPhieu FROM PHIEUDATBAN ORDER BY maPhieu DESC";
+        // Cột là nchar(10), nên chúng ta dùng format PDB + 7 chữ số (PDBXXXXXXX)
+        String newID = "PDB0000001"; // Fallback nếu DB trống
         
-        try (Connection conn = ConnectDB.getConnection();
+        // SỬA: Query này sẽ tìm SỐ lớn nhất, bất kể độ dài chuỗi
+        String sql = "SELECT MAX(CAST(SUBSTRING(maPhieu, 4, 10) AS INT)) FROM PHIEUDATBAN WHERE maPhieu LIKE 'PDB[0-9]%'";
+        
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             
             if (rs.next()) {
-                String lastID = rs.getString("maPhieu");
-                if (lastID != null && lastID.matches("PDB\\d{5}")) {
-                    int num = Integer.parseInt(lastID.trim().substring(3)) + 1; // SỬA: Thêm trim
-                    newID = String.format("PDB%05d", num);
+                int maxNum = rs.getInt(1); // Lấy SỐ lớn nhất (ví dụ: 16)
+                if (maxNum == 0) {
+                    // DB trống, dùng mã fallback
+                    return newID;
                 }
+                int newNum = maxNum + 1; // 17
+                newID = String.format("PDB%07d", newNum); // Format thành PDB0000017
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        
+        // Đảm bảo mã trả về không quá 10 ký tự
+        if(newID.length() > 10) {
+            newID = newID.substring(0, 10);
+        }
+        
         return newID;
     }
 
-    // LƯU Ý: Hàm này chỉ trả về danh sách Ban (không phải logic chính của PDB)
     public Map<String, List<Ban>> getAllBanByFloor() {
         Map<String, List<Ban>> banTheoKhuVuc = new LinkedHashMap<>();
         
@@ -219,13 +228,22 @@ public class PhieuDatBan_DAO {
                     banTheoKhuVuc.put(tenKV, new ArrayList<>());
                 }
                 
-                // Mặc định trạng thái là TRONG
-                ban.setTrangThai(TrangThaiBan.TRONG.name()); 
+                // Cập nhật trạng thái từ DB (vì phieuDat có thể là cache cũ)
+                Ban banMoiNhat = banDAO.getBanTheoMa(ban.getMaBan());
+                ban.setTrangThai(banMoiNhat.getTrangThai());
 
-                for (PhieuDatBan phieu : phieuDat) {
-                    if (phieu.getBan() != null && phieu.getBan().getMaBan().trim().equals(ban.getMaBan().trim()) && phieu.getTrangThaiPhieu().equals("Chưa đến")) {
-                         ban.setTrangThai(TrangThaiBan.DA_DAT.name()); // SỬA: Dùng name()
-                         break;
+                // Đồng bộ lại phiếu ĐÃ ĐẶT (nếu trạng thái không phải CO_KHACH)
+                if (!ban.getTrangThai().trim().equals(TrangThaiBan.CO_KHACH.name())) {
+                    boolean daDat = false;
+                    for (PhieuDatBan phieu : phieuDat) {
+                        if (phieu.getBan() != null && phieu.getBan().getMaBan().trim().equals(ban.getMaBan().trim()) && phieu.getTrangThaiPhieu().equals("Chưa đến")) {
+                             ban.setTrangThai(TrangThaiBan.DA_DAT.name()); 
+                             daDat = true;
+                             break;
+                        }
+                    }
+                    if (!daDat) {
+                         ban.setTrangThai(TrangThaiBan.TRONG.name());
                     }
                 }
                 
@@ -249,19 +267,19 @@ public class PhieuDatBan_DAO {
         List<ChiTietPhieuDatBan> dsCT = new ArrayList<>();
         String sql = "SELECT maMonAn, soLuongMonAn, DonGiaBan, ghiChu FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
                     PhieuDatBan phieu = new PhieuDatBan(maPhieu);
-                    MonAn mon = monAnDAO.getMonAnTheoMa(rs.getString("maMonAn")); // SỬA: getMonAnTheoMa
+                    MonAn mon = monAnDAO.getMonAnTheoMa(rs.getString("maMonAn")); 
                     int soLuong = rs.getInt("soLuongMonAn");
                     double donGiaBan = rs.getDouble("DonGiaBan");
                     String ghiChu = rs.getString("ghiChu");
                     
-                    ChiTietPhieuDatBan ct = new ChiTietPhieuDatBan(mon, phieu, soLuong, donGiaBan, ghiChu); // SỬA: Thay đổi thứ tự tham số
+                    ChiTietPhieuDatBan ct = new ChiTietPhieuDatBan(mon, phieu, soLuong, donGiaBan, ghiChu); 
                     dsCT.add(ct);
                 }
             }
@@ -281,7 +299,7 @@ public class PhieuDatBan_DAO {
         String sqlUpdate = "UPDATE CHITIETPHIEUDATBAN SET soLuongMonAn = ?, ghiChu = ?, DonGiaBan = ? WHERE maPhieu = ? AND maMonAn = ?";
         String sqlInsert = "INSERT INTO CHITIETPHIEUDATBAN (maPhieu, maMonAn, soLuongMonAn, DonGiaBan, ghiChu) VALUES (?, ?, ?, ?, ?)";
         
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement psCheck = conn.prepareStatement(sqlCheck);
              PreparedStatement psUpdate = conn.prepareStatement(sqlUpdate);
              PreparedStatement psInsert = conn.prepareStatement(sqlInsert)) {
@@ -319,7 +337,7 @@ public class PhieuDatBan_DAO {
 
     public boolean deleteChiTiet(String maPhieu, String maMonAn) {
         String sql = "DELETE FROM CHITIETPHIEUDATBAN WHERE maPhieu = ? AND maMonAn = ?";
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu);
@@ -339,7 +357,7 @@ public class PhieuDatBan_DAO {
             "FROM CHITIETPHIEUDATBAN ct JOIN MONAN ma ON ct.maMonAn = ma.maMonAn " +
             "WHERE ct.maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getConnection();
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu);

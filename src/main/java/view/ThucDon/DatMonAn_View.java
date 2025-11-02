@@ -1,39 +1,57 @@
 package view.ThucDon;
 
 import dao.Ban_DAO;
+import dao.HoaDon_DAO; // SỬA: Thêm DAO Hóa Đơn
 import dao.PhieuDatBan_DAO;
 import entity.Ban;
+import entity.ChiTietHoaDon; // SỬA: Thêm
+import entity.HoaDon; // SỬA: Thêm
 import entity.PhieuDatBan;
 import enums.TrangThaiBan;
+import view.HoaDon.HoaDon_ThanhToan_Dialog; // SỬA: Thêm import
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.time.format.DateTimeFormatter;
-import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
-public class DatMonAn_View extends JPanel {
+import dao.MonAn_DAO;
+import entity.MonAn;
+import java.util.EventObject;
+import java.awt.geom.RoundRectangle2D;
+
+public class DatMonAn_View extends JPanel { 
     
     // DAOs
     private Ban_DAO banDAO;
     private PhieuDatBan_DAO datBanDAO;
+    private MonAn_DAO monAnDAO; 
+    private HoaDon_DAO hoaDonDAO; // SỬA: Thêm
 
     // Data
     private PhieuDatBan phieuDatBanHienTai; 
 
     // Components
-    private JTable tblBan;
-    private JTable tblDonDatMon;
-    private DefaultTableModel modelBan;
-    private DefaultTableModel modelDonDatMon;
+    private JTable tblPhieuDat; 
+    private JTable tblChiTietMon; 
+    private DefaultTableModel modelPhieuDat;
+    private DefaultTableModel modelChiTietMon;
     
-    private JButton btnDatMon, btnHoanThanhMon, btnHuyMon, btnLamMoi;
-    private JLabel lblThongTinBan;
+    // SỬA: Đổi tên/Thêm nút
+    private JButton btnGoiThemMon, btnHuyMon, btnLamMoi, btnThanhToan;
+    private JLabel lblThongTinPhieu;
 
     // Colors
     private static final Color PRIMARY_COLOR = new Color(59, 130, 246);
@@ -52,25 +70,40 @@ public class DatMonAn_View extends JPanel {
 
     public DatMonAn_View() {
         this.banDAO = new Ban_DAO();
-        this.datBanDAO = new PhieuDatBan_DAO(); // Khởi tạo đúng DAO
+        this.datBanDAO = new PhieuDatBan_DAO(); 
+        this.monAnDAO = new MonAn_DAO(); 
+        this.hoaDonDAO = new HoaDon_DAO(); // SỬA: Khởi tạo
 
         setLayout(new BorderLayout(0, 0));
         setBackground(BACKGROUND_COLOR);
 
-        // === HEADER ===
-        add(createHeader(), BorderLayout.NORTH);
+        JPanel mainContentPanel = new JPanel(new BorderLayout(0, 0));
+        mainContentPanel.setBackground(BACKGROUND_COLOR);
+        
+        mainContentPanel.add(createHeader(), BorderLayout.NORTH);
+        
+        JSplitPane splitPane = new JSplitPane(
+            JSplitPane.HORIZONTAL_SPLIT,
+            createPhieuDatPanel(), // Panel bên trái
+            createChiTietPanel() // Panel bên phải
+        );
+        splitPane.setDividerLocation(500); 
+        splitPane.setBorder(new EmptyBorder(20, 30, 20, 30)); 
+        splitPane.setOpaque(false);
+        
+        mainContentPanel.add(splitPane, BorderLayout.CENTER);
+        mainContentPanel.add(createFooter(), BorderLayout.SOUTH);
 
-        // === CONTENT ===
-        add(createContent(), BorderLayout.CENTER);
+        JScrollPane masterScroll = new JScrollPane(mainContentPanel);
+        masterScroll.setBorder(null);
+        masterScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        masterScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); 
+        masterScroll.getVerticalScrollBar().setUnitIncrement(16);
 
-        // === FOOTER ===
-        add(createFooter(), BorderLayout.SOUTH);
+        add(masterScroll, BorderLayout.CENTER); 
 
-        // Events
         setupEvents();
-
-        // Load data
-        taiDanhSachBan();
+        taiDanhSachPhieuDat();
     }
 
     private JPanel createHeader() {
@@ -81,16 +114,15 @@ public class DatMonAn_View extends JPanel {
             new EmptyBorder(20, 30, 20, 30)
         ));
 
-        // Left side - Title
         JPanel leftPanel = new JPanel();
         leftPanel.setLayout(new BoxLayout(leftPanel, BoxLayout.Y_AXIS));
         leftPanel.setOpaque(false);
 
-        JLabel titleLabel = new JLabel("Quản lý Đặt món");
+        JLabel titleLabel = new JLabel("Quản lý Đặt món (Cho phiếu đặt trước)");
         titleLabel.setFont(FONT_TITLE);
         titleLabel.setForeground(TEXT_PRIMARY);
 
-        JLabel subtitleLabel = new JLabel("Chọn bàn và gọi món cho khách hàng");
+        JLabel subtitleLabel = new JLabel("Chọn phiếu đặt bàn để thêm/hủy món");
         subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         subtitleLabel.setForeground(TEXT_SECONDARY);
 
@@ -98,7 +130,6 @@ public class DatMonAn_View extends JPanel {
         leftPanel.add(Box.createVerticalStrut(5));
         leftPanel.add(subtitleLabel);
 
-        // Right side - Refresh button (no icon)
         btnLamMoi = createButton("Làm mới", PRIMARY_COLOR);
         btnLamMoi.setPreferredSize(new Dimension(130, 45));
 
@@ -108,71 +139,52 @@ public class DatMonAn_View extends JPanel {
         return headerPanel;
     }
 
-    private JPanel createContent() {
-        JPanel contentPanel = new JPanel(new BorderLayout(20, 0));
-        contentPanel.setBackground(BACKGROUND_COLOR);
-        contentPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
-
-        // Left panel - Danh sách bàn
-        JPanel leftPanel = createBanPanel();
-        leftPanel.setPreferredSize(new Dimension(350, 0));
-
-        // Right panel - Chi tiết đơn
-        JPanel rightPanel = createDonDatPanel();
-
-        contentPanel.add(leftPanel, BorderLayout.WEST);
-        contentPanel.add(rightPanel, BorderLayout.CENTER);
-
-        return contentPanel;
-    }
-
-    private JPanel createBanPanel() {
+    private JPanel createPhieuDatPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 15));
         panel.setOpaque(false);
 
-        // Card header 
-        JPanel headerCard = createCardHeader("Danh sách bàn", "Chọn bàn để xem chi tiết");
+        JPanel headerCard = createCardHeader("Danh sách Phiếu Đặt Bàn", "Chọn phiếu để xem chi tiết");
         
-        // Table
-        modelBan = new DefaultTableModel(new String[]{"Mã bàn", "Số chỗ", "Trạng thái"}, 0) {
+        modelPhieuDat = new DefaultTableModel(new String[]{"Mã Phiếu", "Bàn", "Khách Hàng", "Giờ Hẹn", "Trạng Thái"}, 0) { 
             @Override 
             public boolean isCellEditable(int row, int column) { 
                 return false;
             }
         };
-        tblBan = createStyledTable(modelBan);
-        tblBan.setRowHeight(60);
+        tblPhieuDat = createStyledTable(modelPhieuDat);
+        tblPhieuDat.setRowHeight(50);
         
-        // Custom renderer cho bảng bàn
-        tblBan.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+        // Custom renderer
+        tblPhieuDat.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 
-                setHorizontalAlignment(column == 1 ? CENTER : LEFT);
-                setFont(new Font("Segoe UI", Font.PLAIN, 14));
+                setHorizontalAlignment(LEFT);
+                setFont(new Font("Segoe UI", Font.PLAIN, 13));
                 
-                if (column == 2) { // Cột trạng thái
+                if (column == 2) { // Tên khách
+                    setFont(new Font("Segoe UI", Font.BOLD, 13));
+                }
+                
+                if (column == 4) { // Trạng thái
                     setFont(new Font("Segoe UI", Font.BOLD, 12));
-                    TrangThaiBan status = TrangThaiBan.fromString(value.toString());
-                    
-                    if (status == TrangThaiBan.CO_KHACH) {
-                        setForeground(DANGER_COLOR);
-                    } else if (status == TrangThaiBan.DA_DAT) {
+                    if (value.equals("Đã đến")) {
+                        setForeground(SUCCESS_COLOR);
+                    } else if (value.equals("Chưa đến")) {
                         setForeground(WARNING_COLOR);
                     } else {
-                        setForeground(SUCCESS_COLOR);
+                        setForeground(DANGER_COLOR);
                     }
-                    setText(value != null ? value.toString() : "");
                 }
                 
                 if (isSelected) {
-                    setBackground(new Color(219, 234, 254));
-                    setForeground(TEXT_PRIMARY); // Màu chữ chính
+                    setBackground(table.getSelectionBackground());
+                    setForeground(table.getSelectionForeground()); 
                 } else {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
-                    if (column != 2) setForeground(TEXT_PRIMARY);
+                    if (column != 4) setForeground(TEXT_PRIMARY); // Giữ màu trạng thái
                 }
                 
                 setBorder(new EmptyBorder(10, 15, 10, 15));
@@ -180,7 +192,7 @@ public class DatMonAn_View extends JPanel {
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(tblBan);
+        JScrollPane scrollPane = new JScrollPane(tblPhieuDat);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(Color.WHITE);
 
@@ -194,14 +206,11 @@ public class DatMonAn_View extends JPanel {
         return panel;
     }
 
-    private JPanel createDonDatPanel() {
+    private JPanel createChiTietPanel() {
         JPanel panel = new JPanel(new BorderLayout(0, 15));
         panel.setOpaque(false);
 
-        // Info card - Thông tin bàn đang chọn
         JPanel infoCard = createInfoCard();
-        
-        // Table card
         JPanel tableCard = createDonDatTableCard();
 
         panel.add(infoCard, BorderLayout.NORTH);
@@ -219,15 +228,15 @@ public class DatMonAn_View extends JPanel {
         leftInfo.setLayout(new BoxLayout(leftInfo, BoxLayout.Y_AXIS));
         leftInfo.setOpaque(false);
 
-        lblThongTinBan = new JLabel("Chưa chọn bàn");
-        lblThongTinBan.setFont(new Font("Segoe UI", Font.BOLD, 18));
-        lblThongTinBan.setForeground(TEXT_PRIMARY);
+        lblThongTinPhieu = new JLabel("Chưa chọn phiếu đặt");
+        lblThongTinPhieu.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblThongTinPhieu.setForeground(TEXT_PRIMARY);
 
-        JLabel lblStatus = new JLabel("Vui lòng chọn bàn từ danh sách");
+        JLabel lblStatus = new JLabel("Vui lòng chọn 1 phiếu từ danh sách bên trái");
         lblStatus.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblStatus.setForeground(TEXT_SECONDARY);
 
-        leftInfo.add(lblThongTinBan);
+        leftInfo.add(lblThongTinPhieu);
         leftInfo.add(Box.createVerticalStrut(5));
         leftInfo.add(lblStatus);
 
@@ -240,30 +249,25 @@ public class DatMonAn_View extends JPanel {
         JPanel panel = new JPanel(new BorderLayout(0, 15));
         panel.setOpaque(false);
 
-        // Header
-        JPanel header = createCardHeader("Chi tiết đơn đặt món", "Danh sách món đã gọi");
+        JPanel header = createCardHeader("Chi tiết món đặt trước", "Danh sách món trong phiếu");
 
-        // Table
-        modelDonDatMon = new DefaultTableModel(
-            new String[]{"Mã món", "Tên món", "SL", "Ghi chú", "Trạng thái", "Thời gian"}, 0) {
+        modelChiTietMon = new DefaultTableModel(
+            new String[]{"Mã món", "Tên món", "SL", "Đơn Giá", "Ghi chú"}, 0) {
             @Override 
             public boolean isCellEditable(int row, int column) { 
                 return false;
             }
         };
-        tblDonDatMon = createStyledTable(modelDonDatMon);
-        tblDonDatMon.setRowHeight(55);
+        tblChiTietMon = createStyledTable(modelChiTietMon);
+        tblChiTietMon.setRowHeight(50);
         
-        // Set column widths
-        tblDonDatMon.getColumnModel().getColumn(0).setPreferredWidth(80);
-        tblDonDatMon.getColumnModel().getColumn(1).setPreferredWidth(200);
-        tblDonDatMon.getColumnModel().getColumn(2).setPreferredWidth(50);
-        tblDonDatMon.getColumnModel().getColumn(3).setPreferredWidth(150);
-        tblDonDatMon.getColumnModel().getColumn(4).setPreferredWidth(120);
-        tblDonDatMon.getColumnModel().getColumn(5).setPreferredWidth(100);
+        tblChiTietMon.getColumnModel().getColumn(0).setPreferredWidth(80);
+        tblChiTietMon.getColumnModel().getColumn(1).setPreferredWidth(250);
+        tblChiTietMon.getColumnModel().getColumn(2).setPreferredWidth(40);
+        tblChiTietMon.getColumnModel().getColumn(3).setPreferredWidth(100);
+        tblChiTietMon.getColumnModel().getColumn(4).setPreferredWidth(150);
 
-        // Custom renderer
-        tblDonDatMon.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+        tblChiTietMon.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int column) {
@@ -276,26 +280,18 @@ public class DatMonAn_View extends JPanel {
                 } else if (column == 2) { // Số lượng
                     setHorizontalAlignment(CENTER);
                     setFont(new Font("Segoe UI", Font.BOLD, 14));
-                } else if (column == 4) { // Trạng thái
-                    setFont(new Font("Segoe UI", Font.BOLD, 12));
-                    if (value != null) {
-                        String s = value.toString();
-                        if (s.contains("Hoàn thành")) {
-                            setForeground(SUCCESS_COLOR);
-                        } else {
-                            setForeground(WARNING_COLOR);
-                        }
-                    } 
+                } else if (column == 3) { // Đơn giá
+                    setHorizontalAlignment(RIGHT);
                 } else {
                     setHorizontalAlignment(LEFT);
                 }
                 
                 if (isSelected) {
-                    setBackground(new Color(219, 234, 254));
-                    if (column != 4) setForeground(TEXT_PRIMARY);
+                    setBackground(table.getSelectionBackground());
+                    setForeground(table.getSelectionForeground());
                 } else {
                     setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
-                    if (column != 4) setForeground(TEXT_PRIMARY);
+                    setForeground(TEXT_PRIMARY);
                 }
                 
                 setBorder(new EmptyBorder(10, 15, 10, 15));
@@ -303,7 +299,7 @@ public class DatMonAn_View extends JPanel {
             }
         });
 
-        JScrollPane scrollPane = new JScrollPane(tblDonDatMon);
+        JScrollPane scrollPane = new JScrollPane(tblChiTietMon);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBackground(Color.WHITE);
 
@@ -317,6 +313,7 @@ public class DatMonAn_View extends JPanel {
         return panel;
     }
 
+    // ===== HÀM ĐÃ SỬA (Thêm 3 nút) =====
     private JPanel createFooter() {
         JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
         footerPanel.setBackground(CARD_COLOR);
@@ -327,19 +324,22 @@ public class DatMonAn_View extends JPanel {
 
         Dimension btnSize = new Dimension(170, 45);
 
-        btnDatMon = createButton("Đặt món", SUCCESS_COLOR);
-        btnDatMon.setPreferredSize(btnSize);
+        btnGoiThemMon = createButton("Gọi thêm món", PRIMARY_COLOR);
+        btnGoiThemMon.setPreferredSize(btnSize);
 
-        btnHoanThanhMon = createButton("Hoàn thành", PRIMARY_COLOR);
-        btnHoanThanhMon.setPreferredSize(btnSize);
-        btnHoanThanhMon.setEnabled(false);
-
-        btnHuyMon = createButton("Hủy món", DANGER_COLOR);
+        btnHuyMon = createButton("Hủy món đã chọn", DANGER_COLOR);
         btnHuyMon.setPreferredSize(btnSize);
+        
+        btnThanhToan = createButton("Thanh toán", SUCCESS_COLOR);
+        btnThanhToan.setPreferredSize(btnSize);
+        
+        btnGoiThemMon.setEnabled(false);
+        btnHuyMon.setEnabled(false);
+        btnThanhToan.setEnabled(false); // Tắt ban đầu
 
-        footerPanel.add(btnDatMon);
-        footerPanel.add(btnHoanThanhMon);
+        footerPanel.add(btnGoiThemMon);
         footerPanel.add(btnHuyMon);
+        footerPanel.add(btnThanhToan);
 
         return footerPanel;
     }
@@ -385,10 +385,10 @@ public class DatMonAn_View extends JPanel {
         table.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         table.setRowHeight(50);
         table.setSelectionBackground(new Color(219, 234, 254));
-        table.setSelectionForeground(TEXT_PRIMARY);
+        table.setSelectionForeground(TEXT_PRIMARY); // SỬA: Giữ màu chữ đen
         table.setGridColor(BORDER_COLOR);
         table.setShowGrid(true);
-        table.setIntercellSpacing(new Dimension(1, 1));
+        table.setIntercellSpacing(new Dimension(0, 0));
 
         JTableHeader header = table.getTableHeader();
         header.setFont(FONT_HEADER);
@@ -454,91 +454,100 @@ public class DatMonAn_View extends JPanel {
     // ===== EVENT HANDLERS =====
 
     private void setupEvents() {
-        tblBan.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting() && tblBan.getSelectedRow() != -1) {
-                xuLyChonBan();
+        tblPhieuDat.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting() && tblPhieuDat.getSelectedRow() != -1) {
+                xuLyChonPhieu();
             }
         });
         
-        btnDatMon.addActionListener(e -> moDialogDatMon());
+        btnGoiThemMon.addActionListener(e -> moDialogDatMon());
         btnHuyMon.addActionListener(e -> xuLyHuyMon());
-        btnLamMoi.addActionListener(e -> taiDanhSachBan());
+        btnThanhToan.addActionListener(e -> xuLyThanhToan()); // SỬA: Thêm sự kiện
+        btnLamMoi.addActionListener(e -> taiDanhSachPhieuDat());
     }
 
     // ===== DATA METHODS =====
-
-    private void taiDanhSachBan() {
-        modelBan.setRowCount(0);
-        modelDonDatMon.setRowCount(0);
+    
+    // ===== HÀM ĐÃ SỬA (Load tất cả) =====
+    private void taiDanhSachPhieuDat() {
+        modelPhieuDat.setRowCount(0);
+        modelChiTietMon.setRowCount(0);
         phieuDatBanHienTai = null;
-        lblThongTinBan.setText("Chưa chọn bàn");
+        lblThongTinPhieu.setText("Chưa chọn phiếu đặt");
+        btnGoiThemMon.setEnabled(false);
+        btnHuyMon.setEnabled(false);
+        btnThanhToan.setEnabled(false); // SỬA: Tắt nút
         
-        // Lấy danh sách bàn đang ĐÃ ĐẶT hoặc CÓ KHÁCH
-        List<Ban> dsBan = banDAO.getBanDangHoatDong();
-        for (Ban ban : dsBan) {
-            modelBan.addRow(new Object[]{
-                ban.getMaBan().trim(),
-                ban.getSoCho(),
-                ban.getTrangThai() // Trạng thái String raw DB
+        List<PhieuDatBan> dsPhieu = datBanDAO.getAllPhieuDatBan(); 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yy");
+        
+        for (PhieuDatBan phieu : dsPhieu) {
+            // SỬA: Bỏ IF, load tất cả
+            modelPhieuDat.addRow(new Object[]{
+                phieu.getMaPhieu().trim(),
+                phieu.getBan().getMaBan().trim(),
+                phieu.getKhachHang().getTenKH(),
+                phieu.getThoiGianDenHen().format(formatter),
+                phieu.getTrangThaiPhieu() // Thêm trạng thái
             });
         }
     }
 
-    private void xuLyChonBan() {
-        int row = tblBan.getSelectedRow();
+    // ===== HÀM ĐÃ SỬA (Logic bật/tắt nút) =====
+    private void xuLyChonPhieu() {
+        int row = tblPhieuDat.getSelectedRow();
         if (row == -1) return;
         
-        String maBan = (String) modelBan.getValueAt(row, 0);
-        int soCho = (int) modelBan.getValueAt(row, 1);
-        String trangThaiStr = (String) modelBan.getValueAt(row, 2);
+        String maPhieu = (String) modelPhieuDat.getValueAt(row, 0);
+        String tenBan = (String) modelPhieuDat.getValueAt(row, 1);
+        String tenKhach = (String) modelPhieuDat.getValueAt(row, 2);
+
+        this.phieuDatBanHienTai = datBanDAO.getPhieuDatBanById(maPhieu);
         
-        lblThongTinBan.setText("Bàn " + maBan + " - " + soCho + " chỗ ngồi");
-        
-        // 1. Lấy phiếu đặt bàn đang CHƯA ĐẾN (nếu có)
-        this.phieuDatBanHienTai = datBanDAO.getPhieuByBan(maBan);
-        
-        if (this.phieuDatBanHienTai != null && this.phieuDatBanHienTai.getTrangThaiPhieu().equals("Chưa đến")) {
-             // Bàn đang ở trạng thái ĐÃ ĐẶT 
-             taiDonDatMon(this.phieuDatBanHienTai.getMaPhieu());
-             btnDatMon.setEnabled(true);
-             btnHuyMon.setEnabled(true);
-        } else {
-            // 2. Nếu không có phiếu CHƯA ĐẾN, kiểm tra Hóa đơn (CO_KHACH)
-            // Logic cho bàn CO_KHACH (đã có hóa đơn)
-            if (TrangThaiBan.fromString(trangThaiStr) == TrangThaiBan.CO_KHACH) {
-                 // Cần code để lấy chi tiết món ăn từ bảng CTHOADON
-                 // Hiện tại, ta chỉ hiển thị cảnh báo và tắt nút
-                 modelDonDatMon.setRowCount(0);
-                 JOptionPane.showMessageDialog(this, 
-                    "Bàn đang phục vụ (CO_KHACH). Vui lòng dùng menu Thanh Toán/Gọi món ở DatBan_View.", 
-                    "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-                 // Tắt nút
-                 btnDatMon.setEnabled(false);
-                 btnHuyMon.setEnabled(false);
+        if (this.phieuDatBanHienTai != null) {
+            lblThongTinPhieu.setText("Phiếu: " + maPhieu.trim() + " (Bàn: " + tenBan + " - Khách: " + tenKhach + ")");
+            taiDonDatMon(maPhieu);
+            
+            // SỬA: Logic bật/tắt nút
+            String trangThai = this.phieuDatBanHienTai.getTrangThaiPhieu();
+            
+            if (trangThai.equals("Chưa đến")) {
+                 btnGoiThemMon.setEnabled(true);
+                 btnHuyMon.setEnabled(true);
+                 btnThanhToan.setEnabled(false); // Không thể thanh toán khi chưa đến
+            } else if (trangThai.equals("Đã đến")) {
+                 btnGoiThemMon.setEnabled(true);
+                 btnHuyMon.setEnabled(true);
+                 btnThanhToan.setEnabled(true); // Có thể thanh toán
             } else {
-                 modelDonDatMon.setRowCount(0);
-                 btnDatMon.setEnabled(false);
+                 // Đã thanh toán, Không đến, v.v.
+                 btnGoiThemMon.setEnabled(false);
                  btnHuyMon.setEnabled(false);
+                 btnThanhToan.setEnabled(false);
             }
+        } else {
+            lblThongTinPhieu.setText("Lỗi: Không tìm thấy phiếu " + maPhieu);
+            modelChiTietMon.setRowCount(0);
+            btnGoiThemMon.setEnabled(false);
+            btnHuyMon.setEnabled(false);
+            btnThanhToan.setEnabled(false);
         }
     }
 
     private void taiDonDatMon(String maPhieu) {
-        modelDonDatMon.setRowCount(0);
-        // Dùng hàm getChiTietTheoMaPhieu của PhieuDatBan_DAO
+        modelChiTietMon.setRowCount(0);
         List<Object[]> dsMon = datBanDAO.getChiTietTheoMaPhieu(maPhieu); 
         
-        String thoiDiemGia = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
-        String trangThaiGia = "Chưa hoàn thành";
-
         for (Object[] row : dsMon) {
-            modelDonDatMon.addRow(new Object[]{
-                row[0],
-                row[1],
-                row[2],
-                row[3],
-                trangThaiGia,
-                thoiDiemGia
+            MonAn monAn = monAnDAO.getMonAnTheoMa((String) row[0]);
+            double donGia = (monAn != null) ? monAn.getDonGia() : 0.0;
+            
+            modelChiTietMon.addRow(new Object[]{
+                row[0], // MaMon
+                row[1], // TenMon
+                row[2], // SoLuong
+                String.format("%,.0f", donGia), // Đơn giá
+                row[3]  // GhiChu
             });
         }
     }
@@ -546,7 +555,7 @@ public class DatMonAn_View extends JPanel {
     private void moDialogDatMon() {
         if (phieuDatBanHienTai == null) {
             JOptionPane.showMessageDialog(this, 
-                "Vui lòng chọn một bàn đang có phiếu đặt!", 
+                "Vui lòng chọn một phiếu đặt bàn từ danh sách!", 
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -557,23 +566,22 @@ public class DatMonAn_View extends JPanel {
         );
         dialog.setVisible(true);
         
-        // Sau khi đóng dialog, refresh lại đơn đặt món
         taiDonDatMon(phieuDatBanHienTai.getMaPhieu());
     }
 
     private void xuLyHuyMon() {
-        int selectedRow = tblDonDatMon.getSelectedRow();
+        int selectedRow = tblChiTietMon.getSelectedRow();
         if (selectedRow == -1) {
             JOptionPane.showMessageDialog(this, 
-                "Vui lòng chọn một món trong 'Đơn đặt món' để hủy!", 
+                "Vui lòng chọn một món trong 'Chi tiết món' để hủy!", 
                 "Lỗi", JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         if (phieuDatBanHienTai == null) return;
 
-        String maMonAn = (String) modelDonDatMon.getValueAt(selectedRow, 0);
-        String tenMonAn = (String) modelDonDatMon.getValueAt(selectedRow, 1);
+        String maMonAn = (String) modelChiTietMon.getValueAt(selectedRow, 0);
+        String tenMonAn = (String) modelChiTietMon.getValueAt(selectedRow, 1);
         
         int confirm = JOptionPane.showConfirmDialog(this, 
             "Bạn có chắc muốn HỦY món: " + tenMonAn + "?", 
@@ -581,7 +589,6 @@ public class DatMonAn_View extends JPanel {
             JOptionPane.YES_NO_OPTION);
             
         if (confirm == JOptionPane.YES_OPTION) {
-            // Dùng hàm deleteChiTiet của PhieuDatBan_DAO
             boolean success = datBanDAO.deleteChiTiet(phieuDatBanHienTai.getMaPhieu(), maMonAn);
             if (success) {
                 JOptionPane.showMessageDialog(this, "Hủy món thành công!");
@@ -592,5 +599,217 @@ public class DatMonAn_View extends JPanel {
                     "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
             }
         }
+    }
+    
+    // ===== HÀM MỚI (Xử lý thanh toán) =====
+    private void xuLyThanhToan() {
+        if (phieuDatBanHienTai == null || !phieuDatBanHienTai.getTrangThaiPhieu().equals("Đã đến")) {
+            JOptionPane.showMessageDialog(this, "Chỉ có thể thanh toán các phiếu 'Đã đến'!", "Lỗi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        Ban ban = phieuDatBanHienTai.getBan();
+        if (ban == null) {
+             JOptionPane.showMessageDialog(this, "Lỗi: Phiếu này không liên kết với bàn nào.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        
+        Frame mainFrame = (Frame) SwingUtilities.getAncestorOfClass(Frame.class, this);
+
+        try {
+            // 1. LẤY HOẶC TẠO HÓA ĐƠN
+            HoaDon hoaDonHienTai = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan());
+
+            if (hoaDonHienTai == null) {
+                // Nếu chưa có HĐ, tạo HĐ từ PĐB
+                // TODO: Cần lấy mã NV đăng nhập thay vì "NVTT001"
+                String maNV = phieuDatBanHienTai.getNhanVien() != null ? phieuDatBanHienTai.getNhanVien().getMaNhanVien() : "NVTT001";
+                
+                boolean taoHoaDonOK = hoaDonDAO.taoHoaDonTuPhieuDat(phieuDatBanHienTai, maNV);
+                if (!taoHoaDonOK) {
+                    JOptionPane.showMessageDialog(this, "Lỗi khi tạo hóa đơn từ phiếu đặt bàn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                hoaDonHienTai = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan());
+            }
+
+            if (hoaDonHienTai == null) {
+                JOptionPane.showMessageDialog(this, "Không thể lấy thông tin hóa đơn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 2. TÍNH TOÁN CÁC GIÁ TRỊ
+            double tongTienMonAn = hoaDonHienTai.getTongTienTruocThue();
+            double tienGiam = hoaDonHienTai.getTongGiamGia();
+            double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hoaDonHienTai.getMaHD());
+            double tienThue = tongThanhToan - (tongTienMonAn - tienGiam);
+
+            // 3. LẤY CHI TIẾT MÓN ĂN (TỪ HÓA ĐƠN)
+            List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
+            if (chiTietList == null) chiTietList = new ArrayList<>();
+
+            // 4. MỞ DIALOG THANH TOÁN
+            HoaDon_ThanhToan_Dialog thanhToanDialog = new HoaDon_ThanhToan_Dialog(
+                    mainFrame,
+                    hoaDonHienTai,
+                    hoaDonDAO,
+                    tongTienMonAn,
+                    tienGiam,
+                    tienThue,
+                    tongThanhToan,
+                    chiTietList
+            );
+            thanhToanDialog.setVisible(true);
+
+            // 5. SAU KHI ĐÓNG DIALOG -> Tải lại danh sách PĐB
+            taiDanhSachPhieuDat();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this,
+                    "Đã xảy ra lỗi khi chuẩn bị thanh toán: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+}
+
+// ===== CÁC CLASS HỖ TRỢ GIAO DIỆN (Giữ nguyên) =====
+
+class RoundedPanel extends JPanel {
+    private final int cornerRadius;
+    private final Color bgColor;
+
+    public RoundedPanel(int radius, Color color) {
+        this.cornerRadius = radius;
+        this.bgColor = color;
+        setOpaque(false);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        Color color = (bgColor != null) ? bgColor : getBackground();
+        g2.setColor(color);
+        g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
+        g2.dispose();
+    }
+}
+
+class SmallRoundedButton extends JButton {
+    Color bgColor;
+    private Color fgColor;
+    private int arc = 10;
+
+    public SmallRoundedButton(String text, Color bg, Color fg) {
+        super(text);
+        this.bgColor = bg;
+        this.fgColor = fg;
+        setOpaque(false);
+        setContentAreaFilled(false);
+        setBorderPainted(false);
+        setFocusPainted(false);
+        setForeground(fgColor);
+        setFont(new Font("Segoe UI", Font.BOLD, 12));
+        setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        setPreferredSize(new Dimension(72, 28)); 
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        Color fill = bgColor;
+        if (getModel().isPressed()) fill = bgColor.darker();
+        else if (getModel().isRollover()) fill = bgColor.brighter();
+        g2.setColor(fill);
+        g2.fillRoundRect(0, 0, getWidth(), getHeight(), arc, arc);
+        FontMetrics fm = g2.getFontMetrics();
+        int textWidth = fm.stringWidth(getText());
+        int textHeight = fm.getAscent();
+        g2.setColor(getForeground());
+        g2.drawString(getText(), (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2 - 2);
+        g2.dispose();
+    }
+}
+
+class SmallButtonCellRenderer implements javax.swing.table.TableCellRenderer {
+    private final JPanel panel;
+    private final SmallRoundedButton button;
+
+    public SmallButtonCellRenderer() {
+        panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 8)); 
+        panel.setOpaque(true); 
+        button = new SmallRoundedButton("+ Đặt", new Color(40, 167, 69), Color.WHITE);
+        button.setFocusable(false);
+        panel.add(button);
+    }
+
+    @Override
+    public Component getTableCellRendererComponent(javax.swing.JTable table, Object value, boolean isSelected,
+                                                   boolean hasFocus, int row, int column) {
+        String text = (value == null) ? "" : value.toString();
+        button.setText(text);
+        if (isSelected) { 
+            panel.setBackground(table.getSelectionBackground());
+            button.bgColor = new Color(40, 167, 69).darker();
+        } else {
+            panel.setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 252));
+            button.bgColor = new Color(40, 167, 69);
+        }
+        button.repaint();
+        return panel;
+    }
+}
+
+class SmallButtonCellEditor extends AbstractCellEditor implements javax.swing.table.TableCellEditor {
+    private final JPanel panel;
+    private final SmallRoundedButton button;
+    private int editingRow = -1;
+    private ChonMon_Dialog dialog; // Thêm tham chiếu
+
+    // SỬA: Thêm dialog vào constructor
+    public SmallButtonCellEditor(ChonMon_Dialog dialog) {
+        this.dialog = dialog; 
+        panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 8)); 
+        panel.setOpaque(true); 
+        button = new SmallRoundedButton("+ Đặt", new Color(40, 167, 69), Color.WHITE);
+        button.setFocusable(false);
+        button.addActionListener(e -> {
+            final int row = editingRow;
+            SwingUtilities.invokeLater(() -> {
+                fireEditingStopped();
+                if (row >= 0) {
+                    // Gọi hàm datMon của dialog cha
+                    dialog.datMon(row);
+                }
+            });
+        });
+        panel.add(button);
+    }
+
+    @Override
+    public Component getTableCellEditorComponent(javax.swing.JTable table, Object value, boolean isSelected, int row, int column) {
+        this.editingRow = row;
+        String text = (value == null) ? "" : value.toString();
+        button.setText(text);
+        panel.setBackground(table.getSelectionBackground()); 
+        button.bgColor = new Color(40, 167, 69).darker();
+        button.repaint();
+        return panel;
+    }
+
+    @Override
+    public Object getCellEditorValue() {
+        return "+ Đặt";
+    }
+
+    @Override
+    public boolean isCellEditable(EventObject e) {
+        if (e instanceof MouseEvent) {
+            return ((MouseEvent) e).getClickCount() >= 1;
+        }
+        return false;
     }
 }

@@ -4,6 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.geom.RoundRectangle2D;
+import java.beans.PropertyChangeListener; // SỬA: THÊM IMPORT
 
 /**
  * JDialog độc lập dùng để nhập số lượng và ghi chú cho một món ăn.
@@ -52,7 +53,8 @@ public class NhapSoLuong_Dialog extends JDialog {
         gbc.anchor = GridBagConstraints.WEST;
         pnlForm.add(lblSoLuong, gbc);
 
-        spnSoLuong = new JSpinner(new SpinnerNumberModel(1, 1, 100, 1));
+        // SỬA: Bỏ min/max (để null) cho phép nhập tự do, để ta tự validate
+        spnSoLuong = new JSpinner(new SpinnerNumberModel(1, null, null, 1)); 
         spnSoLuong.setFont(FONT_LABEL);
         gbc.gridx = 1;
         gbc.gridy = 0;
@@ -97,10 +99,43 @@ public class NhapSoLuong_Dialog extends JDialog {
     /**
      * Xử lý sự kiện khi nhấn nút "Đặt"
      */
+    // ===== HÀM ĐÃ SỬA (Thêm validation) =====
     private void dat(ActionEvent e) {
-        int soLuong = (int) spnSoLuong.getValue();
+        int soLuong;
+        try {
+            // Lấy giá trị user gõ vào (quan trọng)
+            spnSoLuong.commitEdit(); 
+            soLuong = (int) spnSoLuong.getValue();
+        } catch (java.text.ParseException ex) {
+            JOptionPane.showMessageDialog(this, 
+                "Vui lòng nhập một số nguyên hợp lệ.", 
+                "Lỗi định dạng", 
+                JOptionPane.ERROR_MESSAGE);
+            spnSoLuong.setValue(1); // Reset
+            return; // Không đóng
+        }
+        
+        // SỬA: Check > 100
+        if (soLuong > 100) {
+            JOptionPane.showMessageDialog(this, 
+                "Số lượng không được vượt quá 100.", 
+                "Lỗi số lượng", 
+                JOptionPane.ERROR_MESSAGE);
+            spnSoLuong.setValue(100); // Reset về 100
+            return; // Không đóng dialog
+        }
+        
+        // SỬA: Check < 1
+        if (soLuong < 1) { 
+             JOptionPane.showMessageDialog(this, 
+                "Số lượng phải lớn hơn 0.", 
+                "Lỗi số lượng", 
+                JOptionPane.ERROR_MESSAGE);
+            spnSoLuong.setValue(1); // Reset về 1
+            return; // Không đóng dialog
+        }
+        
         String ghiChu = txtGhiChu.getText().trim();
-        // Lưu kết quả vào biến
         this.ketQua = new Object[]{soLuong, ghiChu};
         dispose(); // Đóng dialog
     }
@@ -111,8 +146,7 @@ public class NhapSoLuong_Dialog extends JDialog {
      */
     public Object[] showDialog() {
         setVisible(true);
-        // Code sẽ bị block ở đây cho đến khi dialog (dispose())
-        return this.ketQua; // Trả về kết quả
+        return this.ketQua;
     }
 
     /**
