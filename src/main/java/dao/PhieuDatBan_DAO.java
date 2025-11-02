@@ -18,7 +18,6 @@ public class PhieuDatBan_DAO {
     private final Ban_DAO banDAO = new Ban_DAO();
     private final MonAn_DAO monAnDAO = new MonAn_DAO();
     
-    // SỬA: Map ResultSet KHÔNG CÓ TIENCOC
     private PhieuDatBan mapResultSetToPhieuDatBan(ResultSet rs) throws SQLException {
         String maPhieu = rs.getString("maPhieu");
         LocalDateTime thoiGianDenHen = rs.getTimestamp("thoiGianDenHen").toLocalDateTime();

@@ -3,7 +3,7 @@ package view.Ban;
 import dao.Ban_DAO;
 import dao.ChiTietHoaDon_DAO;
 import dao.HoaDon_DAO;
-import dao.PhieuDatBan_DAO; 
+import dao.PhieuDatBan_DAO;
 import entity.Ban;
 import entity.ChiTietHoaDon;
 import entity.ChiTietPhieuDatBan;
@@ -32,11 +32,12 @@ public class ChiTietPhieuDatBan_View extends JPanel {
     private JTable table;
     private PhieuDatBan phieu;
     private Ban ban;
-    private PhieuDatBan_DAO daoDatBan = new PhieuDatBan_DAO(); 
+    private PhieuDatBan_DAO daoDatBan = new PhieuDatBan_DAO();
     private HoaDon_DAO daoHoaDon = new HoaDon_DAO();
     private Runnable onCloseCallback;
+    private String maNVDangNhap; // SỬA: Thêm biến lưu mã NV
 
-    private JPanel orderDetailsCard; 
+    private JPanel orderDetailsCard;
 
     private static final Color PRIMARY_COLOR = new Color(37, 99, 235);
     private static final Color SECONDARY_COLOR = new Color(59, 130, 246);
@@ -49,6 +50,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
     private static final Color ACCENT_COLOR = new Color(249, 115, 22);
 
     private static final DecimalFormat CURRENCY_FORMAT;
+
     static {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(new Locale("vi", "VN"));
         symbols.setGroupingSeparator(',');
@@ -56,9 +58,11 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         CURRENCY_FORMAT = new DecimalFormat("#,##0", symbols);
     }
 
-    public ChiTietPhieuDatBan_View(Ban ban, Runnable onCloseCallback) {
+    // SỬA: Thêm 'maNhanVien' vào constructor
+    public ChiTietPhieuDatBan_View(Ban ban, String maNhanVien, Runnable onCloseCallback) {
         this.ban = ban;
         this.onCloseCallback = onCloseCallback;
+        this.maNVDangNhap = maNhanVien; // SỬA: Lưu mã NV
         this.phieu = daoDatBan.getPhieuByBan(ban.getMaBan());
 
         setLayout(new BorderLayout(0, 0));
@@ -76,8 +80,8 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         JPanel header = new JPanel(new BorderLayout());
         header.setBackground(Color.WHITE);
         header.setBorder(new CompoundBorder(
-            new MatteBorder(0, 0, 1, 0, BORDER_COLOR),
-            new EmptyBorder(20, 30, 20, 30)
+                new MatteBorder(0, 0, 1, 0, BORDER_COLOR),
+                new EmptyBorder(20, 30, 20, 30)
         ));
 
         JPanel leftPanel = new JPanel();
@@ -214,17 +218,18 @@ public class ChiTietPhieuDatBan_View extends JPanel {
 
             String khTen = "Khách vãng lai";
             KhachHang kh = phieu.getKhachHang();
-            
+
             if (kh != null && "KH00000000".equals(kh.getMaKH().trim())) { // SỬA: getMaKH
                 // Logic parse khách vãng lai từ Ghi chú
                 String ghiChuDisplay = phieu.getGhiChu() != null ? phieu.getGhiChu().trim() : "";
-                 if (ghiChuDisplay.startsWith("Khách: ")) {
+                if (ghiChuDisplay.startsWith("Khách: ")) {
                     try {
                         String[] ghiChuParts = ghiChuDisplay.split(" - SĐT: ");
                         if (ghiChuParts.length > 0) {
                             khTen = ghiChuParts[0].substring(7).trim();
                         }
-                    } catch (Exception e) {}
+                    } catch (Exception e) {
+                    }
                 }
             } else if (kh != null) {
                 khTen = kh.getTenKH(); // SỬA: getTenKH
@@ -279,14 +284,14 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         JPanel summaryPanel = new JPanel(new BorderLayout(10, 0));
         summaryPanel.setOpaque(false);
         summaryPanel.setBorder(new CompoundBorder(
-            new LineBorder(BORDER_COLOR, 1, true),
-            new EmptyBorder(12, 15, 12, 15)
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(12, 15, 12, 15)
         ));
         summaryPanel.setBackground(new Color(239, 246, 255));
 
         List<ChiTietPhieuDatBan> chiTietList = phieu != null ?
-            daoDatBan.getChiTietByPhieuId(phieu.getMaPhieu()) :
-            new java.util.ArrayList<>();
+                daoDatBan.getChiTietByPhieuId(phieu.getMaPhieu()) :
+                new java.util.ArrayList<>();
         int totalItems = chiTietList.size();
 
         JLabel summaryText = new JLabel("<html><b>" + totalItems + "</b> món ăn đã đặt</html>");
@@ -307,8 +312,8 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         card.setLayout(new BorderLayout(0, 15));
 
         List<ChiTietPhieuDatBan> chiTietList = phieu != null ?
-            daoDatBan.getChiTietByPhieuId(phieu.getMaPhieu()) :
-            new java.util.ArrayList<>();
+                daoDatBan.getChiTietByPhieuId(phieu.getMaPhieu()) :
+                new java.util.ArrayList<>();
 
         String[] cols = {"STT", "Tên món ăn", "Đơn giá", "Số lượng", "Thành tiền"};
         Object[][] data = new Object[chiTietList.size()][5];
@@ -316,7 +321,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
 
         for (int i = 0; i < chiTietList.size(); i++) {
             ChiTietPhieuDatBan ct = chiTietList.get(i);
-            
+
             data[i][0] = i + 1;
             data[i][1] = ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "N/A";
 
@@ -376,8 +381,8 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         JPanel totalPanel = new JPanel(new BorderLayout());
         totalPanel.setOpaque(false);
         totalPanel.setBorder(new CompoundBorder(
-            new MatteBorder(2, 0, 0, 0, BORDER_COLOR),
-            new EmptyBorder(20, 0, 0, 0)
+                new MatteBorder(2, 0, 0, 0, BORDER_COLOR),
+                new EmptyBorder(20, 0, 0, 0)
         ));
 
         JPanel totalRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 20, 0));
@@ -406,8 +411,8 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         card.setLayout(new BorderLayout(0, 20));
         card.setBackground(CARD_COLOR);
         card.setBorder(new CompoundBorder(
-            new LineBorder(BORDER_COLOR, 1, true),
-            new EmptyBorder(25, 25, 25, 25)
+                new LineBorder(BORDER_COLOR, 1, true),
+                new EmptyBorder(25, 25, 25, 25)
         ));
 
         JLabel titleLabel = new JLabel(title);
@@ -469,6 +474,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                     btn.setBackground(bgColor);
                 }
             }
+
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 btn.setBackground(bgColor);
             }
@@ -477,6 +483,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         return btn;
     }
 
+    // ===== HÀM ĐÃ ĐƯỢC THAY THẾ HOÀN TOÀN =====
     private void chuyenDenThanhToan() {
         if (ban == null) {
             JOptionPane.showMessageDialog(this, "Không có thông tin bàn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -490,52 +497,99 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         }
 
         try {
-            // SỬA: Lấy hóa đơn chưa thanh toán
+            // 1. LẤY HOẶC TẠO HÓA ĐƠN
             HoaDon hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
 
             if (hoaDonHienTai == null) {
-                JOptionPane.showMessageDialog(this,
-                    "Không tìm thấy hóa đơn chưa thanh toán cho bàn " + ban.getMaBan(),
-                    "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return; 
+                // Chưa có hóa đơn → Tạo mới từ Phiếu Đặt Bàn
+                if (phieu == null) {
+                    JOptionPane.showMessageDialog(this,
+                            "Không tìm thấy phiếu đặt bàn cho bàn " + ban.getMaBan(),
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // SỬA: Lấy mã NV từ biến của class (được truyền vào từ constructor)
+                String maNVHienTai = this.maNVDangNhap; 
+                
+                if(maNVHienTai == null || maNVHienTai.trim().isEmpty()) {
+                     JOptionPane.showMessageDialog(this,
+                            "Lỗi: Không tìm thấy thông tin nhân viên đăng nhập.",
+                            "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                boolean taoHoaDonOK = daoHoaDon.taoHoaDonTuPhieuDat(phieu, maNVHienTai);
+
+                if (!taoHoaDonOK) {
+                    JOptionPane.showMessageDialog(this,
+                            "Lỗi khi tạo hóa đơn từ phiếu đặt bàn!",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // Lấy lại hóa đơn vừa tạo
+                hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
             }
 
-            // Tính tổng tiền sau thuế và khuyến mãi (dùng hàm tổng hợp)
+            if (hoaDonHienTai == null) {
+                JOptionPane.showMessageDialog(this,
+                        "Không thể lấy thông tin hóa đơn!",
+                        "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // 2. TÍNH TOÁN CÁC GIÁ TRỊ
+            // Tổng tiền món ăn (trước KM và Thuế)
+            double tongTienMonAn = hoaDonHienTai.getTongTienTruocThue();
+
+            // Tiền giảm từ khuyến mãi (nếu đã áp dụng)
+            double tienGiam = hoaDonHienTai.getTongGiamGia();
+
+            // Tổng tiền cuối cùng (sau KM và Thuế)
             double tongThanhToan = daoHoaDon.tinhTongTienHoaDon(hoaDonHienTai.getMaHD());
-            
-            // Lấy chi tiết món ăn (cần để in hóa đơn)
+
+            // Tiền thuế = TongThanhToan - (TongTienMonAn - TienGiam)
+            double tienThue = tongThanhToan - (tongTienMonAn - tienGiam);
+
+            // 3. LẤY CHI TIẾT MÓN ĂN
             List<ChiTietHoaDon> chiTietList = daoHoaDon.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
             if (chiTietList == null) chiTietList = new ArrayList<>();
 
-            // Tính tổng tiền món ăn (trước KM và Thuế)
-            double tongTienMonAn = chiTietList.stream().mapToDouble(ct -> ct.getSoLuong() * ct.getDonGiaBan()).sum();
-            
-            // Lấy tiền giảm và tiền thuế đã lưu trong HĐ (giả định đã được cập nhật khi gọi món)
-            // LƯU Ý: Phải tính tiền giảm và tiền thuế chính xác ở đây để truyền vào Dialog
-            double tienGiam = hoaDonHienTai.getTongGiamGia();
-            double tienThue = tongThanhToan - (tongTienMonAn - tienGiam);
-            
-            
+            // 4. MỞ DIALOG THANH TOÁN
             view.HoaDon.HoaDon_ThanhToan_Dialog thanhToanDialog = new view.HoaDon.HoaDon_ThanhToan_Dialog(
-                mainFrame, hoaDonHienTai, daoHoaDon,
-                tongTienMonAn, tienGiam, tienThue, tongThanhToan,
-                chiTietList
+                    mainFrame,
+                    hoaDonHienTai,
+                    daoHoaDon,
+                    tongTienMonAn,
+                    tienGiam,
+                    tienThue,
+                    tongThanhToan,
+                    chiTietList
             );
             thanhToanDialog.setVisible(true);
 
-            // Cập nhật lại trạng thái nếu thanh toán thành công
-            HoaDon hoaDonSauKhiDongDialog = daoHoaDon.findByMaHD(hoaDonHienTai.getMaHD());
-            if (hoaDonSauKhiDongDialog != null && hoaDonSauKhiDongDialog.isDaThanhToan()) {
+            // 5. SAU KHI ĐÓNG DIALOG - KIỂM TRA TRẠNG THÁI THANH TOÁN
+            HoaDon hoaDonSauThanhToan = daoHoaDon.findByMaHD(hoaDonHienTai.getMaHD());
+
+            if (hoaDonSauThanhToan != null && hoaDonSauThanhToan.isDaThanhToan()) {
+                // Thanh toán thành công → Đóng view và refresh danh sách bàn
                 if (onCloseCallback != null) {
                     onCloseCallback.run();
                 }
-            } 
+
+                // Đóng view hiện tại (nếu nó là JDialog)
+                Window window = SwingUtilities.getWindowAncestor(this);
+                if (window instanceof JDialog) {
+                    ((JDialog) window).dispose();
+                }
+            }
 
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this,
-                "Đã xảy ra lỗi khi chuẩn bị thanh toán: " + e.getMessage(),
-                "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    "Đã xảy ra lỗi khi chuẩn bị thanh toán: " + e.getMessage(),
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
