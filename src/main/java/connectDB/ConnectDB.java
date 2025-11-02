@@ -27,11 +27,6 @@ public class ConnectDB {
         }
     }
 
-    /**
-     * SỬA LỖI: Luôn tạo và trả về một Connection MỚI,
-     * cho phép các lớp DAO đóng nó một cách an toàn bằng try-with-resources.
-     * * @return Connection mới, hoặc null nếu có lỗi
-     */
     public static Connection getConnection() {
         Connection newConnection = null;
         try {
