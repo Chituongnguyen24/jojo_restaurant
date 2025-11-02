@@ -37,7 +37,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.awt.geom.RoundRectangle2D;
 import java.util.Calendar;
-import java.util.concurrent.ExecutionException; 
+import java.util.concurrent.ExecutionException; // SỬA: Thêm import
 
 import com.toedter.calendar.JDateChooser;
 
@@ -132,7 +132,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         btnRefresh.setPreferredSize(new Dimension(150, 35));
 
         btnXemDanhSachPDB = new RoundedButton("DS Phiếu Đặt", MAU_XAM_NHE, COLOR_WHITE);
-        btnXemDanhSachPDB.setPreferredSize(new Dimension(150, 35)); 
+        btnXemDanhSachPDB.setPreferredSize(new Dimension(150, 35));
         
         lblThongKeBan = new JLabel("Đang tải...");
         lblThongKeBan.setFont(FONT_CHU);
@@ -200,7 +200,7 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         JPanel pnlRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlRight.setOpaque(false);
-        pnlRight.add(btnXemDanhSachPDB);
+        pnlRight.add(btnXemDanhSachPDB); 
         pnlRight.add(btnRefresh);
 
         JPanel pnlTitleBar = new JPanel(new BorderLayout());
@@ -421,16 +421,11 @@ public class DatBan_View extends JPanel implements ActionListener {
         return cbo;
     }
 
-    // ===== HÀM ĐÃ SỬA (FIX MÀU CHỮ KHI CHỌN) =====
     private JTable taoStyledTable(DefaultTableModel model) {
         JTable table = new JTable(model);
         table.setRowHeight(35);
         table.setFont(FONT_CHU);
-        table.setSelectionBackground(new Color(230, 240, 255)); // Màu nền khi chọn
-        
-        // SỬA: Giữ màu chữ là màu đen (COLOR_TITLE) khi chọn
-        table.setSelectionForeground(COLOR_TITLE); 
-        
+        table.setSelectionBackground(new Color(230, 240, 255));
         table.setGridColor(MAU_VIEN);
         table.getTableHeader().setFont(FONT_TIEUDE_NHO);
         table.getTableHeader().setBackground(new Color(248, 249, 250));
@@ -604,6 +599,7 @@ public class DatBan_View extends JPanel implements ActionListener {
             taiDuLieuVaHienThiBanDau(false); // Tải lại data, giữ khu vực
         });
     }
+
 
     private void taiDuLieuKhuVuc() {
         try {
@@ -805,10 +801,12 @@ public class DatBan_View extends JPanel implements ActionListener {
     }
     
     private void hienThiDanhSachPhieuDat() {
+        // Tạo cửa sổ pop-up
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Danh sách Phiếu Đặt Bàn", true);
         dialog.setSize(600, 400);
         dialog.setLocationRelativeTo(this);
         
+        // Tạo JScrollPane chứa tblPhieuDat (đã có sẵn)
         JScrollPane scrollPane = new JScrollPane(tblPhieuDat);
         scrollPane.setBorder(new EmptyBorder(10, 10, 10, 10));
         
@@ -832,6 +830,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         
         dialog.add(scrollPane, BorderLayout.CENTER);
         
+        // Tạo nút đóng
         JButton btnDong = new RoundedButton("Đóng", MAU_XAM_NHE, COLOR_WHITE);
         btnDong.addActionListener(e -> dialog.dispose());
         JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -841,6 +840,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         
         dialog.add(pnlButton, BorderLayout.SOUTH);
         
+        // Hiển thị dialog
         dialog.setVisible(true);
     }
 
@@ -878,10 +878,12 @@ public class DatBan_View extends JPanel implements ActionListener {
         // 1. Tác vụ UI (nhanh, chạy trên EDT)
         if (cardBanDangChon != null && cardBanDangChon instanceof RoundedPanel && banDangChon != null) {
             try {
-                // SỬA: Lấy trạng thái CŨ (trước khi refresh) để reset màu
-                ((RoundedPanel) cardBanDangChon).setBorderColor(TrangThaiBan.fromString(banDangChon.getTrangThai()).getColor());
+                Ban banCu = banDAO.getBanTheoMa(banDangChon.getMaBan()); 
+                if(banCu != null) {
+                    ((RoundedPanel) cardBanDangChon).setBorderColor(TrangThaiBan.fromString(banCu.getTrangThai()).getColor());
+                }
             } catch (Exception e) {
-                 // Bỏ qua nếu lỗi
+                 ((RoundedPanel) cardBanDangChon).setBorderColor(TrangThaiBan.fromString(banDangChon.getTrangThai()).getColor());
             }
             ((RoundedPanel) cardBanDangChon).setBackground(COLOR_WHITE);
             cardBanDangChon.repaint();
@@ -890,7 +892,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         this.banDangChon = ban;
         this.cardBanDangChon = clickedCard;
 
-        // Highlight thẻ mới
         if (cardBanDangChon != null && cardBanDangChon instanceof RoundedPanel) {
             ((RoundedPanel) cardBanDangChon).setBorderColor(MAU_HIGHLIGHT);
             ((RoundedPanel) cardBanDangChon).setBackground(new Color(240, 248, 255));
@@ -920,8 +921,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         // 2. Tác vụ CSDL (chậm) -> Chạy ngầm
         if (trangThai == TrangThaiBan.DA_DAT || trangThai == TrangThaiBan.CO_KHACH) {
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            
-            // SỬA: Chỉ reset form, không reset bàn
             xoaRongFormVaResetBan(); 
             this.banDangChon = ban; 
             this.cardBanDangChon = clickedCard;
@@ -941,7 +940,6 @@ public class DatBan_View extends JPanel implements ActionListener {
                     setCursor(Cursor.getDefaultCursor());
                     try {
                         phieuDangChon = get(); // Lấy PĐB từ doInBackground
-                        
                         if (phieuDangChon != null) {
                             if (phieuDangChon.getKhachHang() != null) {
                                 String maKH = phieuDangChon.getKhachHang().getMaKH();
@@ -972,8 +970,6 @@ public class DatBan_View extends JPanel implements ActionListener {
                                 spinnerGioDat.setValue(tgHen);
                             }
                         }
-                        
-                        btnDatBan.setText("Gọi món");
                         
                         // Hiển thị pop-up (bây giờ sẽ nhanh)
                         if (trangThai == TrangThaiBan.DA_DAT) {
@@ -1045,6 +1041,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         calNgay.set(Calendar.SECOND, 0);
         calNgay.set(Calendar.MILLISECOND, 0);
         
+        // Phải dùng final để SwingWorker có thể truy cập
         final LocalDateTime thoiGianHenFinal = calNgay.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
         if (thoiGianHenFinal.isBefore(LocalDateTime.now().minusMinutes(5))) {
@@ -1052,8 +1049,10 @@ public class DatBan_View extends JPanel implements ActionListener {
             if (confirm == JOptionPane.NO_OPTION) {
                  return;
             }
+            // Nếu Yes, vẫn dùng thoiGianHenFinal (đã set ở trên)
         }
         
+        // Hiển thị con trỏ loading
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
         // 2. Dùng SwingWorker để chạy CSDL ngầm
@@ -1064,6 +1063,8 @@ public class DatBan_View extends JPanel implements ActionListener {
             
             @Override
             protected PhieuDatBan doInBackground() throws Exception {
+                // Tác vụ nặng chạy ở đây
+                
                 KhachHang_DAO khachHangDAO = new KhachHang_DAO();
                 KhachHang khachHang = null;
 
@@ -1109,22 +1110,26 @@ public class DatBan_View extends JPanel implements ActionListener {
 
             @Override
             protected void done() {
-                setCursor(Cursor.getDefaultCursor()); 
+                // Tác vụ này chạy lại trên EDT sau khi doInBackground xong
+                setCursor(Cursor.getDefaultCursor()); // Tắt con trỏ loading
                 
                 try {
-                    PhieuDatBan phieuMoi = get(); 
+                    PhieuDatBan phieuMoi = get(); // Lấy kết quả
                     
                     if (success && phieuMoi != null) {
                         refreshDataGridOnly(); 
                         
                         phieuDangChon = phieuDatBanDAO.getPhieuDatBanById(phieuMoi.getMaPhieu());
 
+                        // SỬA LỖI POP-UP TRỐNG: Hiển thị pop-up SAU KHI CSDL đã xong
                         String thongBao = String.format("<html>Đặt bàn thành công!<br><br>Mã phiếu: %s<br>Bàn: %s<br>Khách: %s</html>",
                                         phieuMoi.getMaPhieu().trim(), banDangChon.getMaBan().trim(), tenKhach);
                         JOptionPane.showMessageDialog(DatBan_View.this, thongBao, "Đặt bàn thành công", JOptionPane.INFORMATION_MESSAGE);
 
+                        // SỬA LUỒNG: Đổi nút sang "Gọi món", không hỏi
                         btnDatBan.setText("Gọi món");
                         
+                        // Highlight lại bàn vừa chọn
                         if (cardBanDangChon != null && cardBanDangChon instanceof RoundedPanel) {
                             ((RoundedPanel) cardBanDangChon).setBorderColor(MAU_HIGHLIGHT);
                             ((RoundedPanel) cardBanDangChon).setBackground(new Color(240, 248, 255));
@@ -1143,7 +1148,7 @@ public class DatBan_View extends JPanel implements ActionListener {
             }
         };
         
-        worker.execute(); 
+        worker.execute(); // Bắt đầu chạy SwingWorker
     }
     
     private void goiMon() {
@@ -1197,7 +1202,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         String maNV = "NVTT001";
         if (phieuDangChon.getNhanVien() != null) maNV = phieuDangChon.getNhanVien().getMaNhanVien();
         ChiTietPhieuDatBan_View chiTietView = new ChiTietPhieuDatBan_View(banDangChon, maNV, () -> {
-            refreshDataGridOnly(); 
+            refreshDataGridOnly(); // Sửa
             dialog.dispose();
         });
         dialog.setContentPane(chiTietView);
