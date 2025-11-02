@@ -622,26 +622,42 @@ public class DatBan_View extends JPanel implements ActionListener {
     }
 
     private void dongBoTrangThaiDatBan() {
-        Set<String> maBanDaDat = new HashSet<>();
+        // Tạo 2 bộ (Set) để lưu mã bàn theo trạng thái từ PhieuDatBan
+        Set<String> maBanDaDat = new HashSet<>();   // Tương ứng "Chưa đến"
+        Set<String> maBanCoKhach = new HashSet<>(); // Tương ứng "Đã đến"
+
         if (danhSachPhieuDatDangHoatDong != null) {
             for (PhieuDatBan phieu : danhSachPhieuDatDangHoatDong) {
-                if (phieu != null && phieu.getBan() != null && phieu.getBan().getMaBan() != null && "Chưa đến".equals(phieu.getTrangThaiPhieu())) {
-                    maBanDaDat.add(phieu.getBan().getMaBan().trim());
+                if (phieu != null && phieu.getBan() != null && phieu.getBan().getMaBan() != null) {
+                    String trangThaiPhieu = phieu.getTrangThaiPhieu().trim();
+                    String maBan = phieu.getBan().getMaBan().trim();
+
+                    if ("Chưa đến".equals(trangThaiPhieu)) {
+                        maBanDaDat.add(maBan);
+                    } else if ("Đã đến".equals(trangThaiPhieu)) {
+                        // Nếu phiếu "Đã đến", bàn đó phải là "Có khách"
+                        maBanCoKhach.add(maBan);
+                    }
                 }
             }
         }
+
         if (danhSachBanTheoKhuVuc != null) {
             for (List<Ban> danhSachBan : danhSachBanTheoKhuVuc.values()) {
                 if (danhSachBan != null) {
                     for (Ban ban : danhSachBan) {
                         if (ban != null && ban.getMaBan() != null) {
                             String maBanHienTai = ban.getMaBan().trim();
-                            if (!TrangThaiBan.CO_KHACH.toString().equals(ban.getTrangThai().trim())) {
-                                if (maBanDaDat.contains(maBanHienTai)) {
-                                    ban.setTrangThai(TrangThaiBan.DA_DAT.toString());
-                                } else {
-                                    ban.setTrangThai(TrangThaiBan.TRONG.toString());
-                                }
+
+                            if (maBanCoKhach.contains(maBanHienTai)) {
+                                // Ưu tiên 1: Bàn có khách (vì phiếu "Đã đến")
+                                ban.setTrangThai(TrangThaiBan.CO_KHACH.toString());
+                            } else if (maBanDaDat.contains(maBanHienTai)) {
+                                // Ưu tiên 2: Bàn đã đặt (vì phiếu "Chưa đến")
+                                ban.setTrangThai(TrangThaiBan.DA_DAT.toString());
+                            } else {
+                                // Mặc định: Bàn trống
+                                ban.setTrangThai(TrangThaiBan.TRONG.toString());
                             }
                         }
                     }
