@@ -67,7 +67,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         // --- Main Panel ---
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
-        mainPanel.setBackground(Color.WHITE);
+//        mainPanel.setBackground(Color.WHITE);
 
         mainPanel.add(createHeader(hoaDon), BorderLayout.NORTH);
         mainPanel.add(createTablePanel(), BorderLayout.CENTER);
@@ -119,14 +119,15 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         
         btnDong = new JButton("Đóng");
         btnDong.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnDong.setBackground(Color.RED);
         btnDong.setPreferredSize(new Dimension(120, 40));
 
         btnThanhToan = new JButton("Xác nhận Thanh toán");
         btnThanhToan.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnThanhToan.setBackground(new Color(34, 197, 94));
-        btnThanhToan.setForeground(Color.WHITE);
+        btnThanhToan.setBackground(Color.GREEN);
         btnThanhToan.setPreferredSize(new Dimension(200, 40));
 
+        
         rightPanel.add(btnDong);
         rightPanel.add(btnThanhToan);
         
@@ -139,6 +140,17 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
  // Sửa trong HoaDon_ChiTietHoaDon_View.java - Method xuLyThanhToan() (Set trạng thái PDB thành "Hoàn thành")
 
     private void xuLyThanhToan() {
+    	
+    	List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
+        if (chiTietList == null || chiTietList.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "Không có món ăn để tạo hóa đơn", 
+                "Hóa Đơn Rỗng", 
+                JOptionPane.ERROR_MESSAGE);
+            return; 
+        }
+    	
+    	
         String phuongThuc = (String) cbxPhuongThucTT.getSelectedItem();
         if (phuongThuc == null) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn phương thức thanh toán.", "Lỗi", JOptionPane.WARNING_MESSAGE);
@@ -191,6 +203,35 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
             }
 
             conn.commit();
+            
+            try {
+                KhachHang kh = hoaDonHienTai.getKhachHang();
+                
+                // Chỉ cộng điểm cho KH thân thiết (giả định KH00000000 là khách vãng lai)
+                if (kh != null && !kh.getMaKH().trim().equalsIgnoreCase("KH00000000")) {
+                    
+                    // Lấy tổng tiền đã thanh toán (đã tính VAT)
+                    double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hoaDonHienTai.getMaHD());
+                    
+                    // Quy tắc: 10,000 VNĐ = 1 điểm (bạn có thể thay đổi)
+                    int diemCongThem = (int) (tongThanhToan / 10000); 
+                    
+                    if (diemCongThem > 0) {
+                        // Gọi hàm DAO để cộng điểm (xem Bước 2)
+                        boolean congDiemOK = khachHangDAO.congDiemTichLuy(kh.getMaKH(), diemCongThem);
+                        if (congDiemOK) {
+                            System.out.println("Debug: Đã cộng " + diemCongThem + " điểm cho KH " + kh.getMaKH());
+                        } else {
+                             System.err.println("Lỗi: Không cộng được điểm cho KH " + kh.getMaKH());
+                        }
+                    }
+                }
+            } catch (Exception e_diem) {
+                // Lỗi cộng điểm không nên làm hỏng giao dịch thanh toán chính
+                System.err.println("Lỗi ngoài lề: Không thể cộng điểm tích lũy. " + e_diem.getMessage());
+            }
+            
+            
             JOptionPane.showMessageDialog(this, "Thanh toán thành công! Hóa đơn đã hoàn tất từ phiếu đặt.");
             dispose();
             
@@ -302,7 +343,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         // ... (Labels)
         gbc.gridx = 0; gbc.gridy = 0; footer.add(createTotalLabel("Tổng tiền món:", false), gbc);
         gbc.gridx = 0; gbc.gridy = 1; footer.add(createTotalLabel("Tổng giảm giá (KM):", false), gbc);
-        gbc.gridx = 0; gbc.gridy = 2; footer.add(createTotalLabel("Thuế & Phí dịch vụ:", false), gbc);
+        gbc.gridx = 0; gbc.gridy = 2; footer.add(createTotalLabel("Thuế VAT(8%):", false), gbc);
         gbc.gridx = 0; gbc.gridy = 3; footer.add(createTotalLabel("TỔNG THANH TOÁN:", true), gbc);
 
         // ... (Values)

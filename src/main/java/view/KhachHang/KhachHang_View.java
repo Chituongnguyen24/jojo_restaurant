@@ -113,9 +113,9 @@ public class KhachHang_View extends JPanel implements ActionListener {
 
 
         statsPanel.add(createStatBox(lblTongKH, "Tổng KH Thành viên", COLOR_TONG_KH));
-        statsPanel.add(createStatBox(lblDong, "Hạng Đồng", COLOR_DONG));
-        statsPanel.add(createStatBox(lblBac, "Hạng Bạc", COLOR_BAC)); 
-        statsPanel.add(createStatBox(lblVang, "Hạng Vàng", COLOR_VANG));
+        statsPanel.add(createStatBox(lblDong, "Khách hàng hạng Đồng", COLOR_DONG));
+        statsPanel.add(createStatBox(lblBac, "Khách hàng hạng Bạc", COLOR_BAC)); 
+        statsPanel.add(createStatBox(lblVang, "Khách hàng hạng Vàng", COLOR_VANG));
         
         pnlHeaderWrapper.add(statsPanel, BorderLayout.CENTER);
         
@@ -447,6 +447,11 @@ public class KhachHang_View extends JPanel implements ActionListener {
                 });
             }
         }
+    }
+    
+    public void refreshTableData() {
+//        System.out.println("KhachHang_View: Đang làm mới dữ liệu...");
+        loadKhachHangData(); 
     }
     
     private void locDuLieu() {

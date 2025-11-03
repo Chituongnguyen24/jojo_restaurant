@@ -15,7 +15,6 @@ import view.Login.DoiMatKhau_View;
 import view.NhanVien.NhanVien_View;
 import view.NhanVien.ThongKe_View;
 import view.ThucDon.*;
-import view.HoaDon.KhuyenMai_View;
 
 public class TrangChu_View extends JPanel {
 
@@ -24,24 +23,26 @@ public class TrangChu_View extends JPanel {
     private final List<JMenuItem> allMenuItems = new ArrayList<>();
     private JMenuItem currentMenuItem = null;
     private final JFrame mainFrame;
+    private KhachHang_View khachHangView;
+	private HoaDon_View hoaDonView;
 
     private static final String CARD_HOME = "HE_THONG";
     private static final String CARD_QUAN_LY_BAN = "QUAN_LY_BAN";
     private static final String CARD_QUAN_LY_DAT_BAN = "QUAN_LY_DAT_BAN";
     private static final String CARD_QUAN_LY_DAT_MON = "QUAN_LY_DAT_MON";
     private static final String CARD_QUAN_LY_THUC_DON = "QUAN_LY_THUC_DON";
-    private static final String CARD_TRA_CUU_MON_AN = "TRA_CUU_MON_AN";
+//    private static final String CARD_TRA_CUU_MON_AN = "TRA_CUU_MON_AN";
     private static final String CARD_QUAN_LY_HOADON = "QUAN_LY_HOADON";
-    private static final String CARD_TRA_CUU_THUE = "TRA_CUU_THUE";
+//    private static final String CARD_TRA_CUU_THUE = "TRA_CUU_THUE";
     private static final String CARD_QUAN_LY_KHUYENMAI = "QUAN_LY_KHUYENMAI";
-    private static final String CARD_TRA_CUU_KHUYENMAI = "TRA_CUU_KHUYENMAI";
+//    private static final String CARD_TRA_CUU_KHUYENMAI = "TRA_CUU_KHUYENMAI";
     
-    private static final String CARD_TRA_CUU_HOADON = "TRA_CUU_HOADON";
+//    private static final String CARD_TRA_CUU_HOADON = "TRA_CUU_HOADON";
     private static final String CARD_QUAN_LY_KH = "QUAN_LY_KH";
-    private static final String CARD_DIEM_KH = "DIEM_TICHLUY";
-    private static final String CARD_TRA_CUU_KH = "TRA_CUU_KH";
+//    private static final String CARD_DIEM_KH = "DIEM_TICHLUY";
+//    private static final String CARD_TRA_CUU_KH = "TRA_CUU_KH";
     private static final String CARD_QUAN_LY_NHANVIEN = "QUAN_LY_NHAN_VIEN";
-    private static final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
+//    private static final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
     private static final String CARD_THONGKE = "THONG_KE";
 
     private enum Role { MANAGER, RECEPTIONIST }
@@ -174,17 +175,17 @@ public class TrangChu_View extends JPanel {
         menuKH.setFont(menuFont);
         JMenuItem mQLKH = new JMenuItem("Quản lý khách hàng");
         mQLKH.setFont(menuItemFont);
-        JMenuItem mDiem = new JMenuItem("Quản lý điểm tích lũy");
-        mDiem.setFont(menuItemFont);
-        JMenuItem mTCKH = new JMenuItem("Tra cứu khách hàng");
-        mTCKH.setFont(menuItemFont);
+//        JMenuItem mDiem = new JMenuItem("Quản lý điểm tích lũy");
+//        mDiem.setFont(menuItemFont);
+//        JMenuItem mTCKH = new JMenuItem("Tra cứu khách hàng");
+//        mTCKH.setFont(menuItemFont);
         menuKH.add(mQLKH);
-        menuKH.add(mDiem);
-        menuKH.add(mTCKH);
+//        menuKH.add(mDiem);
+//        menuKH.add(mTCKH);
         menuBar.add(menuKH);
         allMenuItems.add(mQLKH);
-        allMenuItems.add(mDiem);
-        allMenuItems.add(mTCKH);
+//        allMenuItems.add(mDiem);
+//        allMenuItems.add(mTCKH);
 
         // --- Role-specific menus ---
         if (role == Role.MANAGER) {
@@ -207,56 +208,56 @@ public class TrangChu_View extends JPanel {
             mQLDMon.setFont(menuItemFont);
             JMenuItem mXemTD = new JMenuItem("Quản lý thực đơn");
             mXemTD.setFont(menuItemFont);
-            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu món ăn");
-            mTraCuuMonAn.setFont(menuItemFont);
+//            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu món ăn");
+//            mTraCuuMonAn.setFont(menuItemFont);
             menuThucDon.add(mQLDMon);
             menuThucDon.add(mXemTD);
-            menuThucDon.add(mTraCuuMonAn);
+//            menuThucDon.add(mTraCuuMonAn);
             menuBar.add(menuThucDon);
             allMenuItems.add(mQLDMon);
             allMenuItems.add(mXemTD);
-            allMenuItems.add(mTraCuuMonAn);
+//            allMenuItems.add(mTraCuuMonAn);
 
             JMenu menuHoaDon = new JMenu("Hóa đơn");
             menuHoaDon.setFont(menuFont);
             JMenuItem mQuanLyHoaDon = new JMenuItem("Quản lý hóa đơn");
             mQuanLyHoaDon.setFont(menuItemFont);
-            JMenuItem mTraCuuHoaDon = new JMenuItem("Tra cứu hóa đơn");
-            mTraCuuHoaDon.setFont(menuItemFont);
-            JMenuItem mTCThue = new JMenuItem("Tra cứu thuế");
-            mTCThue.setFont(menuItemFont);
+//            JMenuItem mTraCuuHoaDon = new JMenuItem("Tra cứu hóa đơn");
+//            mTraCuuHoaDon.setFont(menuItemFont);
+//            JMenuItem mTCThue = new JMenuItem("Tra cứu thuế");
+//            mTCThue.setFont(menuItemFont);
             JMenuItem mQLKM = new JMenuItem("Quản lý khuyến mãi");
             mQLKM.setFont(menuItemFont);
-            JMenuItem mTCKM = new JMenuItem("Tra cứu khuyến mãi");
-            mTCKM.setFont(menuItemFont);
+//            JMenuItem mTCKM = new JMenuItem("Tra cứu khuyến mãi");
+//            mTCKM.setFont(menuItemFont);
             menuHoaDon.add(mQuanLyHoaDon);
-            menuHoaDon.add(mTraCuuHoaDon);
-            menuHoaDon.add(mTCThue);
+//            menuHoaDon.add(mTraCuuHoaDon);
+//            menuHoaDon.add(mTCThue);
             menuHoaDon.add(mQLKM);
-            menuHoaDon.add(mTCKM);
+//            menuHoaDon.add(mTCKM);
             menuBar.add(menuHoaDon);
             allMenuItems.add(mQuanLyHoaDon);
-            allMenuItems.add(mTraCuuHoaDon);
-            allMenuItems.add(mTCThue);
+//            allMenuItems.add(mTraCuuHoaDon);
+//            allMenuItems.add(mTCThue);
             allMenuItems.add(mQLKM);
-            allMenuItems.add(mTCKM);
+//            allMenuItems.add(mTCKM);
             
             
             JMenu menuNV = new JMenu("Nhân viên");
             menuNV.setFont(menuFont);
             JMenuItem mQLNV = new JMenuItem("Quản lý nhân viên");
             mQLNV.setFont(menuItemFont);
-            JMenuItem mTCNV = new JMenuItem("Tra cứu nhân viên");
-            mTCNV.setFont(menuItemFont);
+//            JMenuItem mTCNV = new JMenuItem("Tra cứu nhân viên");
+//            mTCNV.setFont(menuItemFont);
             JMenuItem mTKNV = new JMenuItem("Thống kê");
             mTKNV.setFont(menuItemFont);
             menuNV.add(mQLNV);
-            menuNV.add(mTCNV);
+//            menuNV.add(mTCNV);
             menuNV.addSeparator();
             menuNV.add(mTKNV);
             menuBar.add(menuNV);
             allMenuItems.add(mQLNV);
-            allMenuItems.add(mTCNV);
+//            allMenuItems.add(mTCNV);
             allMenuItems.add(mTKNV);
         } else {
             // Receptionist: limited menus relevant to reception
@@ -272,29 +273,29 @@ public class TrangChu_View extends JPanel {
             menuThucDon.setFont(menuFont);
             JMenuItem mDatMon = new JMenuItem("Quản lý đặt món");
             mDatMon.setFont(menuItemFont);
-            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu món ăn");
-            mTraCuuMonAn.setFont(menuItemFont);
+//            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu món ăn");
+//            mTraCuuMonAn.setFont(menuItemFont);
             menuThucDon.add(mDatMon);
-            menuThucDon.add(mTraCuuMonAn);
+//            menuThucDon.add(mTraCuuMonAn);
             menuBar.add(menuThucDon);
             allMenuItems.add(mDatMon);
-            allMenuItems.add(mTraCuuMonAn);
+//            allMenuItems.add(mTraCuuMonAn);
 
             JMenu menuHoaDon = new JMenu("Hóa đơn");
             menuHoaDon.setFont(menuFont);
             JMenuItem mQuanLyHoaDon = new JMenuItem("Quản lý hóa đơn");
             mQuanLyHoaDon.setFont(menuItemFont);
-            JMenuItem mTraCuuHoaDon = new JMenuItem("Tra cứu hóa đơn");
-            mTraCuuHoaDon.setFont(menuItemFont);
-            JMenuItem mTCKM = new JMenuItem("Tra cứu khuyến mãi");
-            mTCKM.setFont(menuItemFont);
+//            JMenuItem mTraCuuHoaDon = new JMenuItem("Tra cứu hóa đơn");
+//            mTraCuuHoaDon.setFont(menuItemFont);
+//            JMenuItem mTCKM = new JMenuItem("Tra cứu khuyến mãi");
+//            mTCKM.setFont(menuItemFont);
             menuHoaDon.add(mQuanLyHoaDon);
-            menuHoaDon.add(mTraCuuHoaDon);
-            menuHoaDon.add(mTCKM);
+//            menuHoaDon.add(mTraCuuHoaDon);
+//            menuHoaDon.add(mTCKM);
             menuBar.add(menuHoaDon);
             allMenuItems.add(mQuanLyHoaDon);
-            allMenuItems.add(mTraCuuHoaDon);
-            allMenuItems.add(mTCKM);
+//            allMenuItems.add(mTraCuuHoaDon);
+//            allMenuItems.add(mTCKM);
         }
 
         
@@ -314,9 +315,11 @@ public class TrangChu_View extends JPanel {
 //        contentPanel.add(new MonAn_TraCuu_View(), CARD_TRA_CUU_MON_AN);
 //        contentPanel.add(new KhachHang_TraCuu_View(), CARD_TRA_CUU_KH);
         contentPanel.add(new DatMonAn_View(), CARD_QUAN_LY_DAT_MON);
-        contentPanel.add(new HoaDon_View(), CARD_QUAN_LY_HOADON);
+        hoaDonView= new HoaDon_View();
+        contentPanel.add(hoaDonView, CARD_QUAN_LY_HOADON);
 //        contentPanel.add(new KhuyenMai_TraCuu_View(),CARD_TRA_CUU_KHUYENMAI);
-        contentPanel.add(new KhachHang_View(), CARD_QUAN_LY_KH);
+        khachHangView = new KhachHang_View();
+        contentPanel.add(khachHangView, CARD_QUAN_LY_KH);
 //        contentPanel.add(new KhachHang_DiemTichLuy_View(), CARD_DIEM_KH);
 
         if (role == Role.MANAGER) {
@@ -352,39 +355,45 @@ public class TrangChu_View extends JPanel {
                 case "Quản lý thực đơn":
                     cardName = CARD_QUAN_LY_THUC_DON;
                     break;
-                case "Tra cứu món ăn":
-                    cardName = CARD_TRA_CUU_MON_AN;
-                    break;
+//                case "Tra cứu món ăn":
+//                    cardName = CARD_TRA_CUU_MON_AN;
+//                    break;
                 case "Quản lý hóa đơn":
                     cardName = CARD_QUAN_LY_HOADON;
+                    if (hoaDonView != null) {
+                    	hoaDonView.refreshTableData();
+                    }
                     break;
-                case "Tra cứu hóa đơn":
-                    cardName = CARD_TRA_CUU_HOADON;
-                    break;
-                case "Tra cứu thuế":
-                    cardName = CARD_TRA_CUU_THUE;
-                    break;
+//                case "Tra cứu hóa đơn":
+//                    cardName = CARD_TRA_CUU_HOADON;
+//                    break;
+//                case "Tra cứu thuế":
+//                    cardName = CARD_TRA_CUU_THUE;
+//                    break;
                 case "Quản lý khuyến mãi":
                     cardName = CARD_QUAN_LY_KHUYENMAI;
                     break;                
-                case "Tra cứu khuyến mãi":
-                    cardName = CARD_TRA_CUU_KHUYENMAI;
-                    break;
+//                case "Tra cứu khuyến mãi":
+//                    cardName = CARD_TRA_CUU_KHUYENMAI;
+//                    break;
                 case "Quản lý khách hàng":
                     cardName = CARD_QUAN_LY_KH;
+                    if (khachHangView != null) {
+                        khachHangView.refreshTableData();
+                    }
                     break;
-                case "Quản lý điểm tích lũy":
-                    cardName = CARD_DIEM_KH;
-                    break;
-                case "Tra cứu khách hàng":
-                    cardName = CARD_TRA_CUU_KH;
-                    break;
+//                case "Quản lý điểm tích lũy":
+//                    cardName = CARD_DIEM_KH;
+//                    break;
+//                case "Tra cứu khách hàng":
+//                    cardName = CARD_TRA_CUU_KH;
+//                    break;
                 case "Quản lý nhân viên":
                     cardName = CARD_QUAN_LY_NHANVIEN;
                     break;
-                case "Tra cứu nhân viên":
-                    cardName = CARD_TRA_CUU_NV;
-                    break;
+//                case "Tra cứu nhân viên":
+//                    cardName = CARD_TRA_CUU_NV;
+//                    break;
                 case "Thống kê":
                     cardName = CARD_THONGKE;
                     break;

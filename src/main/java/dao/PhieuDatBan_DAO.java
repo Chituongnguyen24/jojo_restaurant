@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+
 import java.util.LinkedHashMap;
 
 public class PhieuDatBan_DAO {
@@ -420,5 +422,21 @@ public class PhieuDatBan_DAO {
         }
         return false;
     }
+
+	public boolean capNhatThoiGianNhanBan(String maPhieu, LocalDateTime thoiGianNhanBan) {
+		String sql="UPDATE PHIEUDATBAN"+
+					"SET thoiGianNhanBan=?, trangThaiPhieu=N'Đã đến'"+
+					"WHERE maPhieu= ?";
+		try (Connection conn = ConnectDB.getInstance().getConnection();
+				PreparedStatement pstmt= conn.prepareStatement(sql)){
+					pstmt.setTimestamp(1, Timestamp.valueOf(thoiGianNhanBan));
+					pstmt.setString(2, maPhieu);
+					return pstmt.executeUpdate()>0;
+				}	catch (SQLException e) {
+					e.printStackTrace();
+				}
+		return false;
+		
+	}
     
 }

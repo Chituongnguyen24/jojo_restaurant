@@ -1,19 +1,12 @@
 package view.Ban;
 
-import dao.Ban_DAO;
-import dao.ChiTietHoaDon_DAO;
 import dao.HoaDon_DAO;
 import dao.PhieuDatBan_DAO;
 import entity.Ban;
-import entity.ChiTietHoaDon;
 import entity.ChiTietPhieuDatBan;
 import entity.KhachHang;
-import entity.KhuyenMai;
 import entity.PhieuDatBan;
 import entity.HoaDon;
-import entity.Thue;
-import enums.TrangThaiBan;
-import view.HoaDon.HoaDon_AddDialog;
 import view.ThucDon.ChonMon_Dialog;
 
 import javax.swing.*;
@@ -23,7 +16,6 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
@@ -484,7 +476,6 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         return btn;
     }
 
-    // ===== HÀM ĐÃ ĐƯỢC THAY THẾ HOÀN TOÀN =====
     private void chuyenDenThanhToan() {
         if (ban == null) {
             JOptionPane.showMessageDialog(this, "Không có thông tin bàn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -497,7 +488,6 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         if (window instanceof Frame) {
             mainFrame = (Frame) window;
         } else if (window instanceof Dialog) {
-            // Nếu cửa sổ cha là JDialog, lấy Frame chủ của nó
             mainFrame = (Frame) ((Dialog) window).getOwner();
         }
 
@@ -507,26 +497,31 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         }
 
         try {
-            // 1. LẤY HOẶC TẠO HÓA ĐƠN
-            HoaDon hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
+            HoaDon hoaDonHienTai = null;
+            if (phieu != null) {
+                hoaDonHienTai = daoHoaDon.getHoaDonByMaPhieuDat(phieu.getMaPhieu());
+            }
+            if (hoaDonHienTai == null) {
+                hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
+            }
+
 
             if (hoaDonHienTai == null) {
-                // Chưa có hóa đơn → Tạo mới từ Phiếu Đặt Bàn
+                if (phieu == null) {
+                    phieu = daoDatBan.getPhieuByBan(ban.getMaBan()); 
+                }
+                
                 if (phieu == null) {
                     JOptionPane.showMessageDialog(this,
-                            "Không tìm thấy phiếu đặt bàn cho bàn " + ban.getMaBan(),
+                            "Không tìm thấy phiếu đặt bàn hoặc hóa đơn đang hoạt động cho bàn " + ban.getMaBan(),
                             "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
 
-                // SỬA: Lấy mã NV từ biến của class (được truyền vào từ constructor)
                 String maNVHienTai = this.maNVDangNhap; 
                 
                 if(maNVHienTai == null || maNVHienTai.trim().isEmpty()) {
-                     JOptionPane.showMessageDialog(this,
-                            "Lỗi: Không tìm thấy thông tin nhân viên đăng nhập.",
-                            "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
-                    return;
+                    maNVHienTai = "NVTT001";
                 }
 
                 boolean taoHoaDonOK = daoHoaDon.taoHoaDonTuPhieuDat(phieu, maNVHienTai);
@@ -538,8 +533,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                     return;
                 }
 
-                // Lấy lại hóa đơn vừa tạo
-                hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
+                hoaDonHienTai = daoHoaDon.getHoaDonByMaPhieuDat(phieu.getMaPhieu());
             }
 
             if (hoaDonHienTai == null) {
@@ -549,49 +543,24 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                 return;
             }
 
-            // 2. TÍNH TOÁN CÁC GIÁ TRỊ (Phần này chỉ để debug, dialog sẽ tự tính)
-            // double tongTienMonAn = hoaDonHienTai.getTongTienTruocThue();
-            // double tienGiam = hoaDonHienTai.getTongGiamGia();
-            // double tongThanhToan = daoHoaDon.tinhTongTienHoaDon(hoaDonHienTai.getMaHD()); 
-            // double tienThue = tongThanhToan - (tongTienMonAn - tienGiam); 
-            
-            // 3. LẤY CHI TIẾT MÓN ĂN (Phần này chỉ để debug, dialog sẽ tự lấy)
-            // List<ChiTietHoaDon> chiTietList = daoHoaDon.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
-            // if (chiTietList == null) chiTietList = new ArrayList<>();
-
-            // 4. MỞ DIALOG CHI TIẾT HÓA ĐƠN (ĐỂ THANH TOÁN)
-            // ===== SỬA LỖI Ở ĐÂY =====
-            // Không dùng HoaDon_AddDialog
             view.HoaDon.HoaDon_ChiTietHoaDon_View chiTietDialog = new view.HoaDon.HoaDon_ChiTietHoaDon_View(
                     mainFrame, 
-                    hoaDonHienTai // Truyền hóa đơn hiện tại
+                    hoaDonHienTai 
             );
-            chiTietDialog.setVisible(true);
-            // ===== KẾT THÚC SỬA LỖI =====
+            
+            chiTietDialog.setVisible(true); 
             
 
-            // 5. SAU KHI ĐÓNG DIALOG - KIỂM TRA TRẠNG THÁI THANH TOÁN
-            // Tải lại hóa đơn từ DB để xem nó đã được thanh toán (trong dialog) chưa
             HoaDon hoaDonSauThanhToan = daoHoaDon.findByMaHD(hoaDonHienTai.getMaHD());
-
+            
             if (hoaDonSauThanhToan != null && hoaDonSauThanhToan.isDaThanhToan()) {
-                // Thanh toán thành công → Đóng view và refresh danh sách bàn
                 if (onCloseCallback != null) {
-                    onCloseCallback.run(); // Gọi hàm callback để refresh Ban_View
+                    onCloseCallback.run(); 
                 }
-
-                // Đóng view hiện tại (ChiTietPhieuDatBan_View)
                 if (window instanceof JDialog) {
                     ((JDialog) window).dispose();
-                } else {
-                     // Nếu không phải Dialog, thì tự remove khỏi parent (ví dụ CardLayout)
-                     // Trong trường hợp này, onCloseCallback() đã xử lý việc chuyển view
-                }
-            } else {
-                // Nếu người dùng đóng dialog mà không thanh toán
-                // Tải lại chi tiết phiếu (nếu có thêm món)
-                reloadPhieuAndOrderDetails();
-            }
+                } 
+            } 
 
         } catch (Exception e) {
             e.printStackTrace();

@@ -1,8 +1,10 @@
 package view.Ban;
 
 import dao.Ban_DAO;
+import dao.HoaDon_DAO;
 import dao.PhieuDatBan_DAO;
 import entity.Ban;
+import entity.HoaDon;
 import entity.PhieuDatBan;
 import enums.TrangThaiBan;
 import view.ThucDon.ChonMon_Dialog;
@@ -46,6 +48,7 @@ import javax.swing.Timer;
 public class DatBan_View extends JPanel implements ActionListener {
 
     private final Ban_DAO banDAO;
+    private final HoaDon_DAO hoaDonDAO;
     private final PhieuDatBan_DAO phieuDatBanDAO;
 
     // UI components
@@ -97,6 +100,7 @@ public class DatBan_View extends JPanel implements ActionListener {
 
     public DatBan_View() {
         banDAO = new Ban_DAO();
+		hoaDonDAO = new HoaDon_DAO();
         phieuDatBanDAO = new PhieuDatBan_DAO();
         danhSachBanTheoKhuVuc = new LinkedHashMap<>();
         tenKhuVuc = new ArrayList<>();
@@ -499,27 +503,21 @@ public class DatBan_View extends JPanel implements ActionListener {
         return card;
     }
 
-    /**
-     * [HÀM ĐÃ SỬA] Helper: Tải icon cho bàn một cách an toàn
-     */
     private JLabel createBanIconLabel(Ban ban) {
         String iconFileName = "thongthuong.png"; 
         
-        // SỬA: Dùng đường dẫn gốc của project (bỏ / ở đầu)
         String iconPath = "images/icon/" + iconFileName; 
         
         JLabel lblIcon;
         ImageIcon iconBan = null;
         
         try {
-            // SỬA: Tải ảnh trực tiếp từ project root
             iconBan = new ImageIcon(iconPath); 
         } catch (Exception e) {
             // Lỗi
         }
 
         if (iconBan != null && iconBan.getIconWidth() > 0) {
-            // Tải ảnh thành công
             try {
                 ImageIcon rawIcon = iconBan;
                 int targetW = 45, targetH = 45;
@@ -528,14 +526,12 @@ public class DatBan_View extends JPanel implements ActionListener {
                 lblIcon = new JLabel(new ImageIcon(scaled));
                 lblIcon.setPreferredSize(new Dimension(targetW, targetH));
             } catch (Exception ex) {
-                lblIcon = createFallbackIcon(); // Lỗi khi scale
+                lblIcon = createFallbackIcon(); 
             }
         } else {
-            // Không tìm thấy ảnh (path sai) -> Dùng icon Bàn (🍽️) làm dự phòng (CHỐNG CRASH)
             lblIcon = createFallbackIcon();
         }
 
-        // Code chung cho cả 2 trường hợp
         lblIcon.setOpaque(false);
         lblIcon.setHorizontalAlignment(SwingConstants.CENTER);
         return lblIcon;
@@ -594,14 +590,13 @@ public class DatBan_View extends JPanel implements ActionListener {
             phieuDangChon = null;
             
             xoaRongFormVaResetBan(); 
-            taiDuLieuVaHienThiBanDau(false); // Tải lại data, giữ khu vực
+            taiDuLieuVaHienThiBanDau(false); 
         });
     }
     
-    // SỬA: Hàm refresh không reset form
     public void refreshDataGridOnly() {
         SwingUtilities.invokeLater(() -> {
-            taiDuLieuVaHienThiBanDau(false); // Tải lại data, giữ khu vực
+            taiDuLieuVaHienThiBanDau(false); 
         });
     }
 
@@ -627,9 +622,8 @@ public class DatBan_View extends JPanel implements ActionListener {
     }
 
     private void dongBoTrangThaiDatBan() {
-        // Tạo 2 bộ (Set) để lưu mã bàn theo trạng thái từ PhieuDatBan
-        Set<String> maBanDaDat = new HashSet<>();   // Tương ứng "Chưa đến"
-        Set<String> maBanCoKhach = new HashSet<>(); // Tương ứng "Đã đến"
+        Set<String> maBanDaDat = new HashSet<>();  
+        Set<String> maBanCoKhach = new HashSet<>(); 
 
         if (danhSachPhieuDatDangHoatDong != null) {
             for (PhieuDatBan phieu : danhSachPhieuDatDangHoatDong) {
@@ -640,7 +634,6 @@ public class DatBan_View extends JPanel implements ActionListener {
                     if ("Chưa đến".equals(trangThaiPhieu)) {
                         maBanDaDat.add(maBan);
                     } else if ("Đã đến".equals(trangThaiPhieu)) {
-                        // Nếu phiếu "Đã đến", bàn đó phải là "Có khách"
                         maBanCoKhach.add(maBan);
                     }
                 }
@@ -655,13 +648,10 @@ public class DatBan_View extends JPanel implements ActionListener {
                             String maBanHienTai = ban.getMaBan().trim();
 
                             if (maBanCoKhach.contains(maBanHienTai)) {
-                                // Ưu tiên 1: Bàn có khách (vì phiếu "Đã đến")
                                 ban.setTrangThai(TrangThaiBan.CO_KHACH.toString());
                             } else if (maBanDaDat.contains(maBanHienTai)) {
-                                // Ưu tiên 2: Bàn đã đặt (vì phiếu "Chưa đến")
                                 ban.setTrangThai(TrangThaiBan.DA_DAT.toString());
                             } else {
-                                // Mặc định: Bàn trống
                                 ban.setTrangThai(TrangThaiBan.TRONG.toString());
                             }
                         }
@@ -755,19 +745,13 @@ public class DatBan_View extends JPanel implements ActionListener {
             }
         }
     }
-
-    // SỬA: Xóa hàm capNhatTableBanTrongPhuHop()
-    private void capNhatTableBanTrongPhuHop() {
-        // Hàm này không còn table để cập nhật
-    }
     
     private void ganSuKien() {
         btnDatBan.addActionListener(this);
         btnSearchPDB.addActionListener(this);
         btnRefresh.addActionListener(this);
-        btnXemDanhSachPDB.addActionListener(this); // SỬA: Thêm listener
-        btnThanhToan.addActionListener(this); // SỬA: Thêm listener cho nút thanh toán
-
+        btnXemDanhSachPDB.addActionListener(this); 
+        btnThanhToan.addActionListener(this); 
         cboFilterKhuVuc.addActionListener(e -> {
             String newKhuVuc = (String) cboFilterKhuVuc.getSelectedItem();
             if (newKhuVuc != null && !newKhuVuc.equals(khuVucHienTai)) {
@@ -817,24 +801,21 @@ public class DatBan_View extends JPanel implements ActionListener {
             xuLyNutDatBan();
         } else if (o == btnSearchPDB) {
             timKiemPhieuDat();
-        } else if (o == btnXemDanhSachPDB) { // SỬA: Thêm sự kiện
+        } else if (o == btnXemDanhSachPDB) {
             hienThiDanhSachPhieuDat();
-        } else if (o == btnThanhToan) { // SỬA: Thêm sự kiện click
-            xuLyThanhToan(); // Gọi thẳng hàm thanh toán
+        } else if (o == btnThanhToan) {
+            xuLyThanhToan(); 
         }
     }
     
     private void hienThiDanhSachPhieuDat() {
-        // Tạo cửa sổ pop-up
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Danh sách Phiếu Đặt Bàn", true);
         dialog.setSize(600, 400);
         dialog.setLocationRelativeTo(this);
         
-        // Tạo JScrollPane chứa tblPhieuDat (đã có sẵn)
         JScrollPane scrollPane = new JScrollPane(tblPhieuDat);
         scrollPane.setBorder(new EmptyBorder(10, 10, 10, 10));
         
-        // SỬA: Thêm sự kiện double click cho bảng TRONG POP-UP
         tblPhieuDat.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
@@ -845,7 +826,7 @@ public class DatBan_View extends JPanel implements ActionListener {
                         if (phieu != null && phieu.getBan() != null) {
                             JPanel card = timCardBan(phieu.getBan().getMaBan());
                             xuLyChonBan(phieu.getBan(), card);
-                            dialog.dispose(); // Đóng pop-up sau khi chọn
+                            dialog.dispose(); 
                         }
                     }
                 }
@@ -854,7 +835,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         
         dialog.add(scrollPane, BorderLayout.CENTER);
         
-        // Tạo nút đóng
         JButton btnDong = new RoundedButton("Đóng", MAU_XAM_NHE, COLOR_WHITE);
         btnDong.addActionListener(e -> dialog.dispose());
         JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -864,7 +844,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         
         dialog.add(pnlButton, BorderLayout.SOUTH);
         
-        // Hiển thị dialog
         dialog.setVisible(true);
     }
 
@@ -898,9 +877,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         JOptionPane.showMessageDialog(this, "Đang tìm kiếm Phiếu Đặt Bàn với từ khóa: " + keyword);
     }
 
-    // ===== HÀM ĐÃ SỬA (FIX LỖI POP-UP CHẬM) =====
     private void xuLyChonBan(Ban ban, JPanel clickedCard) {
-        // 1. Tác vụ UI (nhanh, chạy trên EDT)
         if (cardBanDangChon != null && cardBanDangChon instanceof RoundedPanel && banDangChon != null) {
             try {
                 Ban banCu = banDAO.getBanTheoMa(banDangChon.getMaBan()); 
@@ -943,7 +920,6 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         TrangThaiBan trangThai = TrangThaiBan.fromString(ban.getTrangThai());
 
-        // 2. Tác vụ CSDL (chậm) -> Chạy ngầm
         if (trangThai == TrangThaiBan.DA_DAT || trangThai == TrangThaiBan.CO_KHACH) {
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             xoaRongFormVaResetBan(); 
@@ -951,25 +927,22 @@ public class DatBan_View extends JPanel implements ActionListener {
             this.cardBanDangChon = clickedCard;
             btnDatBan.setText("Gọi món");
             if (trangThai == TrangThaiBan.CO_KHACH) {
-                btnThanhToan.setVisible(true); // Bàn "Có khách" -> HIỆN
+                btnThanhToan.setVisible(true); 
             } else {
-                btnThanhToan.setVisible(false); // Bàn "Đã đặt" -> ẨN
+                btnThanhToan.setVisible(false); 
             }
 
-            // Tạo SwingWorker để tải PĐB ngầm
             SwingWorker<PhieuDatBan, Void> worker = new SwingWorker<PhieuDatBan, Void>() {
                 @Override
                 protected PhieuDatBan doInBackground() throws Exception {
-                    // Tác vụ nặng (DB call) chạy ở đây
                     return phieuDatBanDAO.getPhieuByBan(ban.getMaBan());
                 }
 
                 @Override
                 protected void done() {
-                    // Tác vụ UI (cập nhật form) chạy trên EDT
                     setCursor(Cursor.getDefaultCursor());
                     try {
-                        phieuDangChon = get(); // Lấy PĐB từ doInBackground
+                        phieuDangChon = get();
                         if (phieuDangChon != null) {
                             if (phieuDangChon.getKhachHang() != null) {
                                 String maKH = phieuDangChon.getKhachHang().getMaKH();
@@ -1001,7 +974,6 @@ public class DatBan_View extends JPanel implements ActionListener {
                             }
                         }
                         
-                        // Hiển thị pop-up (bây giờ sẽ nhanh)
                         if (trangThai == TrangThaiBan.DA_DAT) {
                             JOptionPane.showMessageDialog(DatBan_View.this,
                                 String.format("Bàn %s đã được đặt!\nĐã tải thông tin phiếu: %s", ban.getMaBan().trim(),
@@ -1020,7 +992,6 @@ public class DatBan_View extends JPanel implements ActionListener {
             worker.execute();
 
         } else {
-            // Bàn trống (nhanh)
             phieuDangChon = null;
             btnDatBan.setText("Đặt bàn");
         }
@@ -1036,9 +1007,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         else goiMon();
     }
 
-    // ===== HÀM ĐÃ SỬA (FIX LỖI POP-UP TRỐNG) =====
     private void datBanMoi() {
-        // 1. Validation (nhanh, chạy trên EDT)
         final String tenKhach = txtTenKhach.getText().trim();
         final String sdtHoacMaKH = txtSdtKhach.getText().trim();
         final int soNguoi = (int) cboSoKhach.getSelectedItem();
@@ -1071,7 +1040,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         calNgay.set(Calendar.SECOND, 0);
         calNgay.set(Calendar.MILLISECOND, 0);
         
-        // Phải dùng final để SwingWorker có thể truy cập
         final LocalDateTime thoiGianHenFinal = calNgay.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
 
         if (thoiGianHenFinal.isBefore(LocalDateTime.now().minusMinutes(5))) {
@@ -1079,13 +1047,10 @@ public class DatBan_View extends JPanel implements ActionListener {
             if (confirm == JOptionPane.NO_OPTION) {
                  return;
             }
-            // Nếu Yes, vẫn dùng thoiGianHenFinal (đã set ở trên)
         }
         
-        // Hiển thị con trỏ loading
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
-        // 2. Dùng SwingWorker để chạy CSDL ngầm
         SwingWorker<PhieuDatBan, String> worker = new SwingWorker<PhieuDatBan, String>() {
             
             private String ghiChuFinal = ghiChu;
@@ -1093,7 +1058,6 @@ public class DatBan_View extends JPanel implements ActionListener {
             
             @Override
             protected PhieuDatBan doInBackground() throws Exception {
-                // Tác vụ nặng chạy ở đây
                 
                 KhachHang_DAO khachHangDAO = new KhachHang_DAO();
                 KhachHang khachHang = null;
@@ -1122,7 +1086,7 @@ public class DatBan_View extends JPanel implements ActionListener {
 
                 String maPhieuMoi = phieuDatBanDAO.generateNewID();
                 NhanVien_DAO nhanVienDAO = new NhanVien_DAO();
-                NhanVien nhanVien = nhanVienDAO.getNhanVienById("NVTT001"); // TODO: Lấy từ session
+                NhanVien nhanVien = nhanVienDAO.getNhanVienById("NVTT001"); 
                 if (nhanVien == null) {
                     throw new Exception("Lỗi: Không tìm thấy thông tin nhân viên (NVTT001)!");
                 }
@@ -1140,27 +1104,23 @@ public class DatBan_View extends JPanel implements ActionListener {
 
             @Override
             protected void done() {
-                // Tác vụ này chạy lại trên EDT sau khi doInBackground xong
-                setCursor(Cursor.getDefaultCursor()); // Tắt con trỏ loading
+                setCursor(Cursor.getDefaultCursor()); 
                 
                 try {
-                    PhieuDatBan phieuMoi = get(); // Lấy kết quả
+                    PhieuDatBan phieuMoi = get(); 
                     
                     if (success && phieuMoi != null) {
                         refreshDataGridOnly(); 
                         
                         phieuDangChon = phieuDatBanDAO.getPhieuDatBanById(phieuMoi.getMaPhieu());
 
-                        // SỬA LỖI POP-UP TRỐNG: Hiển thị pop-up SAU KHI CSDL đã xong
                         String thongBao = String.format("<html>Đặt bàn thành công!<br><br>Mã phiếu: %s<br>Bàn: %s<br>Khách: %s</html>",
                                         phieuMoi.getMaPhieu().trim(), banDangChon.getMaBan().trim(), tenKhach);
                         JOptionPane.showMessageDialog(DatBan_View.this, thongBao, "Đặt bàn thành công", JOptionPane.INFORMATION_MESSAGE);
 
-                        // SỬA LUỒNG: Đổi nút sang "Gọi món", không hỏi
                         btnDatBan.setText("Gọi món");
                         btnThanhToan.setVisible(false);
                         
-                        // Highlight lại bàn vừa chọn
                         if (cardBanDangChon != null && cardBanDangChon instanceof RoundedPanel) {
                             ((RoundedPanel) cardBanDangChon).setBorderColor(MAU_HIGHLIGHT);
                             ((RoundedPanel) cardBanDangChon).setBackground(new Color(240, 248, 255));
@@ -1179,7 +1139,7 @@ public class DatBan_View extends JPanel implements ActionListener {
             }
         };
         
-        worker.execute(); // Bắt đầu chạy SwingWorker
+        worker.execute(); 
     }
     
     private void goiMon() {
@@ -1215,6 +1175,8 @@ public class DatBan_View extends JPanel implements ActionListener {
         }
     }
 
+ // Sửa hàm này trong file: view/Ban/DatBan_View.java
+
     private void xuLyThanhToan() {
         if (banDangChon == null) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn bàn để thanh toán!", "Lỗi", JOptionPane.WARNING_MESSAGE);
@@ -1234,13 +1196,20 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         String maNV = "NVTT001";
         if (phieuDangChon.getNhanVien() != null) maNV = phieuDangChon.getNhanVien().getMaNhanVien();
-        ChiTietPhieuDatBan_View chiTietView = new ChiTietPhieuDatBan_View(banDangChon, maNV, () -> {
-            refreshDataGridOnly(); // Sửa
-            dialog.dispose();
-        });
+        Runnable callbackSauKhiThanhToan = () -> {
+            refreshDataGridOnly();   
+            xoaRongFormVaResetBan(); 
+            dialog.dispose();       
+        };
+
+        ChiTietPhieuDatBan_View chiTietView = new ChiTietPhieuDatBan_View(
+            banDangChon, 
+            maNV, 
+            callbackSauKhiThanhToan 
+        );
+        
         dialog.setContentPane(chiTietView);
         dialog.setVisible(true);
-        xoaRongFormVaResetBan();
     }
 
     // UI helper classes

@@ -491,6 +491,27 @@ public class HoaDon_DAO {
         return doanhThuTheoNgay;
     }
 
+    public HoaDon getHoaDonByMaPhieuDat(String maPhieu) {
+        String sql = "SELECT TOP 1 * FROM HOADON " +
+                     "WHERE MaPhieu = ? " +
+                     "ORDER BY GioVao DESC"; 
+
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, maPhieu.trim());
+            
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    return createHoaDonFromResultSet(rs); 
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    
     public HoaDon getHoaDonByBanChuaThanhToan(String maBan) {
         String sql = "SELECT MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, " +
                 "phuongThucThanhToan, MaKM, MaThue, MaPhieu, " +
