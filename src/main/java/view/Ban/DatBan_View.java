@@ -39,7 +39,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.awt.geom.RoundRectangle2D;
 import java.util.Calendar;
-import java.util.concurrent.ExecutionException; // SỬA: Thêm import
+import java.util.concurrent.ExecutionException;
 
 import com.toedter.calendar.JDateChooser;
 
@@ -57,7 +57,9 @@ public class DatBan_View extends JPanel implements ActionListener {
     private final JSpinner spinnerGioDat;
     private final JTextField txtSearchPDB, txtTenKhach, txtSdtKhach, txtGhiChu;
     
-    private final JButton btnSearchPDB, btnDatBan, btnRefresh, btnXemDanhSachPDB, btnThanhToan;
+    // SỬA: Thêm btnHuyDatBan và btnTimBanTheoGio
+    private final JButton btnSearchPDB, btnDatBan, btnRefresh, btnXemDanhSachPDB, btnThanhToan, btnHuyDatBan;
+    private JButton btnTimBanTheoGio; // Nút để lọc bàn theo thời gian
     private final DefaultTableModel modelPhieuDat;
     private final JTable tblPhieuDat;
     
@@ -127,12 +129,20 @@ public class DatBan_View extends JPanel implements ActionListener {
         btnSearchPDB = new RoundedButton("Tìm kiếm PDB", MAU_XANH_DUONG, COLOR_WHITE);
         btnSearchPDB.setPreferredSize(new Dimension(140, 38));
 
+        // THÊM MỚI: Khởi tạo nút "Tìm bàn"
+        btnTimBanTheoGio = new RoundedButton("Tìm bàn", MAU_XANH_LA, COLOR_WHITE);
+        btnTimBanTheoGio.setPreferredSize(new Dimension(110, 38)); 
+
         btnDatBan = new RoundedButton("Đặt bàn", MAU_XANH_LA, COLOR_WHITE);
         btnDatBan.setPreferredSize(new Dimension(150, 40));
         
         btnThanhToan = new RoundedButton("Thanh toán", MAU_XANH_DUONG, COLOR_WHITE); // 
         btnThanhToan.setPreferredSize(new Dimension(150, 40));
         btnThanhToan.setVisible(false);
+        
+        btnHuyDatBan = new RoundedButton("Hủy đặt bàn", MAU_DO, COLOR_WHITE); 
+        btnHuyDatBan.setPreferredSize(new Dimension(150, 40));
+        btnHuyDatBan.setVisible(false);
         
         btnRefresh = new RoundedButton("Làm mới", new Color(255, 243, 224), MAU_CAM_CHINH);
         btnRefresh.setPreferredSize(new Dimension(150, 35));
@@ -219,60 +229,72 @@ public class DatBan_View extends JPanel implements ActionListener {
         return panelHeaderWrapper;
     }
 
+    // =============================================================
+    // THAY THẾ TOÀN BỘ HÀM NÀY
+    // =============================================================
     private JPanel taoPanelTimKiem() {
         JPanel pnlSearch = new RoundedPanel(15, COLOR_WHITE, new GridBagLayout());
         pnlSearch.setBorder(new EmptyBorder(12, 15, 12, 15));
         
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 10, 5, 10);
+        gbc.insets = new Insets(5, 8, 5, 8); // SỬA: Giảm khoảng cách
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
         gbc.gridx = 0; gbc.gridy = 0;
         pnlSearch.add(new JLabel("Tìm kiếm PDB:"), gbc);
         
-        gbc.gridx = 1; gbc.weightx = 0.3;
-        txtSearchPDB.setPreferredSize(new Dimension(200, 38));
+        gbc.gridx = 1; gbc.weightx = 0.1;
+        txtSearchPDB.setPreferredSize(new Dimension(120, 38)); // SỬA: Giảm chiều rộng
         styleComponent(txtSearchPDB);
         pnlSearch.add(txtSearchPDB, gbc);
         
         gbc.gridx = 2; gbc.weightx = 0;
+        btnSearchPDB.setPreferredSize(new Dimension(120, 38)); // SỬA: Giảm chiều rộng
         pnlSearch.add(btnSearchPDB, gbc);
 
         gbc.gridx = 3; gbc.gridy = 0; gbc.weightx = 0;
         pnlSearch.add(new JLabel("Số khách:"), gbc);
         
         gbc.gridx = 4;
-        cboSoKhach.setPreferredSize(new Dimension(80, 38));
+        cboSoKhach.setPreferredSize(new Dimension(70, 38)); // SỬA: Giảm chiều rộng
         styleComponent(cboSoKhach);
         pnlSearch.add(cboSoKhach, gbc);
 
         gbc.gridx = 5;
         pnlSearch.add(new JLabel("Khu vực:"), gbc);
         
-        gbc.gridx = 6;
-        cboFilterKhuVuc.setPreferredSize(new Dimension(150, 38));
+        gbc.gridx = 6; gbc.weightx = 0.1;
+        cboFilterKhuVuc.setPreferredSize(new Dimension(120, 38)); // SỬA: Giảm chiều rộng
         styleComponent(cboFilterKhuVuc);
         pnlSearch.add(cboFilterKhuVuc, gbc);
 
-        gbc.gridx = 7;
+        gbc.gridx = 7; gbc.weightx = 0;
         pnlSearch.add(new JLabel("Ngày đặt:"), gbc);
         
-        gbc.gridx = 8;
-        datePicker.setPreferredSize(new Dimension(130, 38));
+        gbc.gridx = 8; gbc.weightx = 0.1;
+        datePicker.setPreferredSize(new Dimension(130, 38)); // SỬA: Đặt kích thước chuẩn
         styleComponent(datePicker);
         pnlSearch.add(datePicker, gbc);
 
-        gbc.gridx = 9;
+        gbc.gridx = 9; gbc.weightx = 0;
         pnlSearch.add(new JLabel("Giờ đặt:"), gbc);
         
         gbc.gridx = 10;
         spinnerGioDat.setPreferredSize(new Dimension(80, 38));
         styleComponent((JComponent) spinnerGioDat);
         pnlSearch.add(spinnerGioDat, gbc);
+        
+        // THÊM MỚI NÚT "TÌM BÀN"
+        gbc.gridx = 11; gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE; // Không co giãn nút này
+        pnlSearch.add(btnTimBanTheoGio, gbc);
 
         return pnlSearch;
     }
+    // =============================================================
+    // KẾT THÚC THAY THẾ
+    // =============================================================
 
     private void styleComponent(JComponent comp) {
         comp.setFont(FONT_CHU);
@@ -375,6 +397,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         pnlButton.setOpaque(false);
         pnlButton.add(btnDatBan);
+        pnlButton.add(btnHuyDatBan); 
         pnlButton.add(btnThanhToan);
         
         pnlForm.add(pnlButton, BorderLayout.SOUTH);
@@ -512,7 +535,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         try {
             iconBan = new ImageIcon(iconPath); 
         } catch (Exception e) {
-            // Lỗi
+           
         }
 
         if (iconBan != null && iconBan.getIconWidth() > 0) {
@@ -544,13 +567,18 @@ public class DatBan_View extends JPanel implements ActionListener {
     }
 
     private void taiDuLieuVaHienThiBanDau(boolean resetKhuVuc) {
+        // 1. Tải dữ liệu thô từ CSDL
         taiDuLieuKhuVuc();
         taiDuLieuDatBan();
-        dongBoTrangThaiDatBan();
+        
+        // 2. Cập nhật trạng thái bàn dựa trên thời gian đang được chọn trên bộ lọc.
+        capNhatTrangThaiBanTheoThoiGian(); 
 
+        // 3. Cập nhật ComboBox Khu vực
         String khuVucDaChon = (String) cboFilterKhuVuc.getSelectedItem();
         capNhatCboKhuVuc();
 
+        // 4. Thiết lập lại khu vực đang chọn
         if (resetKhuVuc || khuVucDaChon == null) {
             cboFilterKhuVuc.setSelectedItem("Tất cả");
             khuVucHienTai = "Tất cả";
@@ -559,6 +587,7 @@ public class DatBan_View extends JPanel implements ActionListener {
             khuVucHienTai = khuVucDaChon;
         }
 
+        // 5. Vẽ lại giao diện
         capNhatHienThiLuoiBan();
         capNhatThongKeBan();
         capNhatTablePhieuDat();
@@ -572,16 +601,16 @@ public class DatBan_View extends JPanel implements ActionListener {
         SwingUtilities.invokeLater(() -> {
             if (cardBanDangChon != null && banDangChon != null) {
                  try {
-                    String maBan = banDangChon.getMaBan();
-                    Ban banMoi = banDAO.getBanTheoMa(maBan); 
-                    if(banMoi != null) {
-                        ((RoundedPanel) cardBanDangChon).setBorderColor(TrangThaiBan.fromString(banMoi.getTrangThai()).getColor());
-                    }
+                     String maBan = banDangChon.getMaBan();
+                     Ban banMoi = banDAO.getBanTheoMa(maBan); 
+                     if(banMoi != null) {
+                         ((RoundedPanel) cardBanDangChon).setBorderColor(TrangThaiBan.fromString(banMoi.getTrangThai()).getColor());
+                     }
                  } catch (Exception e) {
-                     // Bỏ qua
+                      // Bỏ qua
                  }
-                 ((RoundedPanel) cardBanDangChon).setBackground(COLOR_WHITE);
-                 cardBanDangChon.repaint();
+                ((RoundedPanel) cardBanDangChon).setBackground(COLOR_WHITE);
+                cardBanDangChon.repaint();
             }
             banDangChon = null;
             cardBanDangChon = null;
@@ -619,39 +648,69 @@ public class DatBan_View extends JPanel implements ActionListener {
         }
     }
 
-    private void dongBoTrangThaiDatBan() {
-        Set<String> maBanDaDat = new HashSet<>();  
-        Set<String> maBanCoKhach = new HashSet<>(); 
+    /**
+     * Cập nhật trạng thái của tất cả các bàn dựa trên
+     * thời gian (ngày + giờ) người dùng đã chọn trên bộ lọc.
+     * Bàn sẽ bị đánh dấu là "Đã đặt" nếu có phiếu đặt trong vòng +/- 2 giờ
+     * so với thời gian đã chọn.
+     */
+    private void capNhatTrangThaiBanTheoThoiGian() {
+        // 1. Lấy thời gian người dùng đã chọn
+        LocalDateTime thoiGianChon = getThoiGianDaChon();
+        LocalDateTime thoiGianBatDau = thoiGianChon.minusHours(2); // Trước 2 giờ
+        LocalDateTime thoiGianKetThuc = thoiGianChon.plusHours(2); // Sau 2 giờ
+        LocalDateTime now = LocalDateTime.now();
 
+        // 2. Tạo danh sách các bàn bị trùng lịch
+        Set<String> maBanDaDatTrongKhungGio = new HashSet<>();
+        Set<String> maBanCoKhachHienTai = new HashSet<>();
+        
+        // (danhSachPhieuDatDangHoatDong phải được tải trước khi gọi hàm này)
         if (danhSachPhieuDatDangHoatDong != null) {
             for (PhieuDatBan phieu : danhSachPhieuDatDangHoatDong) {
-                if (phieu != null && phieu.getBan() != null && phieu.getBan().getMaBan() != null) {
-                    String trangThaiPhieu = phieu.getTrangThaiPhieu().trim();
-                    String maBan = phieu.getBan().getMaBan().trim();
+                if (phieu == null || phieu.getBan() == null) continue;
+                
+                String maBan = phieu.getBan().getMaBan().trim();
+                String trangThaiPhieu = phieu.getTrangThaiPhieu().trim();
+                LocalDateTime thoiGianHen = phieu.getThoiGianDenHen();
 
-                    if ("Chưa đến".equals(trangThaiPhieu)) {
-                        maBanDaDat.add(maBan);
-                    } else if ("Đã đến".equals(trangThaiPhieu)) {
-                        maBanCoKhach.add(maBan);
+                // Lưu lại các bàn đang "Có khách" (Đã đến)
+                if ("Đã đến".equals(trangThaiPhieu)) {
+                    maBanCoKhachHienTai.add(maBan);
+                }
+
+                // Kiểm tra trùng lịch:
+                // Chỉ kiểm tra các phiếu "Chưa đến" hoặc "Đã đến"
+                if (("Chưa đến".equals(trangThaiPhieu) || "Đã đến".equals(trangThaiPhieu)) && thoiGianHen != null) {
+                    // Nếu thời gian hẹn của phiếu nằm trong cửa sổ 4 giờ ( +/- 2 giờ)
+                    if (thoiGianHen.isAfter(thoiGianBatDau) && thoiGianHen.isBefore(thoiGianKetThuc)) {
+                        maBanDaDatTrongKhungGio.add(maBan);
                     }
                 }
             }
         }
 
+        // 3. Cập nhật trạng thái cho danh sách bàn
+        // Kiểm tra xem thời gian người dùng chọn có phải là "hiện tại" không (ví dụ: trong vòng 30 phút tới)
+        boolean dangXemHienTai = thoiGianChon.isAfter(now.minusMinutes(15)) && thoiGianChon.isBefore(now.plusMinutes(30));
+
         if (danhSachBanTheoKhuVuc != null) {
             for (List<Ban> danhSachBan : danhSachBanTheoKhuVuc.values()) {
                 if (danhSachBan != null) {
                     for (Ban ban : danhSachBan) {
-                        if (ban != null && ban.getMaBan() != null) {
-                            String maBanHienTai = ban.getMaBan().trim();
+                        String maBanHienTai = ban.getMaBan().trim();
 
-                            if (maBanCoKhach.contains(maBanHienTai)) {
-                                ban.setTrangThai(TrangThaiBan.CO_KHACH.toString());
-                            } else if (maBanDaDat.contains(maBanHienTai)) {
-                                ban.setTrangThai(TrangThaiBan.DA_DAT.toString());
-                            } else {
-                                ban.setTrangThai(TrangThaiBan.TRONG.toString());
-                            }
+                        // Ưu tiên 1: Hiển thị "Có khách" nếu người dùng đang xem giờ hiện tại
+                        if (dangXemHienTai && maBanCoKhachHienTai.contains(maBanHienTai)) {
+                            ban.setTrangThai(TrangThaiBan.CO_KHACH.toString());
+                        } 
+                        // Ưu tiên 2: Hiển thị "Đã đặt" nếu bị trùng lịch trong khung giờ đã chọn
+                        else if (maBanDaDatTrongKhungGio.contains(maBanHienTai)) {
+                            ban.setTrangThai(TrangThaiBan.DA_DAT.toString());
+                        } 
+                        // Ưu tiên 3: Bàn "Trống"
+                        else {
+                            ban.setTrangThai(TrangThaiBan.TRONG.toString());
                         }
                     }
                 }
@@ -744,12 +803,25 @@ public class DatBan_View extends JPanel implements ActionListener {
         }
     }
     
+    // =============================================================
+    // THAY THẾ TOÀN BỘ HÀM NÀY
+    // =============================================================
+    /**
+     * Gán các sự kiện (listeners) cho các component (nút, combobox, ...).
+     */
     private void ganSuKien() {
+        // 1. Gán sự kiện cho các nút chính
         btnDatBan.addActionListener(this);
         btnSearchPDB.addActionListener(this);
         btnRefresh.addActionListener(this);
         btnXemDanhSachPDB.addActionListener(this); 
         btnThanhToan.addActionListener(this); 
+        btnHuyDatBan.addActionListener(this); 
+        
+        // THÊM MỚI: Gán sự kiện cho nút "Tìm bàn"
+        btnTimBanTheoGio.addActionListener(this);
+        
+        // 2. Gán sự kiện cho ComboBox lọc khu vực
         cboFilterKhuVuc.addActionListener(e -> {
             String newKhuVuc = (String) cboFilterKhuVuc.getSelectedItem();
             if (newKhuVuc != null && !newKhuVuc.equals(khuVucHienTai)) {
@@ -759,16 +831,41 @@ public class DatBan_View extends JPanel implements ActionListener {
             }
         });
 
+        // 3. Gán sự kiện cho ComboBox số khách (hiện không làm gì)
         cboSoKhach.addActionListener(e -> {
-            // Không làm gì (vì table đã bị xóa)
+            // Không làm gì 
         });
 
+        // 4. Gán sự kiện cho Bảng danh sách phiếu đặt (xử lý trong popup)
         tblPhieuDat.addMouseListener(new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
-                // SỬA: Sự kiện double-click trên bảng này sẽ được xử lý trong pop-up
+                 // Sự kiện double-click trên bảng này sẽ được xử lý trong pop-up
             }
         });
+        
+        // ===================================
+        // XÓA BỎ CÁC LISTENER TỰ ĐỘNG
+        // ===================================
+        /* // Listener cho JDateChooser (chọn ngày)
+        datePicker.addPropertyChangeListener("date", new PropertyChangeListener() {
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if ("date".equals(evt.getPropertyName())) {
+                    locBanTheoThoiGian();
+                }
+            }
+        });
+
+        // Listener cho JSpinner (chọn giờ)
+        spinnerGioDat.addChangeListener(e -> {
+            locBanTheoThoiGian();
+        });
+        */
+        // ===================================
     }
+    // =============================================================
+    // KẾT THÚC THAY THẾ
+    // =============================================================
 
     private JPanel timCardBan(String maBan) {
         for (Component comp : pnlLuoiBan.getComponents()) {
@@ -783,13 +880,15 @@ public class DatBan_View extends JPanel implements ActionListener {
                         }
                     }
                 } catch (Exception e) {
-                    // Lỗi tìm kiếm, bỏ qua
-                }
+                                    }
             }
         }
         return null;
     }
 
+    // =============================================================
+    // SỬA ĐỔI HÀM NÀY
+    // =============================================================
     @Override
     public void actionPerformed(ActionEvent e) {
         Object o = e.getSource();
@@ -803,8 +902,16 @@ public class DatBan_View extends JPanel implements ActionListener {
             hienThiDanhSachPhieuDat();
         } else if (o == btnThanhToan) {
             xuLyThanhToan(); 
+        } else if (o == btnHuyDatBan) { 
+            xuLyHuyDatBan();
+        } else if (o == btnTimBanTheoGio) { // THÊM MỚI
+            // Gọi hàm lọc bàn khi nhấn nút
+            locBanTheoThoiGian();
         }
     }
+    // =============================================================
+    // KẾT THÚC SỬA ĐỔI
+    // =============================================================
     
     private void hienThiDanhSachPhieuDat() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Danh sách Phiếu Đặt Bàn", true);
@@ -862,6 +969,8 @@ public class DatBan_View extends JPanel implements ActionListener {
         txtSearchPDB.setText("");
         btnDatBan.setText("Đặt bàn");
         btnThanhToan.setVisible(false);
+        btnHuyDatBan.setVisible(false); 
+        
         phieuDangChon = null;
         banDangChon = null;
     }
@@ -918,17 +1027,22 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         TrangThaiBan trangThai = TrangThaiBan.fromString(ban.getTrangThai());
 
+        
         if (trangThai == TrangThaiBan.DA_DAT || trangThai == TrangThaiBan.CO_KHACH) {
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
             xoaRongFormVaResetBan(); 
             this.banDangChon = ban; 
             this.cardBanDangChon = clickedCard;
             btnDatBan.setText("Gọi món");
+            
             if (trangThai == TrangThaiBan.CO_KHACH) {
                 btnThanhToan.setVisible(true); 
-            } else {
-                btnThanhToan.setVisible(false); 
+                btnHuyDatBan.setVisible(false);
+            } else { // trangThai == TrangThaiBan.DA_DAT
+                btnThanhToan.setVisible(false);
+                btnHuyDatBan.setVisible(true);
             }
+           
 
             SwingWorker<PhieuDatBan, Void> worker = new SwingWorker<PhieuDatBan, Void>() {
                 @Override
@@ -972,15 +1086,17 @@ public class DatBan_View extends JPanel implements ActionListener {
                             }
                         }
                         
+                        
                         if (trangThai == TrangThaiBan.DA_DAT) {
                             JOptionPane.showMessageDialog(DatBan_View.this,
-                                String.format("Bàn %s đã được đặt!\nĐã tải thông tin phiếu: %s", ban.getMaBan().trim(),
+                                String.format("Bàn %s đã được đặt!\nĐã tải thông tin phiếu: %s\n(Bạn có thể 'Gọi món' để check-in hoặc 'Hủy đặt' nếu khách không đến)", ban.getMaBan().trim(),
                                         (phieuDangChon != null ? phieuDangChon.getMaPhieu() : "N/A")), "Bàn đã đặt", JOptionPane.INFORMATION_MESSAGE);
                         } else {
                             JOptionPane.showMessageDialog(DatBan_View.this,
                                 String.format("Bàn %s đang phục vụ khách!\nBạn có thể gọi thêm món hoặc thanh toán.", ban.getMaBan().trim()),
                                 "Bàn đang sử dụng", JOptionPane.INFORMATION_MESSAGE);
                         }
+                     
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -989,9 +1105,11 @@ public class DatBan_View extends JPanel implements ActionListener {
             };
             worker.execute();
 
-        } else {
+        } else { // Bàn TRỐNG
             phieuDangChon = null;
             btnDatBan.setText("Đặt bàn");
+            btnThanhToan.setVisible(false); 
+            btnHuyDatBan.setVisible(false); 
         }
     }
 
@@ -1011,7 +1129,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         final int soNguoi = (int) cboSoKhach.getSelectedItem();
         final String ghiChu = txtGhiChu.getText().trim();
 
-        // ===== PHẦN CODE THÊM VÀO ĐỂ FIX LỖI =====
         if (soNguoi > banDangChon.getSoCho()) {
             JOptionPane.showMessageDialog(this,
                     String.format("Số khách (%d người) không được vượt quá số chỗ của bàn (%d chỗ)!",
@@ -1021,7 +1138,6 @@ public class DatBan_View extends JPanel implements ActionListener {
             cboSoKhach.requestFocus(); // Đưa con trỏ về ComboBox số khách
             return; // Dừng thực hiện đặt bàn
         }
-        // ===== KẾT THÚC PHẦN CODE FIX =====
 
         if (tenKhach.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
@@ -1034,23 +1150,8 @@ public class DatBan_View extends JPanel implements ActionListener {
             return;
         }
 
-        Date ngayHen = datePicker.getDate();
-        Date gioHen = (Date) spinnerGioDat.getValue();
-        if (ngayHen == null) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn ngày hẹn!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        Calendar calNgay = Calendar.getInstance();
-        calNgay.setTime(ngayHen);
-        Calendar calGio = Calendar.getInstance();
-        calGio.setTime(gioHen);
-        calNgay.set(Calendar.HOUR_OF_DAY, calGio.get(Calendar.HOUR_OF_DAY));
-        calNgay.set(Calendar.MINUTE, calGio.get(Calendar.MINUTE));
-        calNgay.set(Calendar.SECOND, 0);
-        calNgay.set(Calendar.MILLISECOND, 0);
-        
-        final LocalDateTime thoiGianHenFinal = calNgay.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+        // SỬA: Dùng hàm getThoiGianDaChon() để lấy thời gian
+        final LocalDateTime thoiGianHenFinal = getThoiGianDaChon();
 
         if (thoiGianHenFinal.isBefore(LocalDateTime.now().minusMinutes(5))) {
             int confirm = JOptionPane.showConfirmDialog(this, "Thời gian hẹn đã qua!\nBạn có muốn đặt luôn với thời gian hiện tại không?", "Cảnh báo", JOptionPane.YES_NO_OPTION);
@@ -1130,6 +1231,7 @@ public class DatBan_View extends JPanel implements ActionListener {
 
                         btnDatBan.setText("Gọi món");
                         btnThanhToan.setVisible(false);
+                        btnHuyDatBan.setVisible(true); 
                         
                         if (cardBanDangChon != null && cardBanDangChon instanceof RoundedPanel) {
                             ((RoundedPanel) cardBanDangChon).setBorderColor(MAU_HIGHLIGHT);
@@ -1167,6 +1269,7 @@ public class DatBan_View extends JPanel implements ActionListener {
             banDAO.capNhatBan(banDangChon);
             
             btnThanhToan.setVisible(true);
+            btnHuyDatBan.setVisible(false); 
         }
 
         Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
@@ -1203,9 +1306,9 @@ public class DatBan_View extends JPanel implements ActionListener {
         String maNV = "NVTT001";
         if (phieuDangChon.getNhanVien() != null) maNV = phieuDangChon.getNhanVien().getMaNhanVien();
         Runnable callbackSauKhiThanhToan = () -> {
-            refreshDataGridOnly();   
+            refreshDataGridOnly();    
             xoaRongFormVaResetBan(); 
-            dialog.dispose();       
+            dialog.dispose();      
         };
 
         ChiTietPhieuDatBan_View chiTietView = new ChiTietPhieuDatBan_View(
@@ -1217,8 +1320,88 @@ public class DatBan_View extends JPanel implements ActionListener {
         dialog.setContentPane(chiTietView);
         dialog.setVisible(true);
     }
+    
+   
+    private void xuLyHuyDatBan() {
+        // Kiểm tra điều kiện
+        if (banDangChon == null || phieuDangChon == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một bàn đã đặt để hủy!", "Lỗi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        if (TrangThaiBan.fromString(banDangChon.getTrangThai()) != TrangThaiBan.DA_DAT) {
+                JOptionPane.showMessageDialog(this, "Chỉ có thể hủy phiếu của bàn 'Đã đặt' (khách chưa đến)!", "Lỗi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-    // UI helper classes
+        // Xác nhận
+        int confirm = JOptionPane.showConfirmDialog(this, 
+            String.format("Bạn có chắc muốn HỦY phiếu đặt '%s' cho bàn '%s' không?\nThao tác này sẽ trả bàn về trạng thái 'Trống'.", 
+                        phieuDangChon.getMaPhieu(), banDangChon.getMaBan().trim()),
+            "Xác nhận hủy đặt bàn", 
+            JOptionPane.YES_NO_OPTION, 
+            JOptionPane.WARNING_MESSAGE);
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+        // Xử lý trong SwingWorker để tránh treo UI
+        SwingWorker<Boolean, Void> worker = new SwingWorker<Boolean, Void>() {
+            @Override
+            protected Boolean doInBackground() throws Exception {
+                try {
+                    // 1. Cập nhật phiếu đặt bàn
+                	phieuDangChon.setTrangThaiPhieu("Không đến"); // SỬA: Dùng "Không đến"
+                    boolean updatePhieuOK = phieuDatBanDAO.updatePhieuDatBan(phieuDangChon);
+
+                    if (!updatePhieuOK) {
+                        throw new Exception("Lỗi khi cập nhật trạng thái Phiếu Đặt Bàn.");
+                    }
+
+                    // 2. Cập nhật bàn
+                    banDangChon.setTrangThai(TrangThaiBan.TRONG.name());
+                    boolean updateBanOK = banDAO.capNhatBan(banDangChon);
+
+                    if (!updateBanOK) {
+                       
+                        phieuDangChon.setTrangThaiPhieu("Chưa đến");
+                        phieuDatBanDAO.updatePhieuDatBan(phieuDangChon);
+                        throw new Exception("Lỗi khi cập nhật trạng thái Bàn.");
+                    }
+
+                    return true;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    throw e; // Ném lỗi để bắt ở done()
+                }
+            }
+
+            @Override
+            protected void done() {
+                setCursor(Cursor.getDefaultCursor());
+                try {
+                    boolean success = get();
+                    if (success) {
+                        JOptionPane.showMessageDialog(DatBan_View.this, "Đã hủy đặt bàn thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                        refreshData(); 
+                    }
+                } catch (ExecutionException ex) {
+                    String errorMessage = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+                    JOptionPane.showMessageDialog(DatBan_View.this, "Hủy thất bại: " + errorMessage, "Lỗi CSDL", JOptionPane.ERROR_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(DatBan_View.this, "Hủy thất bại: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        };
+        
+        worker.execute();
+    }
+
+
+    // Lớp nội danh (inner class)
     private class RoundedPanel extends JPanel {
         private final int cornerRadius;
         private Color borderColor = MAU_VIEN;
@@ -1257,6 +1440,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         }
     }
 
+    // Lớp nội danh (inner class)
     private class RoundedButton extends JButton {
         private final int doBoGoc;
         private final Color bg;
@@ -1291,5 +1475,49 @@ public class DatBan_View extends JPanel implements ActionListener {
             super.paintComponent(g);
             g2.dispose();
         }
+    }
+    
+    // ===================================
+    // CÁC HÀM HELPER CHO VIỆC LỌC
+    // ===================================
+    
+    /**
+     * Lấy thời gian (LocalDateTime) mà người dùng đã chọn trên UI.
+     * @return LocalDateTime đã chọn.
+     */
+    private LocalDateTime getThoiGianDaChon() {
+        Date ngayChon = datePicker.getDate();
+        Date gioChon = (Date) spinnerGioDat.getValue();
+
+        if (ngayChon == null) {
+            ngayChon = new Date(); // Mặc định là hôm nay nếu null
+        }
+
+        Calendar calNgay = Calendar.getInstance();
+        calNgay.setTime(ngayChon);
+        Calendar calGio = Calendar.getInstance();
+        calGio.setTime(gioChon);
+
+        calNgay.set(Calendar.HOUR_OF_DAY, calGio.get(Calendar.HOUR_OF_DAY));
+        calNgay.set(Calendar.MINUTE, calGio.get(Calendar.MINUTE));
+        calNgay.set(Calendar.SECOND, 0);
+        calNgay.set(Calendar.MILLISECOND, 0);
+
+        return calNgay.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+    }
+    
+    /**
+     * Được gọi khi người dùng nhấn nút "Tìm bàn".
+     * Cập nhật lại trạng thái bàn và vẽ lại lưới bàn.
+     */
+    private void locBanTheoThoiGian() {
+        // 1. Cập nhật lại trạng thái các bàn dựa trên thời gian mới
+        capNhatTrangThaiBanTheoThoiGian();
+        
+        // 2. Vẽ lại lưới bàn với trạng thái đã cập nhật
+        capNhatHienThiLuoiBan();
+        
+        // 3. Cập nhật lại thống kê
+        capNhatThongKeBan();
     }
 }
