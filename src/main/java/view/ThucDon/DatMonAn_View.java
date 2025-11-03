@@ -1,14 +1,11 @@
 package view.ThucDon;
 
 import dao.Ban_DAO;
-import dao.HoaDon_DAO; // SỬA: Thêm DAO Hóa Đơn
+import dao.HoaDon_DAO; 
 import dao.PhieuDatBan_DAO;
 import entity.Ban;
-import entity.ChiTietHoaDon; // SỬA: Thêm
-import entity.HoaDon; // SỬA: Thêm
+import entity.HoaDon; 
 import entity.PhieuDatBan;
-import view.HoaDon.HoaDon_AddDialog;
-
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -18,7 +15,6 @@ import javax.swing.table.JTableHeader;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 
 import dao.MonAn_DAO;
