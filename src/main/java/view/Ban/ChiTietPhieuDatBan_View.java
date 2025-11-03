@@ -1,20 +1,20 @@
 package view.Ban;
 
 import dao.Ban_DAO;
-import dao.ChiTietHoaDon_DAO; // Đảm bảo bạn đã import
+import dao.ChiTietHoaDon_DAO;
 import dao.HoaDon_DAO;
 import dao.PhieuDatBan_DAO;
 import entity.Ban;
 import entity.ChiTietHoaDon;
 import entity.ChiTietPhieuDatBan;
 import entity.KhachHang;
-import entity.KhuyenMai; // Đảm bảo bạn đã import
+import entity.KhuyenMai;
 import entity.PhieuDatBan;
 import entity.HoaDon;
-import entity.Thue; // Đảm bảo bạn đã import
+import entity.Thue;
 import enums.TrangThaiBan;
+import view.HoaDon.HoaDon_AddDialog;
 import view.ThucDon.ChonMon_Dialog;
-import view.HoaDon.HoaDon_ThanhToan_Dialog; // SỬA: Thêm import này
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -36,10 +36,9 @@ public class ChiTietPhieuDatBan_View extends JPanel {
     private PhieuDatBan_DAO daoDatBan = new PhieuDatBan_DAO();
     private HoaDon_DAO daoHoaDon = new HoaDon_DAO();
     private Runnable onCloseCallback;
-    private String maNVDangNhap; 
+    private String maNVDangNhap; // SỬA: Thêm biến lưu mã NV
 
     private JPanel orderDetailsCard;
-	private HoaDon_DAO hoaDonDAO;
 
     private static final Color PRIMARY_COLOR = new Color(37, 99, 235);
     private static final Color SECONDARY_COLOR = new Color(59, 130, 246);
@@ -60,10 +59,11 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         CURRENCY_FORMAT = new DecimalFormat("#,##0", symbols);
     }
 
+    // SỬA: Thêm 'maNhanVien' vào constructor
     public ChiTietPhieuDatBan_View(Ban ban, String maNhanVien, Runnable onCloseCallback) {
         this.ban = ban;
         this.onCloseCallback = onCloseCallback;
-        this.maNVDangNhap = maNhanVien; 
+        this.maNVDangNhap = maNhanVien; // SỬA: Lưu mã NV
         this.phieu = daoDatBan.getPhieuByBan(ban.getMaBan());
 
         setLayout(new BorderLayout(0, 0));
@@ -220,7 +220,8 @@ public class ChiTietPhieuDatBan_View extends JPanel {
             String khTen = "Khách vãng lai";
             KhachHang kh = phieu.getKhachHang();
 
-            if (kh != null && "KH00000000".equals(kh.getMaKH().trim())) { 
+            if (kh != null && "KH00000000".equals(kh.getMaKH().trim())) { // SỬA: getMaKH
+                // Logic parse khách vãng lai từ Ghi chú
                 String ghiChuDisplay = phieu.getGhiChu() != null ? phieu.getGhiChu().trim() : "";
                 if (ghiChuDisplay.startsWith("Khách: ")) {
                     try {
@@ -232,7 +233,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                     }
                 }
             } else if (kh != null) {
-                khTen = kh.getTenKH(); 
+                khTen = kh.getTenKH(); // SỬA: getTenKH
             }
 
             card.add(createInfoRow("Khách hàng", khTen));
@@ -242,7 +243,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         } else {
             card.add(createInfoRow("Số bàn", ban.getMaBan()));
             card.add(createInfoRow("Trạng thái", "Có khách"));
-            card.add(createInfoRow("Loại bàn", ban.getLoaiBan())); 
+            card.add(createInfoRow("Loại bàn", ban.getLoaiBan())); // SỬA: LoaiBan là String
             card.add(createInfoRow("Số chỗ", String.valueOf(ban.getSoCho())));
         }
 
@@ -325,7 +326,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
             data[i][0] = i + 1;
             data[i][1] = ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "N/A";
 
-            double donGiaBan = ct.getDonGiaBan(); 
+            double donGiaBan = ct.getDonGiaBan(); // LẤY ĐƠN GIÁ BÁN TỪ CTPDB
             int soLuong = ct.getSoLuongMonAn();
             double thanhTien = donGiaBan * soLuong;
 
@@ -483,25 +484,26 @@ public class ChiTietPhieuDatBan_View extends JPanel {
         return btn;
     }
 
-    // ===== HÀM ĐÃ SỬA (FIX LỖI ClassCastException) =====
+    // ===== HÀM ĐÃ ĐƯỢC THAY THẾ HOÀN TOÀN =====
     private void chuyenDenThanhToan() {
         if (ban == null) {
             JOptionPane.showMessageDialog(this, "Không có thông tin bàn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        // SỬA: Tìm kiếm Frame (cửa sổ chính) thay vì JDialog
-        // (Frame) SwingUtilities.getWindowAncestor(this) -> Lỗi
-        // (Frame) SwingUtilities.getAncestorOfClass(Frame.class, this) -> Đúng
-        Frame mainFrame = (Frame) SwingUtilities.getAncestorOfClass(Frame.class, this);
+        Window window = SwingUtilities.getWindowAncestor(this);
+        Frame mainFrame = null;
+
+        if (window instanceof Frame) {
+            mainFrame = (Frame) window;
+        } else if (window instanceof Dialog) {
+            // Nếu cửa sổ cha là JDialog, lấy Frame chủ của nó
+            mainFrame = (Frame) ((Dialog) window).getOwner();
+        }
 
         if (mainFrame == null) {
-            // SỬA: Fallback, tìm Frame của bất kỳ cửa sổ nào đang mở
-            mainFrame = JOptionPane.getRootFrame(); 
-            if (mainFrame == null) {
-                 JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy cửa sổ chính.", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
-                 return;
-            }
+            JOptionPane.showMessageDialog(this, "Lỗi: Không tìm thấy cửa sổ chính (Frame).", "Lỗi hệ thống", JOptionPane.ERROR_MESSAGE);
+            return;
         }
 
         try {
@@ -509,6 +511,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
             HoaDon hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
 
             if (hoaDonHienTai == null) {
+                // Chưa có hóa đơn → Tạo mới từ Phiếu Đặt Bàn
                 if (phieu == null) {
                     JOptionPane.showMessageDialog(this,
                             "Không tìm thấy phiếu đặt bàn cho bàn " + ban.getMaBan(),
@@ -516,6 +519,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                     return;
                 }
 
+                // SỬA: Lấy mã NV từ biến của class (được truyền vào từ constructor)
                 String maNVHienTai = this.maNVDangNhap; 
                 
                 if(maNVHienTai == null || maNVHienTai.trim().isEmpty()) {
@@ -534,6 +538,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                     return;
                 }
 
+                // Lấy lại hóa đơn vừa tạo
                 hoaDonHienTai = daoHoaDon.getHoaDonByBanChuaThanhToan(ban.getMaBan());
             }
 
@@ -544,40 +549,48 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                 return;
             }
 
-            // 2. TÍNH TOÁN CÁC GIÁ TRỊ
-            double tongTienMonAn = hoaDonHienTai.getTongTienTruocThue();
-            double tienGiam = hoaDonHienTai.getTongGiamGia();
-            double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hoaDonHienTai.getMaHD());
-            double tienThue = tongThanhToan - (tongTienMonAn - tienGiam);
+            // 2. TÍNH TOÁN CÁC GIÁ TRỊ (Phần này chỉ để debug, dialog sẽ tự tính)
+            // double tongTienMonAn = hoaDonHienTai.getTongTienTruocThue();
+            // double tienGiam = hoaDonHienTai.getTongGiamGia();
+            // double tongThanhToan = daoHoaDon.tinhTongTienHoaDon(hoaDonHienTai.getMaHD()); 
+            // double tienThue = tongThanhToan - (tongTienMonAn - tienGiam); 
+            
+            // 3. LẤY CHI TIẾT MÓN ĂN (Phần này chỉ để debug, dialog sẽ tự lấy)
+            // List<ChiTietHoaDon> chiTietList = daoHoaDon.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
+            // if (chiTietList == null) chiTietList = new ArrayList<>();
 
-            // 3. LẤY CHI TIẾT MÓN ĂN
-            List<ChiTietHoaDon> chiTietList = daoHoaDon.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
-            if (chiTietList == null) chiTietList = new ArrayList<>();
-
-            // 4. MỞ DIALOG THANH TOÁN
-            HoaDon_ThanhToan_Dialog thanhToanDialog = new HoaDon_ThanhToan_Dialog(
-                    mainFrame,
-                    hoaDonHienTai,
-                    daoHoaDon,
-                    tongTienMonAn,
-                    tienGiam,
-                    tienThue,
-                    tongThanhToan,
-                    chiTietList
+            // 4. MỞ DIALOG CHI TIẾT HÓA ĐƠN (ĐỂ THANH TOÁN)
+            // ===== SỬA LỖI Ở ĐÂY =====
+            // Không dùng HoaDon_AddDialog
+            view.HoaDon.HoaDon_ChiTietHoaDon_View chiTietDialog = new view.HoaDon.HoaDon_ChiTietHoaDon_View(
+                    mainFrame, 
+                    hoaDonHienTai // Truyền hóa đơn hiện tại
             );
-            thanhToanDialog.setVisible(true);
+            chiTietDialog.setVisible(true);
+            // ===== KẾT THÚC SỬA LỖI =====
+            
 
             // 5. SAU KHI ĐÓNG DIALOG - KIỂM TRA TRẠNG THÁI THANH TOÁN
+            // Tải lại hóa đơn từ DB để xem nó đã được thanh toán (trong dialog) chưa
             HoaDon hoaDonSauThanhToan = daoHoaDon.findByMaHD(hoaDonHienTai.getMaHD());
 
             if (hoaDonSauThanhToan != null && hoaDonSauThanhToan.isDaThanhToan()) {
+                // Thanh toán thành công → Đóng view và refresh danh sách bàn
                 if (onCloseCallback != null) {
-                    onCloseCallback.run();
+                    onCloseCallback.run(); // Gọi hàm callback để refresh Ban_View
                 }
-                Window window = SwingUtilities.getWindowAncestor(this);
+
+                // Đóng view hiện tại (ChiTietPhieuDatBan_View)
                 if (window instanceof JDialog) {
                     ((JDialog) window).dispose();
+                } else {
+                     // Nếu không phải Dialog, thì tự remove khỏi parent (ví dụ CardLayout)
+                     // Trong trường hợp này, onCloseCallback() đã xử lý việc chuyển view
                 }
+            } else {
+                // Nếu người dùng đóng dialog mà không thanh toán
+                // Tải lại chi tiết phiếu (nếu có thêm món)
+                reloadPhieuAndOrderDetails();
             }
 
         } catch (Exception e) {

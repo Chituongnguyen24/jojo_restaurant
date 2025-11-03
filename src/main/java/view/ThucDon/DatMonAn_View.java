@@ -7,21 +7,15 @@ import entity.Ban;
 import entity.ChiTietHoaDon; // SỬA: Thêm
 import entity.HoaDon; // SỬA: Thêm
 import entity.PhieuDatBan;
-import enums.TrangThaiBan;
-import view.HoaDon.HoaDon_ThanhToan_Dialog; // SỬA: Thêm import
+import view.HoaDon.HoaDon_AddDialog;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -466,9 +460,8 @@ public class DatMonAn_View extends JPanel {
         btnLamMoi.addActionListener(e -> taiDanhSachPhieuDat());
     }
 
-    // ===== DATA METHODS =====
-    
-    // ===== HÀM ĐÃ SỬA (Load tất cả) =====
+ // Sửa trong DatMonAn_View.java - Method taiDanhSachPhieuDat() (Lọc PDB != "Hoàn thành")
+
     private void taiDanhSachPhieuDat() {
         modelPhieuDat.setRowCount(0);
         modelChiTietMon.setRowCount(0);
@@ -476,20 +469,22 @@ public class DatMonAn_View extends JPanel {
         lblThongTinPhieu.setText("Chưa chọn phiếu đặt");
         btnGoiThemMon.setEnabled(false);
         btnHuyMon.setEnabled(false);
-        btnThanhToan.setEnabled(false); // SỬA: Tắt nút
+        btnThanhToan.setEnabled(false);
         
         List<PhieuDatBan> dsPhieu = datBanDAO.getAllPhieuDatBan(); 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yy");
         
         for (PhieuDatBan phieu : dsPhieu) {
-            // SỬA: Bỏ IF, load tất cả
-            modelPhieuDat.addRow(new Object[]{
-                phieu.getMaPhieu().trim(),
-                phieu.getBan().getMaBan().trim(),
-                phieu.getKhachHang().getTenKH(),
-                phieu.getThoiGianDenHen().format(formatter),
-                phieu.getTrangThaiPhieu() // Thêm trạng thái
-            });
+            // SỬA: Lọc chỉ hiển thị nếu trạng thái != "Hoàn thành" (để "biến mất" sau thanh toán)
+            if (!"Hoàn thành".equals(phieu.getTrangThaiPhieu())) {
+                modelPhieuDat.addRow(new Object[]{
+                    phieu.getMaPhieu().trim(),
+                    phieu.getBan().getMaBan().trim(),
+                    phieu.getKhachHang().getTenKH(),
+                    phieu.getThoiGianDenHen().format(formatter),
+                    phieu.getTrangThaiPhieu() // Thêm trạng thái
+                });
+            }
         }
     }
 
@@ -618,11 +613,10 @@ public class DatMonAn_View extends JPanel {
 
         try {
             // 1. LẤY HOẶC TẠO HÓA ĐƠN
+            // Kiểm tra xem bàn đã có HĐ chưa thanh toán chưa
             HoaDon hoaDonHienTai = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan());
 
             if (hoaDonHienTai == null) {
-                // Nếu chưa có HĐ, tạo HĐ từ PĐB
-                // TODO: Cần lấy mã NV đăng nhập thay vì "NVTT001"
                 String maNV = phieuDatBanHienTai.getNhanVien() != null ? phieuDatBanHienTai.getNhanVien().getMaNhanVien() : "NVTT001";
                 
                 boolean taoHoaDonOK = hoaDonDAO.taoHoaDonTuPhieuDat(phieuDatBanHienTai, maNV);
@@ -630,6 +624,7 @@ public class DatMonAn_View extends JPanel {
                     JOptionPane.showMessageDialog(this, "Lỗi khi tạo hóa đơn từ phiếu đặt bàn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
+                // Lấy lại Hóa đơn vừa tạo
                 hoaDonHienTai = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan());
             }
 
@@ -638,28 +633,13 @@ public class DatMonAn_View extends JPanel {
                 return;
             }
 
-            // 2. TÍNH TOÁN CÁC GIÁ TRỊ
-            double tongTienMonAn = hoaDonHienTai.getTongTienTruocThue();
-            double tienGiam = hoaDonHienTai.getTongGiamGia();
-            double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hoaDonHienTai.getMaHD());
-            double tienThue = tongThanhToan - (tongTienMonAn - tienGiam);
-
-            // 3. LẤY CHI TIẾT MÓN ĂN (TỪ HÓA ĐƠN)
-            List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
-            if (chiTietList == null) chiTietList = new ArrayList<>();
-
-            // 4. MỞ DIALOG THANH TOÁN
-            HoaDon_ThanhToan_Dialog thanhToanDialog = new HoaDon_ThanhToan_Dialog(
-                    mainFrame,
-                    hoaDonHienTai,
-                    hoaDonDAO,
-                    tongTienMonAn,
-                    tienGiam,
-                    tienThue,
-                    tongThanhToan,
-                    chiTietList
+            // 4. MỞ DIALOG XEM CHI TIẾT HÓA ĐƠN (Đã sửa: Thay thế HoaDon_AddDialog)
+            // LƯU Ý: Đây chỉ là dialog xem chi tiết, bạn cần thêm logic nút Thanh Toán vào view này.
+            view.HoaDon.HoaDon_ChiTietHoaDon_View chiTietDialog = new view.HoaDon.HoaDon_ChiTietHoaDon_View(
+                    mainFrame, 
+                    hoaDonHienTai // Truyền hóa đơn hiện tại
             );
-            thanhToanDialog.setVisible(true);
+            chiTietDialog.setVisible(true);
 
             // 5. SAU KHI ĐÓNG DIALOG -> Tải lại danh sách PĐB
             taiDanhSachPhieuDat();

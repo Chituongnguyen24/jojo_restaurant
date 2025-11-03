@@ -136,7 +136,7 @@ CREATE TABLE [dbo].[PHIEUDATBAN](
 	CONSTRAINT [FK_PDB_KH] FOREIGN KEY([maKhachHang]) REFERENCES [dbo].[KHACHHANG] ([MaKH]),
 	CONSTRAINT [FK_PDB_NV] FOREIGN KEY([maNV]) REFERENCES [dbo].[NHANVIEN] ([maNhanVien]),
 	CONSTRAINT [FK_PDB_BAN] FOREIGN KEY([maBan]) REFERENCES [dbo].[BAN] ([maBan]),
-	CONSTRAINT [CK_PDB_TrangThai] CHECK ([trangThaiPhieu] IN (N'Đã đến', N'Không đến', N'Chưa đến')) -- Ràng buộc kiểm tra
+	CONSTRAINT [CK_PDB_TrangThai] CHECK ([trangThaiPhieu] IN (N'Đã đến', N'Không đến', N'Chưa đến', N'Hoàn thành')) -- Ràng buộc kiểm tra
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
 

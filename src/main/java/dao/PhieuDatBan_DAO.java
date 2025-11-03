@@ -18,6 +18,8 @@ public class PhieuDatBan_DAO {
     private final Ban_DAO banDAO = new Ban_DAO();
     private final MonAn_DAO monAnDAO = new MonAn_DAO();
     
+ // Sửa trong PhieuDatBan_DAO.java - Method mapResultSetToPhieuDatBan (Sửa lỗi "sav ban" thành "phieu.getBan()")
+
     private PhieuDatBan mapResultSetToPhieuDatBan(ResultSet rs) throws SQLException {
         String maPhieu = rs.getString("maPhieu");
         LocalDateTime thoiGianDenHen = rs.getTimestamp("thoiGianDenHen").toLocalDateTime();
@@ -30,14 +32,14 @@ public class PhieuDatBan_DAO {
 
         KhachHang kh = khachHangDAO.getKhachHangById(rs.getString("maKhachHang"));
         NhanVien nv = nhanVienDAO.getNhanVienById(rs.getString("maNV"));
-        Ban ban = banDAO.getBanTheoMa(rs.getString("maBan"));
+        Ban ban = banDAO.getBanTheoMa(rs.getString("maBan"));  // SỬA: Sử dụng Ban ban = banDAO.getBanTheoMa(...)
 
         int soNguoi = rs.getInt("soNguoi");
         String ghiChu = rs.getString("ghiChu");
         String trangThaiPhieu = rs.getString("trangThaiPhieu");
         
         PhieuDatBan phieu = new PhieuDatBan(maPhieu, thoiGianDenHen, thoiGianNhanBan, thoiGianTraBan, 
-                                            kh, nv, ban, soNguoi, ghiChu, trangThaiPhieu); 
+                                            kh, nv, ban, soNguoi, ghiChu, trangThaiPhieu);  // SỬA: Sử dụng ban thay vì "sav ban"
         return phieu;
     }
 
@@ -93,6 +95,8 @@ public class PhieuDatBan_DAO {
         return null;
     }
 
+ // Sửa trong PhieuDatBan_DAO.java - Method insertPhieuDatBan (Sửa lỗi "sav ban" thành "phieu.getBan()")
+
     public boolean insertPhieuDatBan(PhieuDatBan phieu) {
         String sql = "INSERT INTO PHIEUDATBAN (maPhieu, thoiGianDenHen, maKhachHang, maNV, maBan, soNguoi, ghiChu, trangThaiPhieu) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
@@ -103,7 +107,7 @@ public class PhieuDatBan_DAO {
             pstmt.setTimestamp(2, Timestamp.valueOf(phieu.getThoiGianDenHen()));
             pstmt.setString(3, phieu.getKhachHang().getMaKH()); 
             pstmt.setString(4, phieu.getNhanVien().getMaNhanVien()); 
-            pstmt.setString(5, phieu.getBan().getMaBan());
+            pstmt.setString(5, phieu.getBan().getMaBan());  // SỬA: Sử dụng phieu.getBan().getMaBan() thay vì "sav ban"
             pstmt.setInt(6, phieu.getSoNguoi());
             pstmt.setString(7, phieu.getGhiChu());
             pstmt.setString(8, phieu.getTrangThaiPhieu()); 
@@ -115,6 +119,10 @@ public class PhieuDatBan_DAO {
         }
         return false;
     }
+
+ // Sửa trong PhieuDatBan_DAO.java - Method updatePhieuDatBan (Thêm debug log và kiểm tra CHECK constraint)
+
+ // Sửa trong PhieuDatBan_DAO.java - Method updatePhieuDatBan (Sửa lỗi "sav ban" thành "phieu.getBan()")
 
     public boolean updatePhieuDatBan(PhieuDatBan phieu) {
         String sql = "UPDATE PHIEUDATBAN SET thoiGianDenHen = ?, thoiGianNhanBan = ?, thoiGianTraBan = ?, maKhachHang = ?, maNV = ?, maBan = ?, soNguoi = ?, ghiChu = ?, trangThaiPhieu = ? WHERE maPhieu = ?";
@@ -136,20 +144,28 @@ public class PhieuDatBan_DAO {
             
             pstmt.setString(4, phieu.getKhachHang().getMaKH()); 
             pstmt.setString(5, phieu.getNhanVien().getMaNhanVien()); 
-            pstmt.setString(6, phieu.getBan().getMaBan());
+            pstmt.setString(6, phieu.getBan().getMaBan());  // SỬA: Sử dụng phieu.getBan().getMaBan() thay vì "sav ban"
             pstmt.setInt(7, phieu.getSoNguoi());
             pstmt.setString(8, phieu.getGhiChu());
             pstmt.setString(9, phieu.getTrangThaiPhieu()); 
             pstmt.setString(10, phieu.getMaPhieu());
             
-            return pstmt.executeUpdate() > 0;
-            
+            int rowsAffected = pstmt.executeUpdate();  // SỬA: Sử dụng biến rowsAffected
+            if (rowsAffected > 0) {
+                System.out.println("Debug: Cập nhật PDB thành công: " + phieu.getMaPhieu() + " (trạng thái: " + phieu.getTrangThaiPhieu() + ")");  // Debug log
+                return true;
+            } else {
+                System.err.println("Debug: Cập nhật PDB fail (0 rows): " + phieu.getMaPhieu() + " (trạng thái: " + phieu.getTrangThaiPhieu() + ")");  // Debug log
+                return false;
+            }
         } catch (SQLException e) {
+            System.err.println("Debug: Lỗi SQL khi update PDB " + phieu.getMaPhieu() + ": " + e.getMessage() + " (trạng thái: " + phieu.getTrangThaiPhieu() + ")");  // Debug log chi tiết
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
-
+    
+    
     public boolean deletePhieuDatBan(String maPhieu) {
         String sqlDeleteCT = "DELETE FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         String sqlDeletePDB = "DELETE FROM PHIEUDATBAN WHERE maPhieu = ?";
@@ -213,6 +229,8 @@ public class PhieuDatBan_DAO {
         return newID;
     }
 
+ // Sửa trong Ban_DAO.java - Method getAllBanByFloor() (Cập nhật trạng thái bàn dựa vào PDB "Hoàn thành")
+
     public Map<String, List<Ban>> getAllBanByFloor() {
         Map<String, List<Ban>> banTheoKhuVuc = new LinkedHashMap<>();
         
@@ -228,22 +246,27 @@ public class PhieuDatBan_DAO {
                     banTheoKhuVuc.put(tenKV, new ArrayList<>());
                 }
                 
-                // Cập nhật trạng thái từ DB (vì phieuDat có thể là cache cũ)
+                // Cập nhật trạng thái từ DB
                 Ban banMoiNhat = banDAO.getBanTheoMa(ban.getMaBan());
                 ban.setTrangThai(banMoiNhat.getTrangThai());
 
-                // Đồng bộ lại phiếu ĐÃ ĐẶT (nếu trạng thái không phải CO_KHACH)
+                // SỬA: Nếu PDB liên kết có trạng thái "Hoàn thành", coi bàn là TRỐNG (không ảnh hưởng DA_DAT)
                 if (!ban.getTrangThai().trim().equals(TrangThaiBan.CO_KHACH.name())) {
                     boolean daDat = false;
                     for (PhieuDatBan phieu : phieuDat) {
-                        if (phieu.getBan() != null && phieu.getBan().getMaBan().trim().equals(ban.getMaBan().trim()) && phieu.getTrangThaiPhieu().equals("Chưa đến")) {
-                             ban.setTrangThai(TrangThaiBan.DA_DAT.name()); 
-                             daDat = true;
-                             break;
+                        if (phieu.getBan() != null && phieu.getBan().getMaBan().trim().equals(ban.getMaBan().trim())) {
+                            if ("Chưa đến".equals(phieu.getTrangThaiPhieu())) {
+                                ban.setTrangThai(TrangThaiBan.DA_DAT.name());
+                                daDat = true;
+                                break;
+                            } else if ("Hoàn thành".equals(phieu.getTrangThaiPhieu())) {
+                                // PDB hoàn thành → bàn TRỐNG
+                                ban.setTrangThai(TrangThaiBan.TRONG.name());
+                            }
                         }
                     }
                     if (!daDat) {
-                         ban.setTrangThai(TrangThaiBan.TRONG.name());
+                        ban.setTrangThai(TrangThaiBan.TRONG.name());
                     }
                 }
                 
@@ -379,6 +402,23 @@ public class PhieuDatBan_DAO {
     
     public KhachHang getKhachHangVangLai() {
         return khachHangDAO.getKhachHangById("KH00000000");
+    }
+
+    public boolean updateTrangThai(String maPhieu, String trangThaiMoi) {
+        String sql = "UPDATE PHIEUDATBAN SET trangThaiPhieu = ? WHERE maPhieu = ?";
+        
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, trangThaiMoi);
+            pstmt.setString(2, maPhieu);
+            
+            return pstmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
     
 }
