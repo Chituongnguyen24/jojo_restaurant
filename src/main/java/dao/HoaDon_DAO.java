@@ -43,25 +43,19 @@ public class HoaDon_DAO {
         double tongTienTruocThue = rs.getDouble("TongTienTruocThue");
         double tongGiamGia = rs.getDouble("TongGiamGia");
 
-        // Giả định Constructor mới nhất
         return new HoaDon(maHD, nv, kh, ban, ngayLap, gioVao, gioRa, phuongThuc, km, thue, pdb, tongTienTruocThue, tongGiamGia, daThanhToan);
     }
 
-    // Helper: Chuyển java.time.LocalDate sang java.sql.Date
     private Date toSqlDate(LocalDate date) {
         if (date == null) return null;
         return Date.valueOf(date);
     }
 
-    // Helper: Chuyển java.util.Date sang java.sql.Date
     private Date toSqlDate(java.util.Date date) {
         if (date == null) return null;
         return new Date(date.getTime());
     }
 
-    /**
-     * Lấy tất cả hóa đơn, sắp xếp mới nhất lên đầu.
-     */
     public List<HoaDon> getAllHoaDon() {
         List<HoaDon> dsHoaDon = new ArrayList<>();
         String sql = "SELECT MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, ISNULL(TongTienTruocThue, 0) AS TongTienTruocThue, ISNULL(TongGiamGia, 0) AS TongGiamGia, DaThanhToan " +
@@ -80,11 +74,6 @@ public class HoaDon_DAO {
         }
         return dsHoaDon;
     }
-
-    /**
-     * Thêm hóa đơn mới vào CSDL.
-     */
- // Sửa trong HoaDon_DAO.java - Method addHoaDon(HoaDon hd)
 
     public boolean addHoaDon(HoaDon hd) {
         String sql = "INSERT INTO HOADON(MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, TongTienTruocThue, TongGiamGia, DaThanhToan)" +
@@ -107,11 +96,9 @@ public class HoaDon_DAO {
             pstmt.setDate(5, toSqlDate(hd.getNgayLapHoaDon()));
             pstmt.setTimestamp(6, Timestamp.valueOf(hd.getGioVao()));
 
-            // SỬA: Xử lý GioRa NULL (NOT NULL trong DB) - Set mặc định = GioVao khi tạo mới
             LocalDateTime gioRaDefault = (hd.getGioRa() != null) ? hd.getGioRa() : hd.getGioVao();
             pstmt.setTimestamp(7, Timestamp.valueOf(gioRaDefault));
 
-            // SỬA: Xử lý phuongThucThanhToan NULL (NOT NULL trong DB) - Set mặc định
             String phuongThuc = hd.getPhuongThucThanhToan();
             if (phuongThuc == null || phuongThuc.trim().isEmpty()) {
                 phuongThuc = "Chưa xác định";
@@ -121,14 +108,14 @@ public class HoaDon_DAO {
             if (hd.getKhuyenMai() != null && hd.getKhuyenMai().getMaKM() != null)
                 pstmt.setString(9, hd.getKhuyenMai().getMaKM());
             else
-                pstmt.setNull(9, Types.VARCHAR); // CSDL là varchar(15)
+                pstmt.setNull(9, Types.VARCHAR); 
 
             pstmt.setString(10, hd.getThue().getMaSoThue());
 
             if (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null)
                 pstmt.setString(11, hd.getPhieuDatBan().getMaPhieu());
             else
-                pstmt.setNull(11, Types.NCHAR); // CSDL là nchar(10)
+                pstmt.setNull(11, Types.NCHAR); 
 
             pstmt.setDouble(12, hd.getTongTienTruocThue());
             pstmt.setDouble(13, hd.getTongGiamGia());
@@ -136,10 +123,10 @@ public class HoaDon_DAO {
 
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Debug: Insert HD thành công: " + hd.getMaHD());  // Debug log
+                System.out.println("Debug: Insert HD thành công: " + hd.getMaHD()); 
                 return true;
             } else {
-                System.err.println("Debug: Insert HD fail (0 rows): " + hd.getMaHD());  // Debug log
+                System.err.println("Debug: Insert HD fail (0 rows): " + hd.getMaHD()); 
                 return false;
             }
         } catch (SQLException e) {
@@ -149,9 +136,6 @@ public class HoaDon_DAO {
         }
     }
 
-    /**
-     * Cập nhật thông tin hóa đơn.
-     */
     public boolean updateHoaDon(HoaDon hd) {
         String sql = "UPDATE HOADON SET MaNV = ?, MaKH = ?, maBan = ?, NgayLapHoaDon = ?, phuongThucThanhToan = ?, MaKM = ?, " +
                 "MaThue = ?, GioVao = ?, GioRa = ?, MaPhieu = ?, TongTienTruocThue = ?, TongGiamGia = ?, DaThanhToan = ? " +
@@ -169,13 +153,13 @@ public class HoaDon_DAO {
             }
 
             pstmt.setString(3, hd.getBan().getMaBan());
-            pstmt.setDate(4, toSqlDate(hd.getNgayLapHoaDon())); // Dùng helper
+            pstmt.setDate(4, toSqlDate(hd.getNgayLapHoaDon()));
             pstmt.setString(5, hd.getPhuongThucThanhToan());
 
             if (hd.getKhuyenMai() != null && hd.getKhuyenMai().getMaKM() != null)
                 pstmt.setString(6, hd.getKhuyenMai().getMaKM());
             else
-                pstmt.setNull(6, Types.VARCHAR); // CSDL là varchar(15)
+                pstmt.setNull(6, Types.VARCHAR); 
 
             pstmt.setString(7, hd.getThue().getMaSoThue());
             pstmt.setTimestamp(8, Timestamp.valueOf(hd.getGioVao()));
@@ -204,9 +188,6 @@ public class HoaDon_DAO {
         return false;
     }
 
-    /**
-     * Xóa hóa đơn và chi tiết hóa đơn liên quan (dùng transaction).
-     */
     public boolean deleteHoaDon(String maHD) {
         String sqlDeleteChiTiet = "DELETE FROM CHITIETHOADON WHERE MaHD = ?";
         String sqlDeleteHoaDon = "DELETE FROM HOADON WHERE MaHD = ?";
@@ -252,9 +233,6 @@ public class HoaDon_DAO {
         }
     }
 
-    /**
-     * Cập nhật trạng thái thanh toán của hóa đơn.
-     */
     public boolean updateTrangThaiThanhToan(String maHoaDon, boolean daThanhToan) {
         String sql = "UPDATE HOADON SET DaThanhToan = ? WHERE MaHD = ?";
         try (Connection conn = ConnectDB.getInstance().getConnection();
@@ -269,10 +247,6 @@ public class HoaDon_DAO {
         return false;
     }
 
-
-    /**
-     * Tìm hóa đơn theo mã.
-     */
     public HoaDon findByMaHD(String maHD) {
         String sql = "SELECT MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, ISNULL(TongTienTruocThue, 0) AS TongTienTruocThue, ISNULL(TongGiamGia, 0) AS TongGiamGia, DaThanhToan " +
                 "FROM HOADON WHERE MaHD = ?";
@@ -291,9 +265,6 @@ public class HoaDon_DAO {
         return null;
     }
 
-    /**
-     * Lấy danh sách chi tiết hóa đơn (bao gồm tên món) để in.
-     */
     public List<ChiTietHoaDon> getChiTietHoaDonForPrint(String maHoaDon) {
         List<ChiTietHoaDon> chiTietList = new ArrayList<>();
         String sql = "SELECT ct.maMonAn, ma.tenMonAn, ct.SoLuong, ct.DonGiaBan AS donGia " +
@@ -321,28 +292,21 @@ public class HoaDon_DAO {
         return chiTietList;
     }
 
-    /**
-     * ----- SỬA LOGIC TẠO MÃ -----
-     * Tạo mã hóa đơn mới tự động tăng (Format: HDYYMMDDxxxx).
-     * Khớp với dữ liệu mẫu 'HD2509050001'
-     */
     public String generateNewID() {
-        // Format: HD + YY + MM + DD + 4 số thứ tự
         SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd");
-        String datePrefix = "HD" + sdf.format(new java.util.Date()); // VD: HD251102
-        String newID = datePrefix + "0001"; // Default
+        String datePrefix = "HD" + sdf.format(new java.util.Date());
+        String newID = datePrefix + "0001"; 
 
         String sql = "SELECT TOP 1 MaHD FROM HOADON WHERE MaHD LIKE ? ORDER BY MaHD DESC";
 
         try (Connection con = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = con.prepareStatement(sql)) {
             
-            pstmt.setString(1, datePrefix + "%"); // Tìm các mã trong ngày hôm nay
+            pstmt.setString(1, datePrefix + "%"); 
 
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
                     String lastID = rs.getString("MaHD").trim();
-                    // Lấy 4 số cuối
                     String numberPart = lastID.substring(8); 
                     int num = Integer.parseInt(numberPart) + 1;
                     newID = String.format(datePrefix + "%04d", num);
@@ -354,10 +318,6 @@ public class HoaDon_DAO {
         }
         return newID;
     }
-    // ----- KẾT THÚC SỬA LOGIC TẠO MÃ -----
-
-
-    // ... (Các hàm thống kê cũ được giữ nguyên)
 
     public double getTongDoanhThu(java.util.Date from, java.util.Date to) {
         if (from == null || to == null) {
@@ -461,7 +421,6 @@ public class HoaDon_DAO {
             start.add(Calendar.DAY_OF_MONTH, 1);
         }
 
-        // Logic tính Gross Revenue (Tổng tiền món ăn, chưa thuế/KM)
         String sql =
                 " SELECT CONVERT(VARCHAR, NgayLapHoaDon, 103) AS Ngay, " +
                 "        SUM(HOADON.TongTienTruocThue) AS DoanhThuNgay " +
@@ -538,8 +497,6 @@ public class HoaDon_DAO {
         return null;
     }
 
- // Sửa trong HoaDon_DAO.java - Method taoHoaDonTuPhieuDat (Thêm debug và xử lý GioRa)
-
     public boolean taoHoaDonTuPhieuDat(PhieuDatBan phieu, String maNV) {
         if (phieu == null || phieu.getBan() == null) {
             System.err.println("Debug: Phiếu đặt bàn hoặc bàn bị null!");
@@ -564,14 +521,11 @@ public class HoaDon_DAO {
         NhanVien nv = new NhanVien(maNV);
         Ban ban = phieu.getBan();
         
-        // Lấy thuế mặc định (VAT08)
         Thue thueMacDinh = thueDAO.getThueMacDinh(); 
         if (thueMacDinh == null) {
-            // Fallback phòng trường hợp VAT08 bị xóa khỏi CSDL
             thueMacDinh = new Thue("VAT08"); 
         }
 
-        // SỬA: Tạo HD với GioRa = GioVao mặc định, phuongThuc = "Chưa xác định"
         HoaDon hdMoi = new HoaDon(
                 maHDMoi,
                 nv,
@@ -579,17 +533,17 @@ public class HoaDon_DAO {
                 ban,
                 ngayLap,
                 gioVao,
-                gioVao,  // SỬA: Set GioRa = GioVao tạm thời (sẽ update khi thanh toán)
-                "Chưa xác định",  // SỬA: Set mặc định cho phuongThucThanhToan
-                null, // KhuyenMai
-                thueMacDinh, // MaThue (NOT NULL)
-                phieu, // Liên kết phiếu đặt
-                0.0, // TongTienTruocThue
-                0.0, // TongGiamGia
-                false // DaThanhToan
+                gioVao, 
+                "Chưa xác định", 
+                null, 
+                thueMacDinh,
+                phieu, 
+                0.0, 
+                0.0, 
+                false 
         );
         
-        System.out.println("Debug: Tạo HD mới: " + maHDMoi + " từ PDB " + phieu.getMaPhieu());  // Debug
+        System.out.println("Debug: Tạo HD mới: " + maHDMoi + " từ PDB " + phieu.getMaPhieu()); 
         
         boolean success = addHoaDon(hdMoi);
         
@@ -599,23 +553,20 @@ public class HoaDon_DAO {
             if (success) {
                 success = capNhatTongTienHoaDon(maHDMoi);
                 if (success) {
-                    System.out.println("Debug: Tạo HD từ PDB thành công: " + maHDMoi);  // Debug
+                    System.out.println("Debug: Tạo HD từ PDB thành công: " + maHDMoi); 
                 } else {
-                    System.err.println("Debug: Cập nhật tổng tiền fail cho HD " + maHDMoi);  // Debug
+                    System.err.println("Debug: Cập nhật tổng tiền fail cho HD " + maHDMoi); 
                 }
             } else {
-                System.err.println("Debug: Copy chi tiết fail cho HD " + maHDMoi);  // Debug
+                System.err.println("Debug: Copy chi tiết fail cho HD " + maHDMoi); 
             }
         } else {
-            System.err.println("Debug: Insert HD fail: " + maHDMoi);  // Debug
+            System.err.println("Debug: Insert HD fail: " + maHDMoi); 
         }
         
         return success;
     }
 
-    /**
-     * COPY CHI TIẾT MÓN TỪ PHIẾU ĐẶT BÀN SANG HÓA ĐƠN
-     */
     public boolean copyChiTietTuPhieuSangHoaDon(String maPhieu, String maHD) {
         String sqlSelect = "SELECT maMonAn, soLuongMonAn, DonGiaBan FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         String sqlInsert = "INSERT INTO CHITIETHOADON (MaHD, MaMonAn, DonGiaBan, SoLuong) VALUES (?, ?, ?, ?)";
@@ -640,7 +591,7 @@ public class HoaDon_DAO {
                 if (hasRows) {
                     psInsert.executeBatch();
                 }
-                return true; // Thành công ngay cả khi PDB không có món nào
+                return true; 
             }
             
         } catch (SQLException e) {
@@ -650,9 +601,6 @@ public class HoaDon_DAO {
         return false;
     }
 
-    /**
-     * CẬP NHẬT TỔNG TIỀN HÓA ĐƠN (TongTienTruocThue)
-     */
     public boolean capNhatTongTienHoaDon(String maHD) {
         String sqlTinhTong = "SELECT SUM(DonGiaBan * SoLuong) AS TongTien FROM CHITIETHOADON WHERE MaHD = ?";
         String sqlUpdate = "UPDATE HOADON SET TongTienTruocThue = ? WHERE MaHD = ?";
@@ -682,37 +630,25 @@ public class HoaDon_DAO {
         return false;
     }
 
-    /**
-     * ----- SỬA LOGIC KHUYẾN MÃI -----
-     * ÁP DỤNG MÃ KHUYẾN MÃI (Đã sửa logic để khớp CSDL)
-     * Logic: Mọi KM đều là % (MucKM). Không có KM tiền mặt.
-     */
     public String apDungMaKhuyenMai(String maHD, String maKM) {
         if (maKM == null || maKM.trim().isEmpty() || maKM.trim().equalsIgnoreCase("KM00000000")) {
-            // Nếu mã là "Không áp dụng" (KM000...) thì gọi hàm hủy
             if(huyMaKhuyenMai(maHD)) {
-                return "OK"; // Hủy KM thành công
+                return "OK"; 
             } else {
                 return "Lỗi khi hủy khuyến mãi.";
             }
         }
         
-        // 1. Lấy thông tin khuyến mãi
-        // GIẢ ĐỊNH: khuyenMaiDAO.getKhuyenMaiById() đã được tạo
-        // VÀ entity KhuyenMai có các getter khớp với CSDL
         KhuyenMai km = khuyenMaiDAO.getKhuyenMaiById(maKM.trim());
         if (km == null) {
             return "Mã khuyến mãi không tồn tại!";
         }
 
-        // 2. Kiểm tra trạng thái
         if (!km.getTrangThaiKM()) {
             return "Mã khuyến mãi này đã bị vô hiệu hóa!";
         }
 
-        // 3. Kiểm tra thời hạn
         LocalDate now = LocalDate.now();
-        // GIẢ ĐỊNH: Entity KhuyenMai có hàm getNgayApDung/getNgayHetHan
         if (km.getNgayApDung() != null && now.isBefore(km.getNgayApDung())) {
             return "Mã khuyến mãi chưa có hiệu lực!";
         }
@@ -720,7 +656,6 @@ public class HoaDon_DAO {
             return "Mã khuyến mãi đã hết hạn!";
         }
 
-        // 4. Lấy hóa đơn
         HoaDon hd = findByMaHD(maHD);
         if (hd == null) {
             return "Không tìm thấy hóa đơn!";
@@ -728,16 +663,12 @@ public class HoaDon_DAO {
 
         double tongTienTruocThue = hd.getTongTienTruocThue();
 
-        // 5. Tính tiền giảm (Logic CSDL: Mọi KM đều là % (MucKM))
-        // GIẢ ĐỊNH: Entity KhuyenMai có hàm getMucKM()
         double tienGiam = tongTienTruocThue * km.getMucKM();
 
-        // Đảm bảo tiền giảm không vượt quá tổng tiền
         if (tienGiam > tongTienTruocThue) {
             tienGiam = tongTienTruocThue;
         }
 
-        // 6. Cập nhật vào DB
         String sql = "UPDATE HOADON SET MaKM = ?, TongGiamGia = ? WHERE MaHD = ?";
         try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -748,7 +679,7 @@ public class HoaDon_DAO {
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                return "OK"; // Thành công
+                return "OK"; 
             }
 
         } catch (SQLException e) {
@@ -758,18 +689,13 @@ public class HoaDon_DAO {
 
         return "Lỗi khi lưu mã khuyến mãi vào CSDL!";
     }
-    // ----- KẾT THÚC SỬA LOGIC KHUYẾN MÃI -----
 
-    /**
-     * HỦY MÃ KHUYẾN MÃI
-     */
     public boolean huyMaKhuyenMai(String maHD) {
-        // Cập nhật về KM "Không áp dụng" và reset tiền giảm
         String sql = "UPDATE HOADON SET MaKM = ?, TongGiamGia = 0 WHERE MaHD = ?";
         try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            pstmt.setString(1, "KM00000000"); // Set về mã KM mặc định
+            pstmt.setString(1, "KM00000000"); 
             pstmt.setString(2, maHD);
             return pstmt.executeUpdate() > 0;
 
@@ -779,11 +705,6 @@ public class HoaDon_DAO {
         }
         return false;
     }
-
-    /**
-     * THANH TOÁN HÓA ĐƠN (Cập nhật trạng thái + phương thức + giờ ra)
-     */
- // Sửa trong HoaDon_DAO.java - Method thanhToanHoaDon (Cập nhật GioRa khi thanh toán)
 
     public boolean thanhToanHoaDon(String maHD, String phuongThucThanhToan) {
         String sql = "UPDATE HOADON SET DaThanhToan = 1, phuongThucThanhToan = ?, GioRa = GETDATE() WHERE MaHD = ?";
@@ -796,10 +717,10 @@ public class HoaDon_DAO {
 
             int rows = pstmt.executeUpdate();
             if (rows > 0) {
-                System.out.println("Debug: Thanh toán HD thành công: " + maHD);  // Debug log
+                System.out.println("Debug: Thanh toán HD thành công: " + maHD); 
                 return true;
             } else {
-                System.err.println("Debug: Thanh toán HD fail (0 rows): " + maHD);  // Debug log
+                System.err.println("Debug: Thanh toán HD fail (0 rows): " + maHD); 
                 return false;
             }
         } catch (SQLException e) {
@@ -809,35 +730,23 @@ public class HoaDon_DAO {
         }
     }
 
-    // ----- SỬA LOGIC TÍNH THUẾ -----
-    /**
-     * TÍNH TỔNG TIỀN CUỐI CÙNG (Sau KM và Thuế) - CẢI TIẾN
-     * Logic mới: Áp dụng TẤT CẢ thuế/phí đang active (VAT và Phí dịch vụ)
-     * @return Tổng tiền khách phải trả (đã làm tròn)
-     */
     public double tinhTongTienHoaDon(String maHoaDon) {
         HoaDon hoaDon = findByMaHD(maHoaDon);
         if (hoaDon == null) return 0;
 
-        // 1. Lấy TẤT CẢ các loại thuế đang active (VD: VAT08 và PHIPK5)
-        // GIẢ ĐỊNH: thueDAO.getAllActiveTaxes() đã được tạo
         List<Thue> danhSachThueApDung = thueDAO.getAllActiveTaxes(); 
 
-        // 2. Lấy tiền gốc và tiền giảm
-        double tienMonAn = hoaDon.getTongTienTruocThue(); // Tổng tiền các món ăn
+        double tienMonAn = hoaDon.getTongTienTruocThue();
         double tienGiamGia = hoaDon.getTongGiamGia();            
 
-        // 3. Tính tiền sau khi giảm
         double tienSauGiamGia = tienMonAn - tienGiamGia;
         if (tienSauGiamGia < 0) tienSauGiamGia = 0;
 
-        // 4. Áp dụng thuế
         double tienPhiDichVu = 0; 
         double tienVAT = 0;       
         double tyLePhiDichVu = 0; 
         double tyLeVAT = 0;
 
-        // Lấy tỷ lệ % từ DB
         for (Thue thue : danhSachThueApDung) { 
             if (thue.getMaSoThue().equals("PHIPK5")) {
                 tyLePhiDichVu = thue.getTyLeThue(); // 0.05
@@ -846,20 +755,66 @@ public class HoaDon_DAO {
             }
         }
 
-        // 4a. Tính Phí dịch vụ (tính trên tiền sau giảm)
-        tienPhiDichVu = tienSauGiamGia * tyLePhiDichVu; 
+        tienPhiDichVu = tienSauGiamGia * tyLePhiDichVu;
+        double soTienDeTinhVAT = tienSauGiamGia+ tienPhiDichVu; 
 
-        // 4b. Tiền để tính VAT = (Tiền sau giảm + Phí dịch vụ)
-        double soTienDeTinhVAT = tienSauGiamGia + tienPhiDichVu; 
-
-        // 4c. Tính VAT
         tienVAT = soTienDeTinhVAT * tyLeVAT; 
 
-        // 5. Tính tổng cuối cùng
-        // Tổng = (Tiền sau giảm) + (Phí dịch vụ) + (VAT)
         double tongTienPhaiTra = tienSauGiamGia + tienPhiDichVu + tienVAT; 
 
         return Math.round(tongTienPhaiTra); 
+    }
+    
+   
+    public boolean updateKhachHangVaKhuyenMai(String maHD, String maKH, String maKM) {
+        
+        if (maKH == null || maKH.trim().isEmpty()) {
+            maKH = "KH00000000"; 
+        }
+        
+        HoaDon hd = findByMaHD(maHD);
+        if (hd == null) {
+            System.err.println("Lỗi: Không tìm thấy HD để cập nhật KH/KM: " + maHD);
+            return false;
+        }
+        
+        double tongTienTruocThue = hd.getTongTienTruocThue();
+        double tienGiamMoi = 0.0;
+
+        if (maKM == null || maKM.trim().isEmpty() || maKM.trim().equalsIgnoreCase("KM00000000") || maKM.trim().equalsIgnoreCase("null")) {
+            maKM = "KM00000000"; 
+            tienGiamMoi = 0.0;
+        } else {
+            KhuyenMai km = khuyenMaiDAO.getKhuyenMaiById(maKM);
+            if (km == null) {
+                System.err.println("Lỗi: Mã KM không tồn tại: " + maKM);
+                return false;
+            }
+            
+            tienGiamMoi = tongTienTruocThue * km.getMucKM();
+            if (tienGiamMoi > tongTienTruocThue) {
+                tienGiamMoi = tongTienTruocThue;
+            }
+        }
+
+        String sql = "UPDATE HOADON SET MaKH = ?, MaKM = ?, TongGiamGia = ? WHERE MaHD = ?";
+        
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setString(1, maKH.trim());
+            pstmt.setString(2, maKM.trim());
+            pstmt.setDouble(3, tienGiamMoi);
+            pstmt.setString(4, maHD.trim());
+            
+            int rowsAffected = pstmt.executeUpdate();
+            return rowsAffected > 0;
+            
+        } catch (SQLException e) {
+            System.err.println("Lỗi nghiêm trọng khi cập nhật KH/KM cho Hóa đơn: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 
 }

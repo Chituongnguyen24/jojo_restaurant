@@ -1,14 +1,16 @@
 package view.HoaDon;
 
-import dao.Ban_DAO; // SỬA: Thêm Ban_DAO
+import dao.Ban_DAO; 
 import dao.HoaDon_DAO;
 import dao.KhachHang_DAO;
-import dao.PhieuDatBan_DAO; // SỬA: Thêm PhieuDatBan_DAO
+import dao.PhieuDatBan_DAO; 
+import dao.KhuyenMai_DAO; 
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
 import entity.KhachHang;
+import entity.KhuyenMai; 
 import entity.PhieuDatBan;
-import enums.TrangThaiBan; // SỬA: Thêm Enum
+import enums.TrangThaiBan; 
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -26,6 +28,7 @@ import java.text.DecimalFormatSymbols;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
@@ -33,15 +36,18 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
     private DefaultTableModel modelChiTiet;
     private HoaDon_DAO hoaDonDAO;
     private KhachHang_DAO khachHangDAO;
-    private Ban_DAO banDAO; // SỬA: Thêm Ban_DAO
-    private PhieuDatBan_DAO pbdDAO; // SỬA: Thêm PhieuDatBan_DAO
+    private Ban_DAO banDAO;
+    private PhieuDatBan_DAO pbdDAO; 
+    private KhuyenMai_DAO khuyenMaiDAO; 
 
-    // SỬA: Thêm các components
     private HoaDon hoaDonHienTai;
     private JButton btnThanhToan, btnDong;
+    
+    private JComboBox<KhachHang> cbxKhachHang; 
+    private JComboBox<KhuyenMai> cbxKhuyenMai;
+    
     private JComboBox<String> cbxPhuongThucTT;
 
-    // Các label hiển thị tổng tiền
     private JLabel lblTongTienMon, lblTongGiamGia, lblTongThue, lblTongThanhToan;
     private static final DecimalFormat CURRENCY_FORMAT;
 
@@ -54,50 +60,53 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
     public HoaDon_ChiTietHoaDon_View(Frame owner, HoaDon hoaDon) {
         super(owner, "Chi Tiết Hóa Đơn: " + hoaDon.getMaHD(), true);
         
-        this.hoaDonHienTai = hoaDon; // SỬA: Lưu lại hóa đơn
+        this.hoaDonHienTai = hoaDon;
         this.hoaDonDAO = new HoaDon_DAO();
         this.khachHangDAO = new KhachHang_DAO();
-        this.banDAO = new Ban_DAO(); // SỬA: Khởi tạo
-        this.pbdDAO = new PhieuDatBan_DAO(); // SỬA: Khởi tạo
+        this.banDAO = new Ban_DAO();
+        this.pbdDAO = new PhieuDatBan_DAO();
+        this.khuyenMaiDAO = new KhuyenMai_DAO(); 
 
         setSize(1000, 750);
         setLocationRelativeTo(owner);
         setLayout(new BorderLayout(10, 10));
         
-        // --- Main Panel ---
         JPanel mainPanel = new JPanel(new BorderLayout(10, 10));
         mainPanel.setBorder(new EmptyBorder(15, 20, 15, 20));
-//        mainPanel.setBackground(Color.WHITE);
 
-        mainPanel.add(createHeader(hoaDon), BorderLayout.NORTH);
+        mainPanel.add(createHeader(hoaDon, khachHangDAO), BorderLayout.NORTH);
         mainPanel.add(createTablePanel(), BorderLayout.CENTER);
-        mainPanel.add(createFooterPanel(), BorderLayout.SOUTH);
+        mainPanel.add(createFooterPanel(hoaDon, khuyenMaiDAO), BorderLayout.SOUTH);
 
         add(mainPanel, BorderLayout.CENTER);
 
-        // --- Button Panel (SỬA: Thêm mới) ---
         add(createButtonPanel(), BorderLayout.SOUTH);
 
-        // --- Load Data ---
+        // === SỬA LỖI: Gắn sự kiện (Listener) SAU KHI TẤT CẢ components đã được khởi tạo ===
+        cbxKhachHang.addActionListener(e -> capNhatGiaTienXemTruoc());
+        cbxKhuyenMai.addActionListener(e -> capNhatGiaTienXemTruoc());
+        // === KẾT THÚC SỬA LỖI ===
+
         loadChiTietData(hoaDon.getMaHD());
         tinhVaHienThiTongTien(hoaDon);
         
-        // --- Events (SỬA: Thêm sự kiện) ---
         btnDong.addActionListener(e -> dispose());
         btnThanhToan.addActionListener(e -> xuLyThanhToan());
         
-        // SỬA: Vô hiệu hóa nút thanh toán nếu đã thanh toán rồi
         if (hoaDon.isDaThanhToan()) {
             btnThanhToan.setEnabled(false);
             btnThanhToan.setText("Đã Thanh Toán");
             cbxPhuongThucTT.setEnabled(false);
+            
+            cbxKhachHang.setEnabled(false);
+            cbxKhuyenMai.setEnabled(false);
+            
             if (hoaDon.getPhuongThucThanhToan() != null) {
                 cbxPhuongThucTT.setSelectedItem(hoaDon.getPhuongThucThanhToan());
             }
         }
     }
     
-    // ===== SỬA: HÀM MỚI (Tạo Button Panel) =====
     private JPanel createButtonPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(new EmptyBorder(0, 20, 15, 20));
@@ -137,11 +146,10 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         return panel;
     }
 
- // Sửa trong HoaDon_ChiTietHoaDon_View.java - Method xuLyThanhToan() (Set trạng thái PDB thành "Hoàn thành")
 
     private void xuLyThanhToan() {
-    	
-    	List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
+        
+        List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hoaDonHienTai.getMaHD());
         if (chiTietList == null || chiTietList.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
                 "Không có món ăn để tạo hóa đơn", 
@@ -149,12 +157,55 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
                 JOptionPane.ERROR_MESSAGE);
             return; 
         }
-    	
-    	
+        
         String phuongThuc = (String) cbxPhuongThucTT.getSelectedItem();
         if (phuongThuc == null) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn phương thức thanh toán.", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return;
+        }
+
+        KhachHang khachHangMoi = (KhachHang) cbxKhachHang.getSelectedItem();
+        KhuyenMai khuyenMaiMoi = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
+        
+        KhachHang khachHangCu = hoaDonHienTai.getKhachHang();
+        KhuyenMai khuyenMaiCu = hoaDonHienTai.getKhuyenMai();
+
+        boolean canUpdate = false;
+        
+        if (khachHangMoi != null && !Objects.equals(khachHangMoi.getMaKH(), khachHangCu.getMaKH())) {
+            canUpdate = true;
+        }
+        
+        String maKMCu = (khuyenMaiCu != null) ? khuyenMaiCu.getMaKM() : null;
+        String maKMMoi = (khuyenMaiMoi != null) ? khuyenMaiMoi.getMaKM() : null;
+        if (maKMMoi == null && maKMCu != null && maKMCu.equals("KM00000000")) {
+             // Bỏ qua (Do "Không áp dụng" có mã null hoặc KM00000000)
+        } else if (!Objects.equals(maKMMoi, maKMCu)) {
+            canUpdate = true;
+        }
+
+        if (canUpdate) {
+            int confirmUpdate = JOptionPane.showConfirmDialog(this, 
+                "Phát hiện thay đổi thông tin Khách hàng/Khuyến mãi.\nBạn có muốn lưu các thay đổi này trước khi thanh toán?", 
+                "Xác nhận cập nhật", 
+                JOptionPane.YES_NO_OPTION);
+            
+            if (confirmUpdate == JOptionPane.YES_OPTION) {
+                boolean updateOK = hoaDonDAO.updateKhachHangVaKhuyenMai(
+                    hoaDonHienTai.getMaHD(), 
+                    khachHangMoi.getMaKH(), 
+                    maKMMoi
+                );
+                
+                if (updateOK) {
+                    JOptionPane.showMessageDialog(this, "Cập nhật thông tin thành công!");
+                    this.hoaDonHienTai = hoaDonDAO.findByMaHD(hoaDonHienTai.getMaHD());
+                    tinhVaHienThiTongTien(this.hoaDonHienTai);
+                } else {
+                    JOptionPane.showMessageDialog(this, "Lỗi khi cập nhật thông tin. Vui lòng thử lại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return; 
+                }
+            }
         }
 
         int confirm = JOptionPane.showConfirmDialog(this, 
@@ -171,13 +222,11 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
             conn = ConnectDB.getInstance().getConnection();
             conn.setAutoCommit(false);
 
-            // 1. Cập nhật HD
             boolean successHD = hoaDonDAO.thanhToanHoaDon(hoaDonHienTai.getMaHD(), phuongThuc);
             if (!successHD) {
                 throw new SQLException("Thanh toán HD thất bại");
             }
 
-            // 2. Cập nhật bàn
             if (hoaDonHienTai.getBan() != null) {
                 boolean successBan = banDAO.capNhatTrangThaiBan(hoaDonHienTai.getBan().getMaBan(), TrangThaiBan.TRONG);
                 if (!successBan) {
@@ -185,14 +234,12 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
                 }
             }
 
-            // 3. Cập nhật PDB thành "Hoàn thành"
             PhieuDatBan pdb = hoaDonHienTai.getPhieuDatBan();
             if (pdb != null) {
                 PhieuDatBan pdbFull = pbdDAO.getPhieuDatBanById(pdb.getMaPhieu());
                 if (pdbFull != null) {
-                    pdbFull.setTrangThaiPhieu("Hoàn thành");  // SỬA: Set trạng thái mới (khớp CHECK)
+                    pdbFull.setTrangThaiPhieu("Hoàn thành");
                     pdbFull.setThoiGianTraBan(LocalDateTime.now());
-                    System.out.println("Debug: Cập nhật PDB " + pdbFull.getMaPhieu() + " sang Hoàn thành");
                     boolean successPDB = pbdDAO.updatePhieuDatBan(pdbFull);
                     if (!successPDB) {
                         throw new SQLException("Cập nhật PDB thất bại");
@@ -207,17 +254,13 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
             try {
                 KhachHang kh = hoaDonHienTai.getKhachHang();
                 
-                // Chỉ cộng điểm cho KH thân thiết (giả định KH00000000 là khách vãng lai)
                 if (kh != null && !kh.getMaKH().trim().equalsIgnoreCase("KH00000000")) {
                     
-                    // Lấy tổng tiền đã thanh toán (đã tính VAT)
                     double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hoaDonHienTai.getMaHD());
                     
-                    // Quy tắc: 10,000 VNĐ = 1 điểm (bạn có thể thay đổi)
                     int diemCongThem = (int) (tongThanhToan / 10000); 
                     
                     if (diemCongThem > 0) {
-                        // Gọi hàm DAO để cộng điểm (xem Bước 2)
                         boolean congDiemOK = khachHangDAO.congDiemTichLuy(kh.getMaKH(), diemCongThem);
                         if (congDiemOK) {
                             System.out.println("Debug: Đã cộng " + diemCongThem + " điểm cho KH " + kh.getMaKH());
@@ -227,12 +270,23 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
                     }
                 }
             } catch (Exception e_diem) {
-                // Lỗi cộng điểm không nên làm hỏng giao dịch thanh toán chính
                 System.err.println("Lỗi ngoài lề: Không thể cộng điểm tích lũy. " + e_diem.getMessage());
             }
             
+            try {
+                Frame owner = (Frame) this.getOwner();
+                
+                HoaDon hoaDonDaThanhToan = hoaDonDAO.findByMaHD(hoaDonHienTai.getMaHD());
+                
+                HoaDon_Printer.showPreview(owner, hoaDonDaThanhToan, chiTietList); 
+                
+            } catch (Exception e_print) {
+                e_print.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi mở bản xem trước: " + e_print.getMessage());
+            }
             
-            JOptionPane.showMessageDialog(this, "Thanh toán thành công! Hóa đơn đã hoàn tất từ phiếu đặt.");
+            
+            JOptionPane.showMessageDialog(this, "Thanh toán thành công! Hóa đơn đã hoàn tất.");
             dispose();
             
         } catch (Exception e) {
@@ -249,15 +303,12 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
     }
 
 
-    // ===== CÁC HÀM HIỂN THỊ (Giữ nguyên, chỉ sửa 1 chút) =====
-    
-    private JPanel createHeader(HoaDon hoaDon) {
+    private JPanel createHeader(HoaDon hoaDon, KhachHang_DAO khachHangDAO) {
         JPanel panel = new JPanel(new BorderLayout(20, 10));
         panel.setBackground(Color.WHITE);
         panel.setBorder(new MatteBorder(0, 0, 1, 0, new Color(226, 232, 240)));
         panel.setBorder(new EmptyBorder(0, 0, 15, 0));
 
-        // ... (Thông tin hóa đơn)
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setOpaque(false);
@@ -266,23 +317,41 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         infoPanel.add(createHeaderLabel("Giờ vào: " + hoaDon.getGioVao()));
         infoPanel.add(createHeaderLabel("Bàn: " + (hoaDon.getBan() != null ? hoaDon.getBan().getMaBan() : "N/A")));
 
-        // ... (Thông tin khách hàng)
         JPanel khachPanel = new JPanel();
         khachPanel.setLayout(new BoxLayout(khachPanel, BoxLayout.Y_AXIS));
         khachPanel.setOpaque(false);
         
-        KhachHang kh = khachHangDAO.getKhachHangById(hoaDon.getKhachHang().getMaKH());
-        String tenKH = "Khách vãng lai";
-        String sdtKH = "N/A";
-        if (kh != null && !"KH00000000".equals(kh.getMaKH())) {  // SỬA: So sánh đúng
-            tenKH = kh.getTenKH();
-            sdtKH = kh.getSoDienThoai();
-        } else if (kh == null) {
-            System.err.println("Lỗi: KH " + hoaDon.getKhachHang().getMaKH() + " không tồn tại trong DB!");
+        cbxKhachHang = new JComboBox<>();
+        cbxKhachHang.setRenderer(new KhachHangRenderer()); 
+        cbxKhachHang.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        cbxKhachHang.setPreferredSize(new Dimension(220, 30));
+        
+        // === SỬA LỖI: Xóa Listener ở đây ===
+        // cbxKhachHang.addActionListener(e -> capNhatGiaTienXemTruoc());
+        
+        
+        KhachHang khachHangDaChon = null;
+        try {
+            List<KhachHang> dsKH = khachHangDAO.getAllKhachHang();
+            for (KhachHang kh : dsKH) {
+                cbxKhachHang.addItem(kh);
+                if (kh.getMaKH().equals(hoaDon.getKhachHang().getMaKH())) {
+                    khachHangDaChon = kh;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        khachPanel.add(createHeaderLabel("Khách hàng: " + tenKH));
-        khachPanel.add(createHeaderLabel("SĐT: " + sdtKH));
+        
+        if (khachHangDaChon != null) {
+            cbxKhachHang.setSelectedItem(khachHangDaChon); 
+        } else {
+            cbxKhachHang.setSelectedIndex(0); // Mặc định chọn khách lẻ
+        }
+        
+        khachPanel.add(createHeaderLabel("Khách hàng:"));
+        khachPanel.add(cbxKhachHang);
+        khachPanel.add(Box.createVerticalStrut(5)); 
         khachPanel.add(createHeaderLabel("Nhân viên: " + (hoaDon.getNhanVien() != null ? hoaDon.getNhanVien().getMaNhanVien() : "N/A")));
 
         panel.add(infoPanel, BorderLayout.WEST);
@@ -290,7 +359,46 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         return panel;
     }
 
-    private JLabel createHeaderLabel(String text) {
+
+    private void capNhatGiaTienXemTruoc() {
+        // Kiểm tra null (an toàn)
+        if (cbxKhuyenMai == null || lblTongTienMon == null) {
+            return;
+        }
+    
+    	double tongTienMon = hoaDonHienTai.getTongTienTruocThue();
+    	
+    	KhuyenMai kmDuocChon = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
+        double tienGiamMoi = 0.0;
+        
+        if (kmDuocChon != null && kmDuocChon.getMaKM() != null && !kmDuocChon.getMaKM().equalsIgnoreCase("KM00000000")) {
+            tienGiamMoi = tongTienMon * kmDuocChon.getMucKM();
+            if (tienGiamMoi > tongTienMon) {
+                tienGiamMoi = tongTienMon;
+            }
+        }
+        
+        double tienSauGiamGia = tongTienMon - tienGiamMoi;
+        if (tienSauGiamGia < 0) tienSauGiamGia = 0;
+        
+        // === SỬA LỖI: Tính toán thuế & phí áp cứng ===
+        double tyLePhiDichVu = 0.05; // 5%
+        double tyLeVAT = 0.08;       // 8%
+
+        double tienPhiDichVu = tienSauGiamGia * tyLePhiDichVu;
+        double soTienDeTinhVAT = tienSauGiamGia + tienPhiDichVu;
+        double tienVAT = soTienDeTinhVAT * tyLeVAT;
+        
+        double tongTienPhaiTra = tienSauGiamGia + tienPhiDichVu + tienVAT;
+        double tongThueVaPhi = tienPhiDichVu + tienVAT;
+        
+        lblTongTienMon.setText(CURRENCY_FORMAT.format(tongTienMon));
+        lblTongGiamGia.setText(CURRENCY_FORMAT.format(tienGiamMoi));
+        lblTongThue.setText(CURRENCY_FORMAT.format(tongThueVaPhi)); // Cập nhật tiền thuế
+        lblTongThanhToan.setText(CURRENCY_FORMAT.format(Math.round(tongTienPhaiTra)));
+	}
+
+	private JLabel createHeaderLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         label.setForeground(new Color(100, 116, 139));
@@ -311,14 +419,13 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         tableChiTiet.setRowHeight(40);
         tableChiTiet.setGridColor(new Color(226, 232, 240));
 
-        // ... (Custom renderers cho bảng)
         CurrencyRenderer currencyRenderer = new CurrencyRenderer(CURRENCY_FORMAT);
         tableChiTiet.getColumnModel().getColumn(3).setCellRenderer(currencyRenderer);
         tableChiTiet.getColumnModel().getColumn(4).setCellRenderer(currencyRenderer);
         
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
-        tableChiTiet.getColumnModel().getColumn(2).setCellRenderer(centerRenderer); // SL
+        tableChiTiet.getColumnModel().getColumn(2).setCellRenderer(centerRenderer); 
 
         tableChiTiet.getColumnModel().getColumn(0).setPreferredWidth(40);
         tableChiTiet.getColumnModel().getColumn(1).setPreferredWidth(350);
@@ -332,7 +439,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         return scrollPane;
     }
 
-    private JPanel createFooterPanel() {
+    private JPanel createFooterPanel(HoaDon hoaDon, KhuyenMai_DAO khuyenMaiDAO) {
         JPanel footer = new JPanel(new GridBagLayout());
         footer.setBackground(Color.WHITE);
         footer.setBorder(new EmptyBorder(15, 10, 0, 10));
@@ -340,26 +447,57 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.EAST;
 
-        // ... (Labels)
-        gbc.gridx = 0; gbc.gridy = 0; footer.add(createTotalLabel("Tổng tiền món:", false), gbc);
-        gbc.gridx = 0; gbc.gridy = 1; footer.add(createTotalLabel("Tổng giảm giá (KM):", false), gbc);
-        gbc.gridx = 0; gbc.gridy = 2; footer.add(createTotalLabel("Thuế VAT(8%):", false), gbc);
-        gbc.gridx = 0; gbc.gridy = 3; footer.add(createTotalLabel("TỔNG THANH TOÁN:", true), gbc);
+        cbxKhuyenMai = new JComboBox<>();
+        cbxKhuyenMai.setRenderer(new KhuyenMaiRenderer()); 
+        cbxKhuyenMai.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        
+        // === SỬA LỖI: Xóa Listener ở đây ===
+        // cbxKhuyenMai.addActionListener(e -> capNhatGiaTienXemTruoc());
+        
+        KhuyenMai kmDaChon = null;
+        try {
+            List<KhuyenMai> dsKM = khuyenMaiDAO.getAllActiveKhuyenMai(); 
+            for (KhuyenMai km : dsKM) {
+                cbxKhuyenMai.addItem(km);
+                if (hoaDon.getKhuyenMai() != null && hoaDon.getKhuyenMai().getMaKM() != null &&
+                    km.getMaKM() != null && km.getMaKM().equals(hoaDon.getKhuyenMai().getMaKM())) {
+                    kmDaChon = km;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
+        if (kmDaChon != null) {
+            cbxKhuyenMai.setSelectedItem(kmDaChon);
+        } else {
+            cbxKhuyenMai.setSelectedIndex(0); 
+        }
+        
+        gbc.gridx = 0; gbc.gridy = 0; footer.add(createTotalLabel("Áp dụng Khuyến mãi:", false), gbc);
+        gbc.gridx = 1; gbc.gridy = 0; gbc.anchor = GridBagConstraints.LINE_START; footer.add(cbxKhuyenMai, gbc);
+        gbc.anchor = GridBagConstraints.EAST; 
 
-        // ... (Values)
-        gbc.anchor = GridBagConstraints.LINE_END; // Căn phải
+        gbc.gridx = 0; gbc.gridy = 1; footer.add(createTotalLabel("Tổng tiền món:", false), gbc);
+        gbc.gridx = 0; gbc.gridy = 2; footer.add(createTotalLabel("Tổng giảm giá (KM):", false), gbc);
+        
+        // === SỬA: Đổi nhãn thuế cho thẩm mỹ ===
+        gbc.gridx = 0; gbc.gridy = 3; footer.add(createTotalLabel("Thuế & Phí (VAT, P.vụ):", false), gbc);
+        
+        gbc.gridx = 0; gbc.gridy = 4; footer.add(createTotalLabel("THÀNH TIỀN (Tổng phải trả):", true), gbc);
+
+        gbc.anchor = GridBagConstraints.LINE_END; 
         lblTongTienMon = createTotalLabel("0 VNĐ", false);
         lblTongGiamGia = createTotalLabel("0 VNĐ", false);
         lblTongThue = createTotalLabel("0 VNĐ", false);
         lblTongThanhToan = createTotalLabel("0 VNĐ", true);
 
-        gbc.gridx = 1; gbc.gridy = 0; footer.add(lblTongTienMon, gbc);
-        gbc.gridx = 1; gbc.gridy = 1; footer.add(lblTongGiamGia, gbc);
-        gbc.gridx = 1; gbc.gridy = 2; footer.add(lblTongThue, gbc);
-        gbc.gridx = 1; gbc.gridy = 3; footer.add(lblTongThanhToan, gbc);
+        gbc.gridx = 1; gbc.gridy = 1; footer.add(lblTongTienMon, gbc);
+        gbc.gridx = 1; gbc.gridy = 2; footer.add(lblTongGiamGia, gbc);
+        gbc.gridx = 1; gbc.gridy = 3; footer.add(lblTongThue, gbc);
+        gbc.gridx = 1; gbc.gridy = 4; footer.add(lblTongThanhToan, gbc);
         
-        // Filler
-        gbc.gridx = 0; gbc.gridy = 4; gbc.weightx = 1.0;
+        gbc.gridx = 0; gbc.gridy = 5; gbc.weightx = 1.0;
         footer.add(Box.createHorizontalStrut(1), gbc);
 
         return footer;
@@ -380,7 +518,6 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
     private void loadChiTietData(String maHoaDon) {
         modelChiTiet.setRowCount(0);
-        // Dùng hàm lấy chi tiết cho việc in (có tên món)
         List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(maHoaDon);
         int stt = 1;
         for (ChiTietHoaDon ct : chiTietList) {
@@ -391,32 +528,39 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
                     stt++,
                     ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "N/A",
                     ct.getSoLuong(),
-                    donGia, // Render sẽ format
-                    thanhTien // Render sẽ format
+                    donGia, 
+                    thanhTien 
             });
         }
     }
     
-    // ===== HÀM ĐÃ SỬA (Lấy logic tính tiền từ DAO) =====
     private void tinhVaHienThiTongTien(HoaDon hoaDon) {
-        // Lấy tổng tiền món (đã có sẵn trong HĐ khi tạo)
+        
         double tongTienMon = hoaDon.getTongTienTruocThue();
         double tongGiamGia = hoaDon.getTongGiamGia();
 
-        // SỬA: Gọi hàm DAO để tính tổng cuối cùng (bao gồm thuế)
         double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hoaDon.getMaHD());
         
-        // Tính tiền thuế = Tổng cuối - (Tiền món - Tiền giảm)
-        double tienThueVaPhi = tongThanhToan - (tongTienMon - tongGiamGia);
+        // === SỬA LỖI: Cập nhật lại logic tính thuế hiển thị ===
+        // (Logic này phải khớp với logic xem trước)
+        double tienSauGiamGia = tongTienMon - tongGiamGia;
+        if (tienSauGiamGia < 0) tienSauGiamGia = 0;
+        
+        double tyLePhiDichVu = 0.05; // 5%
+        double tyLeVAT = 0.08;       // 8%
+        double tienPhiDichVu = tienSauGiamGia * tyLePhiDichVu;
+        double soTienDeTinhVAT = tienSauGiamGia + tienPhiDichVu;
+        double tienVAT = soTienDeTinhVAT * tyLeVAT;
+        double tongThueVaPhi = tienPhiDichVu + tienVAT;
 
-        // Hiển thị
         lblTongTienMon.setText(CURRENCY_FORMAT.format(tongTienMon));
         lblTongGiamGia.setText(CURRENCY_FORMAT.format(tongGiamGia));
-        lblTongThue.setText(CURRENCY_FORMAT.format(tienThueVaPhi));
+        // Hiển thị tổng thuế (VAT + Phí)
+        lblTongThue.setText(CURRENCY_FORMAT.format(tongThueVaPhi)); 
+        // Hiển thị tổng tiền cuối cùng (đã làm tròn trong DAO)
         lblTongThanhToan.setText(CURRENCY_FORMAT.format(tongThanhToan));
     }
 
-    // ===== CLASS HỖ TRỢ RENDER TIỀN TỆ (Giữ nguyên) =====
     static class CurrencyRenderer extends DefaultTableCellRenderer {
         private DecimalFormat formatter;
         public CurrencyRenderer(DecimalFormat formatter) {
@@ -439,6 +583,34 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
                 cell.setForeground(table.getForeground());
             }
             return cell;
+        }
+    }
+    
+    class KhachHangRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value instanceof KhachHang) {
+                KhachHang kh = (KhachHang) value;
+                setText(kh.getTenKH() + " (" + kh.getMaKH().trim() + ")");
+            }
+            return this;
+        }
+    }
+    
+    class KhuyenMaiRenderer extends DefaultListCellRenderer {
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value instanceof KhuyenMai) {
+                KhuyenMai km = (KhuyenMai) value;
+                if (km.getMaKM() == null || km.getMaKM().trim().isEmpty() || km.getMaKM().trim().equalsIgnoreCase("KM00000000")) {
+                     setText("Không áp dụng");
+                } else {
+                     setText(km.getMoTa());
+                }
+            }
+            return this;
         }
     }
 }
