@@ -40,7 +40,7 @@ public class HoaDon_View extends JPanel implements ActionListener {
     
     private HoaDon hoaDonDuocChon = null;
     
-    private JLabel lblChuaTT, lblDaTT, lblTongHD, lblDoanhThu;
+    private JLabel lblDaTT, lblTongHD, lblDoanhThu;
 
     // SỬA: Định dạng ngày giờ trong Entity mới
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -317,7 +317,6 @@ public class HoaDon_View extends JPanel implements ActionListener {
                 chuaTT++; 
             }
         }
-        lblChuaTT.setText(String.valueOf(chuaTT));
         lblDaTT.setText(String.valueOf(daTT));
         lblTongHD.setText(String.valueOf(dsHD.size()));
         lblDoanhThu.setText(String.format("%,.0f VNĐ", doanhThu));
