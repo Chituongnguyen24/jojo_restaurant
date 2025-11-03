@@ -15,7 +15,6 @@ import view.Login.DoiMatKhau_View;
 import view.NhanVien.NhanVien_View;
 import view.NhanVien.ThongKe_View;
 import view.ThucDon.*;
-import view.HoaDon.KhuyenMai_View;
 
 public class TrangChu_View extends JPanel {
 
@@ -24,6 +23,8 @@ public class TrangChu_View extends JPanel {
     private final List<JMenuItem> allMenuItems = new ArrayList<>();
     private JMenuItem currentMenuItem = null;
     private final JFrame mainFrame;
+    private KhachHang_View khachHangView;
+	private HoaDon_View hoaDonView;
 
     private static final String CARD_HOME = "HE_THONG";
     private static final String CARD_QUAN_LY_BAN = "QUAN_LY_BAN";
@@ -314,9 +315,11 @@ public class TrangChu_View extends JPanel {
 //        contentPanel.add(new MonAn_TraCuu_View(), CARD_TRA_CUU_MON_AN);
 //        contentPanel.add(new KhachHang_TraCuu_View(), CARD_TRA_CUU_KH);
         contentPanel.add(new DatMonAn_View(), CARD_QUAN_LY_DAT_MON);
-        contentPanel.add(new HoaDon_View(), CARD_QUAN_LY_HOADON);
+        hoaDonView= new HoaDon_View();
+        contentPanel.add(hoaDonView, CARD_QUAN_LY_HOADON);
 //        contentPanel.add(new KhuyenMai_TraCuu_View(),CARD_TRA_CUU_KHUYENMAI);
-        contentPanel.add(new KhachHang_View(), CARD_QUAN_LY_KH);
+        khachHangView = new KhachHang_View();
+        contentPanel.add(khachHangView, CARD_QUAN_LY_KH);
 //        contentPanel.add(new KhachHang_DiemTichLuy_View(), CARD_DIEM_KH);
 
         if (role == Role.MANAGER) {
@@ -357,6 +360,9 @@ public class TrangChu_View extends JPanel {
 //                    break;
                 case "Quản lý hóa đơn":
                     cardName = CARD_QUAN_LY_HOADON;
+                    if (hoaDonView != null) {
+                    	hoaDonView.refreshTableData();
+                    }
                     break;
 //                case "Tra cứu hóa đơn":
 //                    cardName = CARD_TRA_CUU_HOADON;
@@ -372,6 +378,9 @@ public class TrangChu_View extends JPanel {
 //                    break;
                 case "Quản lý khách hàng":
                     cardName = CARD_QUAN_LY_KH;
+                    if (khachHangView != null) {
+                        khachHangView.refreshTableData();
+                    }
                     break;
 //                case "Quản lý điểm tích lũy":
 //                    cardName = CARD_DIEM_KH;

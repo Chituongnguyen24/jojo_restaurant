@@ -119,12 +119,10 @@ public class HoaDon_View extends JPanel implements ActionListener {
         statsPanel.setOpaque(false);
         statsPanel.setBorder(new EmptyBorder(0, 30, 25, 30)); 
 
-        lblChuaTT = createStatLabel("0");
         lblDaTT = createStatLabel("0");
         lblTongHD = createStatLabel("0");
         lblDoanhThu = createStatLabel("0 VNĐ");
 
-        statsPanel.add(createStatBox(lblChuaTT, "Chưa thanh toán", COLOR_CHUA_TT));
         statsPanel.add(createStatBox(lblDaTT, "Đã thanh toán", COLOR_DA_TT));
         statsPanel.add(createStatBox(lblTongHD, "Tổng hóa đơn", COLOR_TONG_HD));
         statsPanel.add(createStatBox(lblDoanhThu, "Doanh thu", COLOR_DOANH_THU));
@@ -255,9 +253,10 @@ public class HoaDon_View extends JPanel implements ActionListener {
     
     public void loadHoaDon() {
         modelDanhSachHD.setRowCount(0);
-         
-        String keyword = txtTimNhanh != null ? txtTimNhanh.getText().trim().toLowerCase() : "";
-        
+        String keyword = "";
+        if (txtTimNhanh != null && txtTimNhanh.getText() != null) {
+            keyword = txtTimNhanh.getText().trim().toLowerCase();
+        }
         List<HoaDon> list = hoaDonDAO.getAllHoaDon();
 
         List<HoaDon> filteredList = list.stream()
@@ -265,30 +264,41 @@ public class HoaDon_View extends JPanel implements ActionListener {
             .collect(Collectors.toList());
 
         for (HoaDon hd : filteredList) {
+        	String tenKH = "Khách lẻ";
+        	try {
+                if (hd != null && hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) {
+                    
+                    KhachHang kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH());
+                    
+                    if (kh != null && kh.getTenKH() != null && !kh.getMaKH().trim().equals("KH00000000")) {
+                        tenKH = kh.getTenKH();
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Lỗi khi lấy Tên KH cho HD: " + (hd != null ? hd.getMaHD() : "NULL") + " - " + e.getMessage());
+            }
+
             double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD());
             
-            KhachHang kh = (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) 
-                       ? khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH()) : null;
-            String tenKH = (kh != null && kh.getTenKH() != null) ? kh.getTenKH() : "Khách lẻ";
-            
+            String maHD = (hd != null && hd.getMaHD() != null) ? hd.getMaHD() : "Lỗi-MaHD";
+
             boolean matchKeyword = keyword.isEmpty() 
-                || hd.getMaHD().toLowerCase().contains(keyword) 
+                || maHD.toLowerCase().contains(keyword) 
                 || tenKH.toLowerCase().contains(keyword);
             
-            String maBan = (hd.getBan() != null) ? hd.getBan().getMaBan().trim() : "N/A";
+            String maBan = (hd.getBan() != null && hd.getBan().getMaBan() != null) ? hd.getBan().getMaBan().trim() : "N/A";
             String maPDB = (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null) ? hd.getPhieuDatBan().getMaPhieu().trim() : "Không";
             
             if (matchKeyword) {
                 modelDanhSachHD.addRow(new Object[]{
-                    hd.getMaHD(),
+                    maHD,
                     hd.getNgayLapHoaDon().format(DATE_FORMATTER),
                     hd.getGioVao().format(TIME_FORMATTER),
                     maBan, 
                     maPDB, 
-                    tenKH,
+                    tenKH, 
                     String.format("%,.0f₫", tongTien),
-                    "Đã thanh toán" 
-                });
+                    "Đã thanh toán"                 });
             }
         }
     }
@@ -322,7 +332,6 @@ public class HoaDon_View extends JPanel implements ActionListener {
         Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
         HoaDon hd = hoaDonDAO.findByMaHD(hoaDonDuocChon.getMaHD());
         if (hd != null) {
-             // SỬ DỤNG CLASS MỚI NHẤT (Đã có trong các file bạn cung cấp)
              HoaDon_ChiTietHoaDon_View dialog = new HoaDon_ChiTietHoaDon_View(parentFrame, hd); 
              dialog.setVisible(true);
         } else {
@@ -336,7 +345,6 @@ public class HoaDon_View extends JPanel implements ActionListener {
          
         if (o == btnThem) {
             Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
-            // SỬ DỤNG HoaDon_AddDialog ĐÃ CÓ
             HoaDon_AddDialog dialog = new HoaDon_AddDialog(parentFrame); 
             dialog.setVisible(true);
             loadHoaDon();
@@ -439,4 +447,9 @@ public class HoaDon_View extends JPanel implements ActionListener {
         box.add(inner, BorderLayout.CENTER);
         return box;
     }
+
+	public void refreshTableData() {
+		loadHoaDon();
+		
+	}
 }

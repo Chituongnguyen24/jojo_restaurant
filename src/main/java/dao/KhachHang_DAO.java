@@ -175,13 +175,21 @@ public class KhachHang_DAO {
         return null;
     }
 
-    public void capNhatDiemTichLuy(String maKH, double tongTienThanhToan) {
-        int diemMoi = (int) (tongTienThanhToan / 50000);
-        KhachHang kh = getKhachHangById(maKH);
-        if (kh != null) {
-            kh.setDiemTichLuy(kh.getDiemTichLuy() + diemMoi);
-            capNhatKhachHang(kh);
+    public boolean congDiemTichLuy(String maKH, int diemCongThem) {
+        String sql = "UPDATE KhachHang SET DiemTichLuy = DiemTichLuy + ? WHERE MaKH = ?";
+        
+        try (Connection conn = ConnectDB.getInstance().getConnection(); // (Hoặc ConnectDB.getConnection())
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            
+            pstmt.setInt(1, diemCongThem);
+            pstmt.setString(2, maKH);
+            
+            return pstmt.executeUpdate() > 0;
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        return false;
     }
 
     public String xepHangKhachHang(int diem) {
