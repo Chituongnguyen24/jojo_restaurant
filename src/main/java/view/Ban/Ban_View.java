@@ -464,21 +464,35 @@ public class Ban_View extends JPanel implements ActionListener {
     }
 
     private void themBan() {
-        if (!validateData()) return;
-        
-        String maBanMoi = txtMaBan.getText().trim();
+    	if (!validateData()) return;
 
-        if (banDAO.getBanTheoMa(maBanMoi) != null) {
-            JOptionPane.showMessageDialog(this, "Mã bàn đã tồn tại. Vui lòng sử dụng mã khác hoặc xóa rỗng để tạo mã mới.", "Lỗi trùng lặp", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
+        // SỬA: Không lấy mã bàn từ form nữa.
+        // String maBanMoi = txtMaBan.getText().trim();
+        // if (banDAO.getBanTheoMa(maBanMoi) != null) ...
 
         try {
+            // 1. Lấy thông tin từ form
             Ban banMoi = getBanFromForm();
-            banMoi.setMaBan(maBanMoi); 
-            
+
+            // 2. Lấy mã khu vực đã chọn
+            String khuVucTen = (String) cboKhuVuc.getSelectedItem();
+            String maKV = khuVucDAO.getMaKhuVucTheoTen(khuVucTen);
+
+            // 3. Yêu cầu DAO tạo mã mới DỰA TRÊN mã khu vực
+            // (Bạn sẽ cần tạo hàm mới này trong Ban_DAO)
+            String maBanMoi = banDAO.taoMaBanMoiTheoKhuVuc(maKV);
+
+            // 4. Gán mã mới cho đối tượng
+            banMoi.setMaBan(maBanMoi);
+
+            // 5. Kiểm tra trùng lặp (dù tự tạo nhưng vẫn nên kiểm tra)
+            if (banDAO.getBanTheoMa(maBanMoi) != null) {
+                JOptionPane.showMessageDialog(this, "Lỗi khi tạo mã tự động. Vui lòng thử lại.", "Lỗi trùng lặp", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             if (banDAO.themBan(banMoi)) {
-                JOptionPane.showMessageDialog(this, "Thêm bàn thành công!");
+                JOptionPane.showMessageDialog(this, "Thêm bàn thành công! Mã bàn mới: " + maBanMoi);
                 taiLaiDuLieuVaLamMoiUI(); 
             } else {
                 JOptionPane.showMessageDialog(this, "Thêm bàn thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -541,8 +555,8 @@ public class Ban_View extends JPanel implements ActionListener {
     private void xoaRong() {
         banDuocChon = null;
 
-        txtMaBan.setText(banDAO.getMaBanTuDong()); 
-        txtMaBan.setEditable(true);
+        txtMaBan.setText("--Tự động tạo--"); // Đặt lại text mặc định
+        txtMaBan.setEditable(false);
         
         txtSoCho.setText("");
 
@@ -734,6 +748,7 @@ public class Ban_View extends JPanel implements ActionListener {
 
         pnlInput.add(taoFormLabel("Mã bàn:"));
         txtMaBan = createInputText(false);
+        txtMaBan.setText("--Tự động tạo--");
         pnlInput.add(txtMaBan);
 
         pnlInput.add(taoFormLabel("Số chỗ:"));
