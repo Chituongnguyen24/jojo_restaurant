@@ -22,6 +22,7 @@ import java.awt.Component;
 
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.util.stream.Collectors; 
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -34,17 +35,16 @@ public class HoaDon_View extends JPanel implements ActionListener {
     private DefaultTableModel modelDanhSachHD;
     
     private JTextField txtTimNhanh;
-    private JComboBox<String> cboTrangThaiFilter;
 
-    private JTextField txtMaHD, txtNgayLap, txtGioVao, txtGioRa, txtTongTien, txtKhachHang, txtNhanVien, txtPhuongThuc, txtTrangThai, txtThue, txtKhuyenMai, txtPhieuDatBan;
-    private JButton btnThem, btnCapNhat, btnXoa, btnXoaRong;
+    private JButton btnThem, btnXemChiTiet; 
     
     private HoaDon hoaDonDuocChon = null;
     
     private JLabel lblChuaTT, lblDaTT, lblTongHD, lblDoanhThu;
 
+    // SỬA: Định dạng ngày giờ trong Entity mới
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
 
     private static final Font FONT_CHU = new Font("Segoe UI", Font.PLAIN, 14); 
     private static final Color COLOR_WHITE = Color.WHITE;
@@ -73,8 +73,8 @@ public class HoaDon_View extends JPanel implements ActionListener {
         pnlTopWrapper.add(pnlThongKe, BorderLayout.CENTER);
         add(pnlTopWrapper, BorderLayout.NORTH);
         
-        JSplitPane pnlContent = taoPanelNoiDungChinh();
-        add(pnlContent, BorderLayout.CENTER);
+        JPanel pnlTable = taoPanelTimKiemVaDanhSach();
+        add(pnlTable, BorderLayout.CENTER); 
          
         loadHoaDon();
         loadThongKe();
@@ -83,15 +83,11 @@ public class HoaDon_View extends JPanel implements ActionListener {
     }
      
     private void ganSuKien() {
-        btnThem = new RoundedButton("Thêm", new Color(76, 175, 80), COLOR_WHITE);
-        btnCapNhat = new RoundedButton("Cập nhật", new Color(34, 139, 230), COLOR_WHITE);
-        btnXoa = new RoundedButton("Xóa", new Color(244, 67, 54), COLOR_WHITE);
-        btnXoaRong = new RoundedButton("Xóa rỗng", new Color(108, 117, 125), COLOR_WHITE);
+        btnThem = new RoundedButton("+ Tạo hóa đơn", new Color(76, 175, 80), COLOR_WHITE); 
+        btnXemChiTiet = new RoundedButton("Xem Chi Tiết Món", new Color(255, 152, 0), COLOR_WHITE);
 
         btnThem.addActionListener(this);
-        btnCapNhat.addActionListener(this);
-        btnXoa.addActionListener(this);
-        btnXoaRong.addActionListener(this);
+        btnXemChiTiet.addActionListener(this); 
     }
      
     private JPanel taoPanelHeader() {
@@ -104,14 +100,16 @@ public class HoaDon_View extends JPanel implements ActionListener {
         lblTitle.setForeground(new Color(60, 60, 60));
         panelHeader.add(lblTitle, BorderLayout.WEST);
          
-        JButton btnAdd = new RoundedButton("Thanh toán mới", COLOR_DA_TT, COLOR_WHITE);
-        btnAdd.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnAdd.addActionListener(e -> {
-        	
+        btnThem.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btnThem.addActionListener(e -> {
+            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+            // Vẫn dùng HoaDon_AddDialog cũ (giả định đã được fix)
+            HoaDon_AddDialog dialog = new HoaDon_AddDialog(parentFrame); 
+            dialog.setVisible(true);
             loadHoaDon();
             loadThongKe();
         });
-        panelHeader.add(btnAdd, BorderLayout.EAST);
+        panelHeader.add(btnThem, BorderLayout.EAST);
          
         return panelHeader;
     }
@@ -134,33 +132,15 @@ public class HoaDon_View extends JPanel implements ActionListener {
         return statsPanel;
     }
      
-    private JSplitPane taoPanelNoiDungChinh() {
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        splitPane.setDividerLocation(0.65);
-        splitPane.setResizeWeight(0.65);
-        splitPane.setBorder(null);
-        splitPane.setBackground(BG_VIEW);
-
-        JPanel pnlTable = taoPanelTimKiemVaDanhSach();
-        JPanel pnlForm = taoPanelCRUDForm();
-         
-        splitPane.setLeftComponent(pnlTable);
-        splitPane.setRightComponent(pnlForm);
-         
-        return splitPane;
-    }
-     
     private JPanel taoPanelTimKiemVaDanhSach() {
         JPanel pnlWrapper = new JPanel(new BorderLayout());
         pnlWrapper.setOpaque(false);
-        pnlWrapper.setBorder(new EmptyBorder(10, 20, 20, 10));
+        pnlWrapper.setBorder(new EmptyBorder(10, 20, 20, 20)); 
 
-        JPanel pnlTimKiemWrapper = new RoundedPanel(15, COLOR_WHITE, new FlowLayout(FlowLayout.LEFT, 25, 10));
-        pnlTimKiemWrapper.setBorder(new EmptyBorder(10, 15, 10, 15));
+        JPanel pnlTopControl = taoPanelTimKiem(); 
          
-        taoPanelTimKiem(pnlTimKiemWrapper);
-         
-        String[] columns = {"Mã HD", "Ngày Lập", "Giờ Vào", "Giờ Ra", "Khách Hàng", "Tổng Tiền", "Trạng Thái"};
+        // CÁC CỘT MỚI: MaHD, NgayLapHoaDon, GioVao, MaBan, MaPhieu, KhachHang, TongTien, TrangThai
+        String[] columns = {"Mã HD", "Ngày Lập", "Giờ Vào", "Mã Bàn", "P. Đặt Bàn", "Khách Hàng", "Tổng Tiền", "Trạng Thái"};
         modelDanhSachHD = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -175,7 +155,8 @@ public class HoaDon_View extends JPanel implements ActionListener {
                 int row = tblDanhSachHD.getSelectedRow();
                 if (row != -1) {
                     String maHD = modelDanhSachHD.getValueAt(row, 0).toString();
-                    hienThiChiTietHoaDon(hoaDonDAO.findByMaHD(maHD)); 
+                    hoaDonDuocChon = hoaDonDAO.findByMaHD(maHD);
+                    capNhatTrangThaiNut(); 
                 }
             }
         });
@@ -186,14 +167,19 @@ public class HoaDon_View extends JPanel implements ActionListener {
         scroll.setBackground(COLOR_WHITE);
         scroll.getViewport().setBackground(COLOR_WHITE);
 
-        pnlWrapper.add(pnlTimKiemWrapper, BorderLayout.NORTH); 
+        pnlWrapper.add(pnlTopControl, BorderLayout.NORTH); 
         pnlWrapper.add(scroll, BorderLayout.CENTER); 
         
         return pnlWrapper;
     }
      
-    private void taoPanelTimKiem(JPanel pnlParent) {
-         
+    private JPanel taoPanelTimKiem() {
+        JPanel pnlTimKiemWrapper = new RoundedPanel(15, COLOR_WHITE, new BorderLayout(10, 10));
+        pnlTimKiemWrapper.setBorder(new EmptyBorder(10, 15, 10, 15));
+        
+        JPanel pnlSearch = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 5));
+        pnlSearch.setOpaque(false);
+        
         txtTimNhanh = new JTextField(15);
         txtTimNhanh.setFont(FONT_CHU);
         txtTimNhanh.setBorder(BorderFactory.createCompoundBorder(
@@ -201,113 +187,23 @@ public class HoaDon_View extends JPanel implements ActionListener {
             new EmptyBorder(5, 10, 5, 10)
         ));
          
-        cboTrangThaiFilter = new JComboBox<>(new String[]{"Tất cả", "Đã thanh toán", "Chưa thanh toán"});
-        cboTrangThaiFilter.setFont(FONT_CHU);
-        cboTrangThaiFilter.setBorder(new LineBorder(MAU_VIEN, 1, true));
-         
-        pnlParent.add(new JLabel("Tìm kiếm:"));
-        pnlParent.add(txtTimNhanh);
-        pnlParent.add(new JLabel("Trạng thái:"));
-        pnlParent.add(cboTrangThaiFilter);
-         
+        pnlSearch.add(new JLabel("Tìm kiếm:"));
+        pnlSearch.add(txtTimNhanh);
+        
         ActionListener filterAction = e -> loadHoaDon();
         txtTimNhanh.addActionListener(filterAction);
-        cboTrangThaiFilter.addActionListener(filterAction);
-    }
-     
-    private JPanel taoPanelCRUDForm() {
-        JPanel pnlForm = new RoundedPanel(15, COLOR_WHITE, new BorderLayout());
-        pnlForm.setBorder(new EmptyBorder(25, 25, 25, 25));
-
-        JLabel lblFormTitle = new JLabel("Thông tin hóa đơn");
-        lblFormTitle.setFont(new Font("Segoe UI", Font.BOLD, 20)); 
-        lblFormTitle.setForeground(COLOR_TITLE);
-        lblFormTitle.setBorder(new EmptyBorder(0, 0, 15, 0));
-        pnlForm.add(lblFormTitle, BorderLayout.NORTH);
-         
-        JPanel pnlInput = new JPanel(new GridLayout(6, 2, 10, 10));
-        pnlInput.setOpaque(false);
-         
-        pnlInput.add(taoFormLabel("Mã HD:"));
-        txtMaHD = createInputText(false);
-        pnlInput.add(txtMaHD);
-         
-        pnlInput.add(taoFormLabel("Tổng tiền:"));
-        txtTongTien = createInputText(true);
-        pnlInput.add(txtTongTien);
-         
-        pnlInput.add(taoFormLabel("Trạng thái:"));
-        txtTrangThai = createInputText(true);
-        pnlInput.add(txtTrangThai);
-
-        pnlInput.add(taoFormLabel("Ngày lập:"));
-        txtNgayLap = createInputText(true);
-        pnlInput.add(txtNgayLap);
-         
-        pnlInput.add(taoFormLabel("Giờ vào:"));
-        txtGioVao = createInputText(true);
-        pnlInput.add(txtGioVao);
-         
-        pnlInput.add(taoFormLabel("Giờ ra:"));
-        txtGioRa = createInputText(true);
-        pnlInput.add(txtGioRa);
-         
-        pnlInput.add(taoFormLabel("Phương thức:"));
-        txtPhuongThuc = createInputText(true);
-        pnlInput.add(txtPhuongThuc);
-         
-        pnlInput.add(taoFormLabel("Khách hàng:"));
-        txtKhachHang = createInputText(true);
-        pnlInput.add(txtKhachHang);
-         
-        pnlInput.add(taoFormLabel("Nhân viên:"));
-        txtNhanVien = createInputText(true);
-        pnlInput.add(txtNhanVien);
-         
-        pnlInput.add(taoFormLabel("Thuế:"));
-        txtThue = createInputText(true);
-        pnlInput.add(txtThue);
-         
-        pnlInput.add(taoFormLabel("Khuyến mãi:"));
-        txtKhuyenMai = createInputText(true);
-        pnlInput.add(txtKhuyenMai);
-         
-        pnlInput.add(taoFormLabel("P. Đặt bàn:"));
-        txtPhieuDatBan = createInputText(true);
-        pnlInput.add(txtPhieuDatBan);
-         
-        pnlForm.add(pnlInput, BorderLayout.CENTER);
-
-        JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
+        
+        JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
         pnlButton.setOpaque(false);
-         
-        pnlButton.add(btnThem);
-        pnlButton.add(btnCapNhat);
-        pnlButton.add(btnXoa);
-        pnlButton.add(btnXoaRong);
-         
-        pnlForm.add(pnlButton, BorderLayout.SOUTH);
-         
-        return pnlForm;
+        
+        pnlButton.add(btnXemChiTiet);
+        
+        pnlTimKiemWrapper.add(pnlSearch, BorderLayout.WEST);
+        pnlTimKiemWrapper.add(pnlButton, BorderLayout.EAST);
+        
+        return pnlTimKiemWrapper;
     }
      
-    private JLabel taoFormLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setFont(new Font("Segoe UI", Font.BOLD, 14)); 
-        return label;
-    }
-     
-    private JTextField createInputText(boolean editable) {
-        JTextField field = new JTextField();
-        field.setEditable(editable);
-        field.setFont(FONT_CHU);
-        field.setBorder(BorderFactory.createCompoundBorder(
-            new LineBorder(MAU_VIEN, 1),
-            new EmptyBorder(5, 10, 5, 10)
-        ));
-        return field;
-    }
-
     private JTable createStyledTable(DefaultTableModel model) {
         JTable table = new JTable(model);
         table.setRowHeight(35);
@@ -325,190 +221,73 @@ public class HoaDon_View extends JPanel implements ActionListener {
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
         centerRenderer.setHorizontalAlignment(JLabel.CENTER);
         
-        table.getColumnModel().getColumn(6).setCellRenderer(new DefaultTableCellRenderer() {
+        // Cột Trạng Thái (cột cuối cùng)
+        table.getColumnModel().getColumn(model.getColumnCount() - 1).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                if (value != null) {
-                    String status = value.toString();
-                    if (status.equals("Đã thanh toán")) {
-                        c.setForeground(COLOR_DA_TT);
-                    } else {
-                        c.setForeground(COLOR_CHUA_TT);
-                    }
-                }
+                c.setForeground(COLOR_DA_TT);
                 setHorizontalAlignment(JLabel.CENTER);
                 return c;
             }
         });
         
         table.getColumnModel().getColumn(0).setCellRenderer(centerRenderer);
+        // Căn giữa Mã Bàn và PDB
+        int maBanCol = 3; 
+        int maPDBCol = 4;
+        table.getColumnModel().getColumn(maBanCol).setCellRenderer(centerRenderer);
+        table.getColumnModel().getColumn(maPDBCol).setCellRenderer(centerRenderer);
         
         return table;
     }
      
-    private boolean validateData() {
-        String maHD = txtMaHD.getText().trim();
-        String tongTienStr = txtTongTien.getText().trim();
-        String trangThai = txtTrangThai.getText().trim();
-         
-        if (maHD.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Mã hóa đơn không được để trống.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
-            txtMaHD.requestFocus();
-            return false;
-        }
-         
-        if (tongTienStr.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Tổng tiền không được để trống.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
-            txtTongTien.requestFocus();
-            return false;
-        }
-        try {
-            Double.parseDouble(tongTienStr.replaceAll("[^0-9.]", ""));
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Tổng tiền phải là số hợp lệ.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
-            txtTongTien.requestFocus();
-            return false;
-        }
-         
-        if (trangThai.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Trạng thái không được để trống.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
-            txtTrangThai.requestFocus();
-            return false;
-        }
-         
-        return true;
-    }
-     
-    private HoaDon getHoaDonFromForm() {
-        String maHD = txtMaHD.getText().trim();
-        double tongTien = Double.parseDouble(txtTongTien.getText().trim().replaceAll("[^0-9.]", ""));
-        
-        HoaDon hd = new HoaDon();
-        hd.setMaHD(maHD);
-        hd.setTongTienTruocThue(tongTien);
-        
-        return hd;
-    }
-     
-    private void themHoaDon() {
-        if (!validateData()) return;
-         
-        String newMa = hoaDonDAO.generateNewID();
-         
-        try {
-            HoaDon hdMoi = getHoaDonFromForm();
-            hdMoi.setMaHD(newMa); 
-             
-            if (hoaDonDAO.addHoaDon(hdMoi)) {
-                JOptionPane.showMessageDialog(this, "Thêm hóa đơn thành công!");
-                loadHoaDon();
-                xoaRong();
-            } else {
-                JOptionPane.showMessageDialog(this, "Thêm hóa đơn thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi thêm hóa đơn: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-     
-    private void capNhatHoaDon() {
-        if (hoaDonDuocChon == null) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn cần cập nhật!");
-            return;
-        }
-        if (!validateData()) return;
-
-        try {
-            HoaDon hdCapNhat = getHoaDonFromForm();
-             
-            hdCapNhat.setKhuyenMai(hoaDonDuocChon.getKhuyenMai());
-             
-            if (hoaDonDAO.updateHoaDon(hdCapNhat)) {
-                JOptionPane.showMessageDialog(this, "Cập nhật hóa đơn thành công!");
-                loadHoaDon();
-                loadThongKe();
-                hienThiChiTietHoaDon(hoaDonDAO.findByMaHD(hdCapNhat.getMaHD()));
-            } else {
-                JOptionPane.showMessageDialog(this, "Cập nhật hóa đơn thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi khi cập nhật hóa đơn: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-     
-    private void xoaHoaDon(String maHoaDon) {
-        if (maHoaDon.equals("HD0000")) return;
-         
-        int confirm = JOptionPane.showConfirmDialog(this, 
-            "Xác nhận xóa hóa đơn [" + maHoaDon + "]? Hóa đơn sẽ bị xóa vĩnh viễn.", 
-            "Xác nhận xóa", 
-            JOptionPane.YES_NO_OPTION, 
-            JOptionPane.WARNING_MESSAGE);
-
-        if (confirm == JOptionPane.YES_OPTION) {
-            if (hoaDonDAO.deleteHoaDon(maHoaDon)) {
-                JOptionPane.showMessageDialog(this, "Xóa hóa đơn thành công!");
-                loadHoaDon();
-                loadThongKe();
-                xoaRong();
-            } else {
-                JOptionPane.showMessageDialog(this, "Xóa hóa đơn thất bại. Vui lòng kiểm tra log.");
-            }
-        }
-    }
-     
     private void xoaRong() {
         hoaDonDuocChon = null;
-        txtMaHD.setText(hoaDonDAO.generateNewID());
-        txtNgayLap.setText("");
-        txtGioVao.setText("");
-        txtGioRa.setText("");
-        txtTongTien.setText("");
-        txtKhachHang.setText("");
-        txtNhanVien.setText("");
-        txtPhuongThuc.setText("");
-        txtTrangThai.setText("");
-        txtThue.setText("");
-        txtKhuyenMai.setText("");
-        txtPhieuDatBan.setText("");
-         
-        btnThem.setEnabled(true);
-        btnCapNhat.setEnabled(false);
-        btnXoa.setEnabled(false);
+        capNhatTrangThaiNut();
     }
 
+    private void capNhatTrangThaiNut() {
+        boolean selected = (hoaDonDuocChon != null);
+        
+        btnXemChiTiet.setEnabled(selected);
+    }
+    
     public void loadHoaDon() {
         modelDanhSachHD.setRowCount(0);
          
-        String keyword = txtTimNhanh != null ? txtTimNhanh.getText().trim() : "";
-        String trangThaiFilter = cboTrangThaiFilter != null ? (String) cboTrangThaiFilter.getSelectedItem() : "Tất cả";
-         
+        String keyword = txtTimNhanh != null ? txtTimNhanh.getText().trim().toLowerCase() : "";
+        
         List<HoaDon> list = hoaDonDAO.getAllHoaDon();
 
-        for (HoaDon hd : list) {
+        List<HoaDon> filteredList = list.stream()
+            .filter(HoaDon::isDaThanhToan)
+            .collect(Collectors.toList());
+
+        for (HoaDon hd : filteredList) {
             double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD());
             
             KhachHang kh = (hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) 
                        ? khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH()) : null;
             String tenKH = (kh != null && kh.getTenKH() != null) ? kh.getTenKH() : "Khách lẻ";
-
-            String trangThai = hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán";
             
-            boolean matchKeyword = keyword.isEmpty() || hd.getMaHD().contains(keyword) || tenKH.contains(keyword);
-            boolean matchStatus = "Tất cả".equals(trangThaiFilter) || trangThai.equals(trangThaiFilter);
+            boolean matchKeyword = keyword.isEmpty() 
+                || hd.getMaHD().toLowerCase().contains(keyword) 
+                || tenKH.toLowerCase().contains(keyword);
             
-            if (matchKeyword && matchStatus) {
+            String maBan = (hd.getBan() != null) ? hd.getBan().getMaBan().trim() : "N/A";
+            String maPDB = (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null) ? hd.getPhieuDatBan().getMaPhieu().trim() : "Không";
+            
+            if (matchKeyword) {
                 modelDanhSachHD.addRow(new Object[]{
                     hd.getMaHD(),
                     hd.getNgayLapHoaDon().format(DATE_FORMATTER),
                     hd.getGioVao().format(TIME_FORMATTER),
-                    hd.getGioRa() != null ? hd.getGioRa().format(TIME_FORMATTER) : "---",
+                    maBan, 
+                    maPDB, 
                     tenKH,
                     String.format("%,.0f₫", tongTien),
-                    trangThai
+                    "Đã thanh toán" 
                 });
             }
         }
@@ -534,65 +313,39 @@ public class HoaDon_View extends JPanel implements ActionListener {
         lblDoanhThu.setText(String.format("%,.0f VNĐ", doanhThu));
     }
      
-    private void hienThiChiTietHoaDon(HoaDon hd) {
-        hoaDonDuocChon = hd;
-         
-        if (hd == null) {
-            xoaRong();
+    private void xuLyXemChiTiet() {
+        if (hoaDonDuocChon == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để xem chi tiết!", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
-         
-        txtMaHD.setText(hd.getMaHD());
-        txtTongTien.setText(String.format("%,.0f", hd.getTongTienTruocThue()));
-        txtTrangThai.setText(hd.isDaThanhToan() ? "Đã thanh toán" : "Chưa thanh toán");
-        txtNgayLap.setText(hd.getNgayLapHoaDon().format(DATE_FORMATTER));
-        txtGioVao.setText(hd.getGioVao().format(TIME_FORMATTER));
-        txtGioRa.setText(hd.getGioRa() != null ? hd.getGioRa().format(TIME_FORMATTER) : "Chưa kết thúc");
-        txtPhuongThuc.setText(hd.getPhuongThucThanhToan());
-        txtKhachHang.setText(hd.getKhachHang() != null ? hd.getKhachHang().getTenKH() : "Khách lẻ");
-        txtNhanVien.setText(hd.getNhanVien() != null ? hd.getNhanVien().getHoTen() : "");
-        txtThue.setText(hd.getThue() != null ? hd.getThue().getTenThue() : "Không");
-        txtKhuyenMai.setText(hd.getKhuyenMai() != null ? hd.getKhuyenMai().getMoTa() : "Không");
-        txtPhieuDatBan.setText(hd.getPhieuDatBan() != null ? hd.getPhieuDatBan().getMaPhieu() : "Không");
-         
-        btnThem.setEnabled(false);
-        btnCapNhat.setEnabled(true);
-        btnXoa.setEnabled(hd.isDaThanhToan());
+        
+        Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+        HoaDon hd = hoaDonDAO.findByMaHD(hoaDonDuocChon.getMaHD());
+        if (hd != null) {
+             // SỬ DỤNG CLASS MỚI NHẤT (Đã có trong các file bạn cung cấp)
+             HoaDon_ChiTietHoaDon_View dialog = new HoaDon_ChiTietHoaDon_View(parentFrame, hd); 
+             dialog.setVisible(true);
+        } else {
+             JOptionPane.showMessageDialog(this, "Không tìm thấy chi tiết hóa đơn này!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     @Override
     public void actionPerformed(java.awt.event.ActionEvent e) {
         Object o = e.getSource();
          
-        if (o == btnXoaRong) {
-            xoaRong();
-        } else if (o == btnThem) {
-            themHoaDon();
-        } else if (o == btnCapNhat) {
-            capNhatHoaDon();
-        } else if (o == btnXoa) {
-            if (hoaDonDuocChon != null) {
-                xoaHoaDon(hoaDonDuocChon.getMaHD());
-            } else {
-                 JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn để xóa!");
-            }
+        if (o == btnThem) {
+            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
+            // SỬ DỤNG HoaDon_AddDialog ĐÃ CÓ
+            HoaDon_AddDialog dialog = new HoaDon_AddDialog(parentFrame); 
+            dialog.setVisible(true);
+            loadHoaDon();
+            loadThongKe();
+        } else if (o == btnXemChiTiet) { 
+            xuLyXemChiTiet();
         }
     }
 
-    private ImageIcon loadScaledImage(String path, int width, int height) {
-        ImageIcon icon = null;
-        if (path != null && !path.isEmpty()) {
-            icon = new ImageIcon(path); 
-        }
-
-        if (icon == null || icon.getIconWidth() == -1) {
-            icon = new ImageIcon("images/hd/placeholder.png"); 
-        }
-
-        Image img = icon.getImage().getScaledInstance(width, height, Image.SCALE_SMOOTH);
-        return new ImageIcon(img);
-    }
-     
     private class RoundedPanel extends JPanel {
         private int cornerRadius = 25;
         private Color borderColor = new Color(220, 220, 220);
@@ -634,9 +387,9 @@ public class HoaDon_View extends JPanel implements ActionListener {
         private int cornerRadius = 20;
         private Color bg, fg;
 
-        public RoundedButton(String text, Color bg, Color fg) {
+        public RoundedButton(String text, Color bgColor, Color fg) {
             super(text);
-            this.bg = bg;
+            this.bg = bgColor;
             this.fg = fg;
             setContentAreaFilled(false); 
             setFocusPainted(false); 

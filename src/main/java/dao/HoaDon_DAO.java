@@ -84,6 +84,8 @@ public class HoaDon_DAO {
     /**
      * Thêm hóa đơn mới vào CSDL.
      */
+ // Sửa trong HoaDon_DAO.java - Method addHoaDon(HoaDon hd)
+
     public boolean addHoaDon(HoaDon hd) {
         String sql = "INSERT INTO HOADON(MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, TongTienTruocThue, TongGiamGia, DaThanhToan)" +
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -105,12 +107,16 @@ public class HoaDon_DAO {
             pstmt.setDate(5, toSqlDate(hd.getNgayLapHoaDon()));
             pstmt.setTimestamp(6, Timestamp.valueOf(hd.getGioVao()));
 
-            if (hd.getGioRa() != null) {
-                pstmt.setTimestamp(7, Timestamp.valueOf(hd.getGioRa()));
-            } else {
-                pstmt.setNull(7, Types.TIMESTAMP);
+            // SỬA: Xử lý GioRa NULL (NOT NULL trong DB) - Set mặc định = GioVao khi tạo mới
+            LocalDateTime gioRaDefault = (hd.getGioRa() != null) ? hd.getGioRa() : hd.getGioVao();
+            pstmt.setTimestamp(7, Timestamp.valueOf(gioRaDefault));
+
+            // SỬA: Xử lý phuongThucThanhToan NULL (NOT NULL trong DB) - Set mặc định
+            String phuongThuc = hd.getPhuongThucThanhToan();
+            if (phuongThuc == null || phuongThuc.trim().isEmpty()) {
+                phuongThuc = "Chưa xác định";
             }
-            pstmt.setString(8, hd.getPhuongThucThanhToan());
+            pstmt.setString(8, phuongThuc);
 
             if (hd.getKhuyenMai() != null && hd.getKhuyenMai().getMaKM() != null)
                 pstmt.setString(9, hd.getKhuyenMai().getMaKM());
@@ -128,12 +134,19 @@ public class HoaDon_DAO {
             pstmt.setDouble(13, hd.getTongGiamGia());
             pstmt.setBoolean(14, hd.isDaThanhToan());
 
-            return pstmt.executeUpdate() > 0;
+            int rowsAffected = pstmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("Debug: Insert HD thành công: " + hd.getMaHD());  // Debug log
+                return true;
+            } else {
+                System.err.println("Debug: Insert HD fail (0 rows): " + hd.getMaHD());  // Debug log
+                return false;
+            }
         } catch (SQLException e) {
             System.err.println("Lỗi khi thêm hóa đơn: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     /**
@@ -504,15 +517,17 @@ public class HoaDon_DAO {
         return null;
     }
 
+ // Sửa trong HoaDon_DAO.java - Method taoHoaDonTuPhieuDat (Thêm debug và xử lý GioRa)
+
     public boolean taoHoaDonTuPhieuDat(PhieuDatBan phieu, String maNV) {
         if (phieu == null || phieu.getBan() == null) {
-            System.err.println("Phiếu đặt bàn hoặc bàn bị null!");
+            System.err.println("Debug: Phiếu đặt bàn hoặc bàn bị null!");
             return false;
         }
         
         HoaDon hdExist = getHoaDonByBanChuaThanhToan(phieu.getBan().getMaBan());
         if (hdExist != null) {
-            System.out.println("Bàn " + phieu.getBan().getMaBan() + " đã có hóa đơn " + hdExist.getMaHD());
+            System.out.println("Debug: Bàn " + phieu.getBan().getMaBan() + " đã có hóa đơn " + hdExist.getMaHD());
             return true;
         }
         
@@ -535,6 +550,7 @@ public class HoaDon_DAO {
             thueMacDinh = new Thue("VAT08"); 
         }
 
+        // SỬA: Tạo HD với GioRa = GioVao mặc định, phuongThuc = "Chưa xác định"
         HoaDon hdMoi = new HoaDon(
                 maHDMoi,
                 nv,
@@ -542,8 +558,8 @@ public class HoaDon_DAO {
                 ban,
                 ngayLap,
                 gioVao,
-                null, // GioRa
-                null, // phuongThucThanhToan
+                gioVao,  // SỬA: Set GioRa = GioVao tạm thời (sẽ update khi thanh toán)
+                "Chưa xác định",  // SỬA: Set mặc định cho phuongThucThanhToan
                 null, // KhuyenMai
                 thueMacDinh, // MaThue (NOT NULL)
                 phieu, // Liên kết phiếu đặt
@@ -552,14 +568,25 @@ public class HoaDon_DAO {
                 false // DaThanhToan
         );
         
+        System.out.println("Debug: Tạo HD mới: " + maHDMoi + " từ PDB " + phieu.getMaPhieu());  // Debug
+        
         boolean success = addHoaDon(hdMoi);
         
         if (success) {
             success = copyChiTietTuPhieuSangHoaDon(phieu.getMaPhieu(), maHDMoi);
             
             if (success) {
-                capNhatTongTienHoaDon(maHDMoi);
+                success = capNhatTongTienHoaDon(maHDMoi);
+                if (success) {
+                    System.out.println("Debug: Tạo HD từ PDB thành công: " + maHDMoi);  // Debug
+                } else {
+                    System.err.println("Debug: Cập nhật tổng tiền fail cho HD " + maHDMoi);  // Debug
+                }
+            } else {
+                System.err.println("Debug: Copy chi tiết fail cho HD " + maHDMoi);  // Debug
             }
+        } else {
+            System.err.println("Debug: Insert HD fail: " + maHDMoi);  // Debug
         }
         
         return success;
@@ -568,7 +595,7 @@ public class HoaDon_DAO {
     /**
      * COPY CHI TIẾT MÓN TỪ PHIẾU ĐẶT BÀN SANG HÓA ĐƠN
      */
-    private boolean copyChiTietTuPhieuSangHoaDon(String maPhieu, String maHD) {
+    public boolean copyChiTietTuPhieuSangHoaDon(String maPhieu, String maHD) {
         String sqlSelect = "SELECT maMonAn, soLuongMonAn, DonGiaBan FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         String sqlInsert = "INSERT INTO CHITIETHOADON (MaHD, MaMonAn, DonGiaBan, SoLuong) VALUES (?, ?, ?, ?)";
         
@@ -735,6 +762,8 @@ public class HoaDon_DAO {
     /**
      * THANH TOÁN HÓA ĐƠN (Cập nhật trạng thái + phương thức + giờ ra)
      */
+ // Sửa trong HoaDon_DAO.java - Method thanhToanHoaDon (Cập nhật GioRa khi thanh toán)
+
     public boolean thanhToanHoaDon(String maHD, String phuongThucThanhToan) {
         String sql = "UPDATE HOADON SET DaThanhToan = 1, phuongThucThanhToan = ?, GioRa = GETDATE() WHERE MaHD = ?";
 
@@ -744,13 +773,19 @@ public class HoaDon_DAO {
             pstmt.setString(1, phuongThucThanhToan);
             pstmt.setString(2, maHD);
 
-            return pstmt.executeUpdate() > 0;
-
+            int rows = pstmt.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Debug: Thanh toán HD thành công: " + maHD);  // Debug log
+                return true;
+            } else {
+                System.err.println("Debug: Thanh toán HD fail (0 rows): " + maHD);  // Debug log
+                return false;
+            }
         } catch (SQLException e) {
             System.err.println("Lỗi khi thanh toán hóa đơn: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     // ----- SỬA LOGIC TÍNH THUẾ -----
@@ -805,6 +840,5 @@ public class HoaDon_DAO {
 
         return Math.round(tongTienPhaiTra); 
     }
-    // ----- KẾT THÚC SỬA LOGIC TÍNH THUẾ -----
 
 }
