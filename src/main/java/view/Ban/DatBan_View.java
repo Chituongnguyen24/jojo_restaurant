@@ -51,15 +51,13 @@ public class DatBan_View extends JPanel implements ActionListener {
     private final HoaDon_DAO hoaDonDAO;
     private final PhieuDatBan_DAO phieuDatBanDAO;
 
-    // UI components
     private final JComboBox<Integer> cboSoKhach;
     private final JComboBox<String> cboFilterKhuVuc;
     private final JDateChooser datePicker;
     private final JSpinner spinnerGioDat;
     private final JTextField txtSearchPDB, txtTenKhach, txtSdtKhach, txtGhiChu;
     
-    private final JButton btnSearchPDB, btnDatBan, btnRefresh, btnXemDanhSachPDB, btnThanhToan; //thêm nút thanh toán cho tiện
-    
+    private final JButton btnSearchPDB, btnDatBan, btnRefresh, btnXemDanhSachPDB, btnThanhToan;
     private final DefaultTableModel modelPhieuDat;
     private final JTable tblPhieuDat;
     
@@ -136,7 +134,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         btnThanhToan.setPreferredSize(new Dimension(150, 40));
         btnThanhToan.setVisible(false);
         
-        btnRefresh = new RoundedButton("🔄 Làm mới", new Color(255, 243, 224), MAU_CAM_CHINH);
+        btnRefresh = new RoundedButton("Làm mới", new Color(255, 243, 224), MAU_CAM_CHINH);
         btnRefresh.setPreferredSize(new Dimension(150, 35));
 
         btnXemDanhSachPDB = new RoundedButton("DS Phiếu Đặt", MAU_XAM_NHE, COLOR_WHITE);
@@ -863,7 +861,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         
         txtSearchPDB.setText("");
         btnDatBan.setText("Đặt bàn");
-        btnThanhToan.setVisible(false); // SỬA: Tắt nút thanh toán khi reset
+        btnThanhToan.setVisible(false);
         phieuDangChon = null;
         banDangChon = null;
     }
@@ -1012,6 +1010,18 @@ public class DatBan_View extends JPanel implements ActionListener {
         final String sdtHoacMaKH = txtSdtKhach.getText().trim();
         final int soNguoi = (int) cboSoKhach.getSelectedItem();
         final String ghiChu = txtGhiChu.getText().trim();
+
+        // ===== PHẦN CODE THÊM VÀO ĐỂ FIX LỖI =====
+        if (soNguoi > banDangChon.getSoCho()) {
+            JOptionPane.showMessageDialog(this,
+                    String.format("Số khách (%d người) không được vượt quá số chỗ của bàn (%d chỗ)!",
+                            soNguoi, banDangChon.getSoCho()),
+                    "Lỗi Số Lượng Khách",
+                    JOptionPane.WARNING_MESSAGE);
+            cboSoKhach.requestFocus(); // Đưa con trỏ về ComboBox số khách
+            return; // Dừng thực hiện đặt bàn
+        }
+        // ===== KẾT THÚC PHẦN CODE FIX =====
 
         if (tenKhach.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng nhập tên khách hàng!", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);

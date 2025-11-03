@@ -20,7 +20,7 @@ public class PhieuDatBan_DAO {
     private final Ban_DAO banDAO = new Ban_DAO();
     private final MonAn_DAO monAnDAO = new MonAn_DAO();
     
- // Sửa trong PhieuDatBan_DAO.java - Method mapResultSetToPhieuDatBan (Sửa lỗi "sav ban" thành "phieu.getBan()")
+
 
     private PhieuDatBan mapResultSetToPhieuDatBan(ResultSet rs) throws SQLException {
         String maPhieu = rs.getString("maPhieu");
