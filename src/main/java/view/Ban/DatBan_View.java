@@ -1176,16 +1176,12 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         refreshDataGridOnly(); 
 
-        int tiepTuc = JOptionPane.showConfirmDialog(this, "Đã gọi món thành công!\n\nBạn có muốn gọi thêm món không?", "Gọi món thành công", JOptionPane.YES_NO_OPTION);
-        if (tiepTuc == JOptionPane.YES_OPTION) goiMon();
-        else {
-            int thanhToan = JOptionPane.showConfirmDialog(this, "Bạn có muốn chuyển sang thanh toán không?", "Thanh toán", JOptionPane.YES_NO_OPTION);
-            if (thanhToan == JOptionPane.YES_OPTION) xuLyThanhToan();
-            else xoaRongFormVaResetBan();
-        }
+        JOptionPane.showMessageDialog(this, 
+                "Đã gọi món thành công!", 
+                "Thông báo", 
+                JOptionPane.INFORMATION_MESSAGE);
+                
     }
-
- // Sửa hàm này trong file: view/Ban/DatBan_View.java
 
     private void xuLyThanhToan() {
         if (banDangChon == null) {
