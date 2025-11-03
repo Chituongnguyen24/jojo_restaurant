@@ -55,7 +55,7 @@ public class DatBan_View extends JPanel implements ActionListener {
     private final JSpinner spinnerGioDat;
     private final JTextField txtSearchPDB, txtTenKhach, txtSdtKhach, txtGhiChu;
     
-    private final JButton btnSearchPDB, btnDatBan, btnRefresh, btnXemDanhSachPDB;
+    private final JButton btnSearchPDB, btnDatBan, btnRefresh, btnXemDanhSachPDB, btnThanhToan; //thêm nút thanh toán cho tiện
     
     private final DefaultTableModel modelPhieuDat;
     private final JTable tblPhieuDat;
@@ -127,7 +127,11 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         btnDatBan = new RoundedButton("Đặt bàn", MAU_XANH_LA, COLOR_WHITE);
         btnDatBan.setPreferredSize(new Dimension(150, 40));
-
+        
+        btnThanhToan = new RoundedButton("Thanh toán", MAU_XANH_DUONG, COLOR_WHITE); // 
+        btnThanhToan.setPreferredSize(new Dimension(150, 40));
+        btnThanhToan.setVisible(false);
+        
         btnRefresh = new RoundedButton("🔄 Làm mới", new Color(255, 243, 224), MAU_CAM_CHINH);
         btnRefresh.setPreferredSize(new Dimension(150, 35));
 
@@ -369,6 +373,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
         pnlButton.setOpaque(false);
         pnlButton.add(btnDatBan);
+        pnlButton.add(btnThanhToan);
         
         pnlForm.add(pnlButton, BorderLayout.SOUTH);
 
@@ -761,6 +766,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         btnSearchPDB.addActionListener(this);
         btnRefresh.addActionListener(this);
         btnXemDanhSachPDB.addActionListener(this); // SỬA: Thêm listener
+        btnThanhToan.addActionListener(this); // SỬA: Thêm listener cho nút thanh toán
 
         cboFilterKhuVuc.addActionListener(e -> {
             String newKhuVuc = (String) cboFilterKhuVuc.getSelectedItem();
@@ -813,6 +819,8 @@ public class DatBan_View extends JPanel implements ActionListener {
             timKiemPhieuDat();
         } else if (o == btnXemDanhSachPDB) { // SỬA: Thêm sự kiện
             hienThiDanhSachPhieuDat();
+        } else if (o == btnThanhToan) { // SỬA: Thêm sự kiện click
+            xuLyThanhToan(); // Gọi thẳng hàm thanh toán
         }
     }
     
@@ -876,6 +884,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         
         txtSearchPDB.setText("");
         btnDatBan.setText("Đặt bàn");
+        btnThanhToan.setVisible(false); // SỬA: Tắt nút thanh toán khi reset
         phieuDangChon = null;
         banDangChon = null;
     }
@@ -941,6 +950,11 @@ public class DatBan_View extends JPanel implements ActionListener {
             this.banDangChon = ban; 
             this.cardBanDangChon = clickedCard;
             btnDatBan.setText("Gọi món");
+            if (trangThai == TrangThaiBan.CO_KHACH) {
+                btnThanhToan.setVisible(true); // Bàn "Có khách" -> HIỆN
+            } else {
+                btnThanhToan.setVisible(false); // Bàn "Đã đặt" -> ẨN
+            }
 
             // Tạo SwingWorker để tải PĐB ngầm
             SwingWorker<PhieuDatBan, Void> worker = new SwingWorker<PhieuDatBan, Void>() {
@@ -1144,6 +1158,7 @@ public class DatBan_View extends JPanel implements ActionListener {
 
                         // SỬA LUỒNG: Đổi nút sang "Gọi món", không hỏi
                         btnDatBan.setText("Gọi món");
+                        btnThanhToan.setVisible(false);
                         
                         // Highlight lại bàn vừa chọn
                         if (cardBanDangChon != null && cardBanDangChon instanceof RoundedPanel) {
@@ -1180,6 +1195,8 @@ public class DatBan_View extends JPanel implements ActionListener {
             phieuDatBanDAO.updatePhieuDatBan(phieuDangChon);
             banDangChon.setTrangThai(TrangThaiBan.CO_KHACH.name());
             banDAO.capNhatBan(banDangChon);
+            
+            btnThanhToan.setVisible(true);
         }
 
         Frame owner = (Frame) SwingUtilities.getWindowAncestor(this);
