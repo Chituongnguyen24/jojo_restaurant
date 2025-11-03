@@ -279,6 +279,7 @@ public class Ban_DAO {
         }
         return null;
     }
+    
     public String getMaBanTuDong() {
         String newID = "B01"; 
         String sql = "SELECT TOP 1 maBan FROM Ban WHERE maBan LIKE 'B[0-9]%' OR maBan LIKE 'B[0-9][0-9]%' ORDER BY maBan DESC";
@@ -331,5 +332,74 @@ public class Ban_DAO {
         return ds;
     }
     
+ // Trong lớp Ban_DAO.java
+    public String taoMaBanMoiTheoKhuVuc(String maKhuVuc) {
+        String prefix = "";
+        String paddingFormat = ""; // Định dạng số (VD: %02d hoặc %03d)
+
+        // 1. Xác định Tiền tố (prefix) và Định dạng (padding) dựa trên maKhuVuc
+        switch (maKhuVuc.trim()) {
+            case "VIP":
+                prefix = "VIP";
+                paddingFormat = "%02d"; // VIP01, VIP15
+                break;
+            case "TRET":
+                prefix = "B";
+                paddingFormat = "%03d"; // B001, B020
+                break;
+            case "TANG2":
+                prefix = "B2";
+                paddingFormat = "%02d"; // B201, B220
+                break;
+            case "SANTHUONG":
+                prefix = "ST";
+                paddingFormat = "%02d"; // ST01, ST15
+                break;
+            case "SANVUON":
+                prefix = "SV";
+                paddingFormat = "%02d"; // SV01, SV20
+                break;
+            default:
+                // Nếu không xác định, dùng 'B' làm mặc định
+                prefix = "B";
+                paddingFormat = "%03d";
+        }
+
+        // 2. Tìm mã bàn lớn nhất có cùng tiền tố
+        // (Dùng TOP 1 ... ORDER BY DESC an toàn hơn MAX() khi có padding)
+        String sql = "SELECT TOP 1 maBan FROM BAN WHERE maBan LIKE ? ORDER BY maBan DESC";
+
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setString(1, prefix + "%"); // Ví dụ: "VIP%"
+            
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next() && rs.getString(1) != null) {
+                    // Đã tìm thấy mã lớn nhất, ví dụ: "VIP15"
+                    String maxMaBan = rs.getString(1).trim();
+                    
+                    // 3. Tách phần số ra
+                    String numPart = maxMaBan.substring(prefix.length()); // "15"
+                    
+                    // 4. Chuyển thành số, cộng 1
+                    int soHienTai = Integer.parseInt(numPart); // 15
+                    int soMoi = soHienTai + 1; // 16
+                    
+                    // 5. Trả về mã mới đã định dạng
+                    return prefix + String.format(paddingFormat, soMoi); // "VIP" + "16" = "VIP16"
+
+                } else {
+                    // Không tìm thấy mã nào (khu vực này chưa có bàn)
+                    // Trả về mã đầu tiên, ví dụ "VIP01"
+                    return prefix + String.format(paddingFormat, 1);
+                }
+            }
+        } catch (SQLException | NumberFormatException e) {
+            e.printStackTrace();
+            // Xử lý lỗi: Trả về mã mặc định (an toàn)
+            return prefix + String.format(paddingFormat, 1);
+        }
+    }
     
 }
