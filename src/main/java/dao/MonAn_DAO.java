@@ -9,9 +9,7 @@ import java.util.List;
 
 public class MonAn_DAO {
 
-    /**
-     * Hàm trợ giúp để tạo đối tượng MonAn từ ResultSet
-     */
+
     private MonAn createMonAnFromResultSet(ResultSet rs) throws SQLException {
         return new MonAn(
             rs.getString("maMonAn").trim(),
@@ -23,9 +21,6 @@ public class MonAn_DAO {
         );
     }
 
-    /**
-     * Lấy tất cả món ăn (Chỉ lấy món có trạng thái đang bán)
-     */
     public List<MonAn> getAllMonAn() {
         List<MonAn> ds = new ArrayList<>();
         // Lấy tất cả, bao gồm cả các món đã vô hiệu hóa (trangThai = 0)
