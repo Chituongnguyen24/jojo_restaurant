@@ -38,7 +38,7 @@ public class ChonMon_Dialog extends JDialog {
     private DefaultTableModel modelChiTiet; 
     
     private JButton btnHuyMon; 
-    private JButton btnDong;
+    private JButton btnLuu;
     private JTextField txtSearch; 
 
     // Data cache
@@ -251,17 +251,17 @@ public class ChonMon_Dialog extends JDialog {
         btnHuyMon = createStyledButton("Hủy món đã chọn", BTN_RED_BG, TEXT_COLOR);
         btnHuyMon.setPreferredSize(new Dimension(160, 35)); // Tăng size
         
-        btnDong = createStyledButton("Đóng", BTN_GRAY_BG, TEXT_COLOR);
+        btnLuu = createStyledButton("Lưu", BTN_GREEN_BG, TEXT_COLOR);
         
         pnlButtons.add(btnHuyMon);
-        pnlButtons.add(btnDong);
+        pnlButtons.add(btnLuu);
 
         return pnlButtons;
     }
 
     private void addEventListeners() {
         // Nút Đóng
-        btnDong.addActionListener(e -> dispose());
+    	btnLuu.addActionListener(e -> dispose());
 
         // SỬA: Nút Hủy Món
         btnHuyMon.addActionListener(e -> xuLyHuyMon());

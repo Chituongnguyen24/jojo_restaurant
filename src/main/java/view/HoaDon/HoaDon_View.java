@@ -2,6 +2,7 @@ package view.HoaDon;
 
 import dao.HoaDon_DAO;
 import dao.KhachHang_DAO;
+import entity.ChiTietHoaDon;
 import entity.HoaDon;
 import entity.KhachHang;
 
@@ -36,7 +37,7 @@ public class HoaDon_View extends JPanel implements ActionListener {
     
     private JTextField txtTimNhanh;
 
-    private JButton btnThem, btnXemChiTiet; 
+    private JButton btnIn, btnXemChiTiet; 
     
     private HoaDon hoaDonDuocChon = null;
     
@@ -83,10 +84,10 @@ public class HoaDon_View extends JPanel implements ActionListener {
     }
      
     private void ganSuKien() {
-        btnThem = new RoundedButton("+ Tạo hóa đơn", new Color(76, 175, 80), COLOR_WHITE); 
+        btnIn = new RoundedButton("In hóa đơn", new Color(76, 175, 80), COLOR_WHITE); 
         btnXemChiTiet = new RoundedButton("Xem Chi Tiết Món", new Color(255, 152, 0), COLOR_WHITE);
 
-        btnThem.addActionListener(this);
+        btnIn.addActionListener(this);
         btnXemChiTiet.addActionListener(this); 
     }
      
@@ -100,16 +101,8 @@ public class HoaDon_View extends JPanel implements ActionListener {
         lblTitle.setForeground(new Color(60, 60, 60));
         panelHeader.add(lblTitle, BorderLayout.WEST);
          
-        btnThem.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        btnThem.addActionListener(e -> {
-            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
-            // Vẫn dùng HoaDon_AddDialog cũ (giả định đã được fix)
-            HoaDon_AddDialog dialog = new HoaDon_AddDialog(parentFrame); 
-            dialog.setVisible(true);
-            loadHoaDon();
-            loadThongKe();
-        });
-        panelHeader.add(btnThem, BorderLayout.EAST);
+        btnIn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        panelHeader.add(btnIn, BorderLayout.EAST);
          
         return panelHeader;
     }
@@ -340,14 +333,31 @@ public class HoaDon_View extends JPanel implements ActionListener {
 
     @Override
     public void actionPerformed(java.awt.event.ActionEvent e) {
-        Object o = e.getSource();
+    	Object o = e.getSource();
+        Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this); 
          
-        if (o == btnThem) {
-            Frame parentFrame = (Frame) SwingUtilities.getWindowAncestor(this);
-            HoaDon_AddDialog dialog = new HoaDon_AddDialog(parentFrame); 
-            dialog.setVisible(true);
-            loadHoaDon();
-            loadThongKe();
+        if (o == btnIn) {
+            if (hoaDonDuocChon == null) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để in!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            try {
+                HoaDon hd = hoaDonDuocChon; 
+                
+                List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hd.getMaHD()); 
+                
+                if (chiTietList == null || chiTietList.isEmpty()) {
+                     JOptionPane.showMessageDialog(this, "Hóa đơn này không có chi tiết món ăn để in!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                     return;
+                }
+
+                HoaDon_Printer.showPreview(parentFrame, hd, chiTietList);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi chuẩn bị in: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
         } else if (o == btnXemChiTiet) { 
             xuLyXemChiTiet();
         }
