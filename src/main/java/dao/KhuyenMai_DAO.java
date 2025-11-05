@@ -196,4 +196,21 @@ public class KhuyenMai_DAO {
         }
         return ds;
     }
+
+	public List<KhuyenMai> getAllActiveKhuyenMai() {
+        List<KhuyenMai> ds = new ArrayList<>();
+        String sql = "SELECT * FROM KHUYENMAI WHERE trangThaiKM = 1 ORDER BY CASE WHEN MaKM = 'KM00000000' THEN 0 ELSE 1 END, NgayApDung DESC"; 
+        try (Connection con = ConnectDB.getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                ds.add(createKhuyenMaiFromResultSet(rs));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ds;
+	}
 }

@@ -472,7 +472,7 @@ public class DatMonAn_View extends JPanel {
         
         for (PhieuDatBan phieu : dsPhieu) {
             // SỬA: Lọc chỉ hiển thị nếu trạng thái != "Hoàn thành" (để "biến mất" sau thanh toán)
-            if (!"Hoàn thành".equals(phieu.getTrangThaiPhieu())) {
+            if (!"Hoàn thành".equals(phieu.getTrangThaiPhieu())&&!"Đã đến".equals(phieu.getTrangThaiPhieu())) {
                 modelPhieuDat.addRow(new Object[]{
                     phieu.getMaPhieu().trim(),
                     phieu.getBan().getMaBan().trim(),
@@ -594,7 +594,7 @@ public class DatMonAn_View extends JPanel {
     
     // ===== HÀM MỚI (Xử lý thanh toán) =====
     private void xuLyThanhToan() {
-        if (phieuDatBanHienTai == null || !phieuDatBanHienTai.getTrangThaiPhieu().equals("Đã đến")) {
+        if (phieuDatBanHienTai == null || !phieuDatBanHienTai.getTrangThaiPhieu().equals("Không đến")) {
             JOptionPane.showMessageDialog(this, "Chỉ có thể thanh toán các phiếu 'Đã đến'!", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return;
         }
