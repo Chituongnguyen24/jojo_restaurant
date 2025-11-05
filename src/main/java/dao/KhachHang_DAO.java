@@ -27,7 +27,8 @@ public class KhachHang_DAO {
 
     public List<KhachHang> getAllKhachHang() {
         List<KhachHang> ds = new ArrayList<>();
-        String sql = "SELECT * FROM KHACHHANG WHERE LaThanhVien = 1";
+        // === SỬA LỖI: Thêm "Khách vãng lai" (KH000... có LaThanhVien = 0) ===
+        String sql = "SELECT * FROM KHACHHANG WHERE LaThanhVien = 1 OR MaKH = 'KH00000000' ORDER BY CASE WHEN MaKH = 'KH00000000' THEN 0 ELSE 1 END, TenKH";
         try (Connection con = ConnectDB.getConnection();
              Statement stmt = con.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -178,7 +179,7 @@ public class KhachHang_DAO {
     public boolean congDiemTichLuy(String maKH, int diemCongThem) {
         String sql = "UPDATE KhachHang SET DiemTichLuy = DiemTichLuy + ? WHERE MaKH = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection(); // (Hoặc ConnectDB.getConnection())
+        try (Connection conn = ConnectDB.getInstance().getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setInt(1, diemCongThem);
@@ -306,8 +307,6 @@ public class KhachHang_DAO {
         }
         return result;
     }
-
-    // ===================== THÊM MỚI CÁC HÀM CÒN THIẾU =====================
 
     public KhachHang getKhachHangBySDT(String soDienThoai) {
         if (soDienThoai == null || soDienThoai.trim().isEmpty()) return null;

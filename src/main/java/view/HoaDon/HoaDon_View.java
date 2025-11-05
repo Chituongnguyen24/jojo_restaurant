@@ -41,7 +41,7 @@ public class HoaDon_View extends JPanel implements ActionListener {
     
     private HoaDon hoaDonDuocChon = null;
     
-    private JLabel lblDaTT, lblTongHD, lblDoanhThu;
+    private JLabel lblTongHD, lblDoanhThu;
 
     // SỬA: Định dạng ngày giờ trong Entity mới
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -112,11 +112,9 @@ public class HoaDon_View extends JPanel implements ActionListener {
         statsPanel.setOpaque(false);
         statsPanel.setBorder(new EmptyBorder(0, 30, 25, 30)); 
 
-        lblDaTT = createStatLabel("0");
         lblTongHD = createStatLabel("0");
         lblDoanhThu = createStatLabel("0 VNĐ");
 
-        statsPanel.add(createStatBox(lblDaTT, "Đã thanh toán", COLOR_DA_TT));
         statsPanel.add(createStatBox(lblTongHD, "Tổng hóa đơn", COLOR_TONG_HD));
         statsPanel.add(createStatBox(lblDoanhThu, "Doanh thu", COLOR_DOANH_THU));
          
@@ -310,7 +308,7 @@ public class HoaDon_View extends JPanel implements ActionListener {
                 chuaTT++; 
             }
         }
-        lblDaTT.setText(String.valueOf(daTT));
+//        lblDaTT.setText(String.valueOf(daTT));
         lblTongHD.setText(String.valueOf(dsHD.size()));
         lblDoanhThu.setText(String.format("%,.0f VNĐ", doanhThu));
     }

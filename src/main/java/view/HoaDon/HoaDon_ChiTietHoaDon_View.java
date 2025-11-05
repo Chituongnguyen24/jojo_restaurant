@@ -326,12 +326,11 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         cbxKhachHang.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         cbxKhachHang.setPreferredSize(new Dimension(220, 30));
         
-        // === SỬA LỖI: Xóa Listener ở đây ===
-        // cbxKhachHang.addActionListener(e -> capNhatGiaTienXemTruoc());
-        
+        // === SỬA LỖI: Xóa Listener khỏi đây ===
         
         KhachHang khachHangDaChon = null;
         try {
+            // DAO đã được sửa để lấy cả khách lẻ
             List<KhachHang> dsKH = khachHangDAO.getAllKhachHang();
             for (KhachHang kh : dsKH) {
                 cbxKhachHang.addItem(kh);
@@ -346,7 +345,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         if (khachHangDaChon != null) {
             cbxKhachHang.setSelectedItem(khachHangDaChon); 
         } else {
-            cbxKhachHang.setSelectedIndex(0); // Mặc định chọn khách lẻ
+            cbxKhachHang.setSelectedIndex(0); // Mặc định chọn khách lẻ (vì KH00.. đã ở đầu)
         }
         
         khachPanel.add(createHeaderLabel("Khách hàng:"));
@@ -361,9 +360,9 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
 
     private void capNhatGiaTienXemTruoc() {
-        // Kiểm tra null (an toàn)
-        if (cbxKhuyenMai == null || lblTongTienMon == null) {
-            return;
+        // === SỬA LỖI: Thêm kiểm tra null an toàn ===
+        if (cbxKhuyenMai == null || lblTongTienMon == null || hoaDonHienTai == null) {
+            return; // Thoát nếu các component chưa sẵn sàng
         }
     
     	double tongTienMon = hoaDonHienTai.getTongTienTruocThue();
@@ -381,7 +380,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         double tienSauGiamGia = tongTienMon - tienGiamMoi;
         if (tienSauGiamGia < 0) tienSauGiamGia = 0;
         
-        // === SỬA LỖI: Tính toán thuế & phí áp cứng ===
+        // Logic tính thuế (giả định)
         double tyLePhiDichVu = 0.05; // 5%
         double tyLeVAT = 0.08;       // 8%
 
@@ -451,8 +450,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         cbxKhuyenMai.setRenderer(new KhuyenMaiRenderer()); 
         cbxKhuyenMai.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         
-        // === SỬA LỖI: Xóa Listener ở đây ===
-        // cbxKhuyenMai.addActionListener(e -> capNhatGiaTienXemTruoc());
+        // === SỬA LỖI: Xóa Listener khỏi đây ===
         
         KhuyenMai kmDaChon = null;
         try {
@@ -481,7 +479,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         gbc.gridx = 0; gbc.gridy = 1; footer.add(createTotalLabel("Tổng tiền món:", false), gbc);
         gbc.gridx = 0; gbc.gridy = 2; footer.add(createTotalLabel("Tổng giảm giá (KM):", false), gbc);
         
-        // === SỬA: Đổi nhãn thuế cho thẩm mỹ ===
+        // === SỬA: Đổi nhãn thuế cho thẩm mỹ (tính cả 2 loại thuế) ===
         gbc.gridx = 0; gbc.gridy = 3; footer.add(createTotalLabel("Thuế & Phí (VAT, P.vụ):", false), gbc);
         
         gbc.gridx = 0; gbc.gridy = 4; footer.add(createTotalLabel("THÀNH TIỀN (Tổng phải trả):", true), gbc);
@@ -539,13 +537,14 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         double tongTienMon = hoaDon.getTongTienTruocThue();
         double tongGiamGia = hoaDon.getTongGiamGia();
 
+        // DAO đã được sửa để tính cả 2 loại thuế
         double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hoaDon.getMaHD());
         
-        // === SỬA LỖI: Cập nhật lại logic tính thuế hiển thị ===
-        // (Logic này phải khớp với logic xem trước)
+        // Cập nhật lại logic tính tiền thuế hiển thị
         double tienSauGiamGia = tongTienMon - tongGiamGia;
         if (tienSauGiamGia < 0) tienSauGiamGia = 0;
         
+        // Giả định cứng tỷ lệ (khớp với logic xem trước)
         double tyLePhiDichVu = 0.05; // 5%
         double tyLeVAT = 0.08;       // 8%
         double tienPhiDichVu = tienSauGiamGia * tyLePhiDichVu;
@@ -555,9 +554,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
         lblTongTienMon.setText(CURRENCY_FORMAT.format(tongTienMon));
         lblTongGiamGia.setText(CURRENCY_FORMAT.format(tongGiamGia));
-        // Hiển thị tổng thuế (VAT + Phí)
         lblTongThue.setText(CURRENCY_FORMAT.format(tongThueVaPhi)); 
-        // Hiển thị tổng tiền cuối cùng (đã làm tròn trong DAO)
         lblTongThanhToan.setText(CURRENCY_FORMAT.format(tongThanhToan));
     }
 
