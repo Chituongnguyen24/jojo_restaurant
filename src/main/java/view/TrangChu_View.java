@@ -24,6 +24,7 @@ public class TrangChu_View extends JPanel {
     private JMenuItem currentMenuItem = null;
     private final JFrame mainFrame;
 
+    // Khai báo các View
     private KhachHang_View khachHangView;
     private HoaDon_View hoaDonView;
     private Ban_View banView;
@@ -33,6 +34,7 @@ public class TrangChu_View extends JPanel {
     private KhuyenMai_View khuyenMaiView;
     private NhanVien_View nhanVienView;
     private ThongKe_View thongKeView;
+    private AnTrucTiep_View anTrucTiepView; 
 
 
     private static final String CARD_HOME = "HE_THONG";
@@ -40,19 +42,13 @@ public class TrangChu_View extends JPanel {
     private static final String CARD_QUAN_LY_DAT_BAN = "QUAN_LY_DAT_BAN";
     private static final String CARD_QUAN_LY_DAT_MON = "QUAN_LY_DAT_MON";
     private static final String CARD_QUAN_LY_THUC_DON = "QUAN_LY_THUC_DON";
-    //    private static final String CARD_TRA_CUU_MON_AN = "TRA_CUU_MON_AN";
     private static final String CARD_QUAN_LY_HOADON = "QUAN_LY_HOADON";
-    //    private static final String CARD_TRA_CUU_THUE = "TRA_CUU_THUE";
     private static final String CARD_QUAN_LY_KHUYENMAI = "QUAN_LY_KHUYENMAI";
-    //    private static final String CARD_TRA_CUU_KHUYENMAI = "TRA_CUU_KHUYENMAI";
-    
-    //    private static final String CARD_TRA_CUU_HOADON = "TRA_CUU_HOADON";
     private static final String CARD_QUAN_LY_KH = "QUAN_LY_KH";
-    //    private static final String CARD_DIEM_KH = "DIEM_TICHLUY";
-    //    private static final String CARD_TRA_CUU_KH = "TRA_CUU_KH";
     private static final String CARD_QUAN_LY_NHANVIEN = "QUAN_LY_NHAN_VIEN";
-    //    private static final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
     private static final String CARD_THONGKE = "THONG_KE";
+    
+    private static final String CARD_AN_TRUC_TIEP = "AN_TRUC_TIEP";
 
     private enum Role { MANAGER, RECEPTIONIST }
 
@@ -183,127 +179,98 @@ public class TrangChu_View extends JPanel {
         menuKH.setFont(menuFont);
         JMenuItem mQLKH = new JMenuItem("Quản lý khách hàng");
         mQLKH.setFont(menuItemFont);
-//        JMenuItem mDiem = new JMenuItem("Quản lý điểm tích lũy");
-//        mDiem.setFont(menuItemFont);
-//        JMenuItem mTCKH = new JMenuItem("Tra cứu khách hàng");
-//        mTCKH.setFont(menuItemFont);
         menuKH.add(mQLKH);
-//        menuKH.add(mDiem);
-//        menuKH.add(mTCKH);
         menuBar.add(menuKH);
         allMenuItems.add(mQLKH);
-//        allMenuItems.add(mDiem);
-//        allMenuItems.add(mTCKH);
 
-        // --- Role-specific menus ---
         if (role == Role.MANAGER) {
-            // Manager sees full admin menus
+
             JMenu menuBan = new JMenu("Bàn");
             menuBan.setFont(menuFont);
             JMenuItem mQuanLyBan = new JMenuItem("Quản lý bàn");
             mQuanLyBan.setFont(menuItemFont);
             JMenuItem mQuanLyDatBan = new JMenuItem("Quản lý đặt bàn");
             mQuanLyDatBan.setFont(menuItemFont);
+            
+            JMenuItem mAnTrucTiep = new JMenuItem("Ăn tại chỗ");
+            mAnTrucTiep.setFont(menuItemFont);
+            
             menuBan.add(mQuanLyBan);
             menuBan.add(mQuanLyDatBan);
+            menuBan.add(mAnTrucTiep); 
             menuBar.add(menuBan);
             allMenuItems.add(mQuanLyBan);
             allMenuItems.add(mQuanLyDatBan);
-
+            allMenuItems.add(mAnTrucTiep); 
+            
             JMenu menuThucDon = new JMenu("Thực đơn");
             menuThucDon.setFont(menuFont);
             JMenuItem mQLDMon = new JMenuItem("Quản lý đặt món");
             mQLDMon.setFont(menuItemFont);
             JMenuItem mXemTD = new JMenuItem("Quản lý thực đơn");
             mXemTD.setFont(menuItemFont);
-//            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu món ăn");
-//            mTraCuuMonAn.setFont(menuItemFont);
             menuThucDon.add(mQLDMon);
             menuThucDon.add(mXemTD);
-//            menuThucDon.add(mTraCuuMonAn);
             menuBar.add(menuThucDon);
             allMenuItems.add(mQLDMon);
             allMenuItems.add(mXemTD);
-//            allMenuItems.add(mTraCuuMonAn);
 
             JMenu menuHoaDon = new JMenu("Hóa đơn");
             menuHoaDon.setFont(menuFont);
             JMenuItem mQuanLyHoaDon = new JMenuItem("Quản lý hóa đơn");
             mQuanLyHoaDon.setFont(menuItemFont);
-//            JMenuItem mTraCuuHoaDon = new JMenuItem("Tra cứu hóa đơn");
-//            mTraCuuHoaDon.setFont(menuItemFont);
-//            JMenuItem mTCThue = new JMenuItem("Tra cứu thuế");
-//            mTCThue.setFont(menuItemFont);
             JMenuItem mQLKM = new JMenuItem("Quản lý khuyến mãi");
             mQLKM.setFont(menuItemFont);
-//            JMenuItem mTCKM = new JMenuItem("Tra cứu khuyến mãi");
-//            mTCKM.setFont(menuItemFont);
             menuHoaDon.add(mQuanLyHoaDon);
-//            menuHoaDon.add(mTraCuuHoaDon);
-//            menuHoaDon.add(mTCThue);
             menuHoaDon.add(mQLKM);
-//            menuHoaDon.add(mTCKM);
             menuBar.add(menuHoaDon);
             allMenuItems.add(mQuanLyHoaDon);
-//            allMenuItems.add(mTraCuuHoaDon);
-//            allMenuItems.add(mTCThue);
             allMenuItems.add(mQLKM);
-//            allMenuItems.add(mTCKM);
             
             
             JMenu menuNV = new JMenu("Nhân viên");
             menuNV.setFont(menuFont);
             JMenuItem mQLNV = new JMenuItem("Quản lý nhân viên");
             mQLNV.setFont(menuItemFont);
-//            JMenuItem mTCNV = new JMenuItem("Tra cứu nhân viên");
-//            mTCNV.setFont(menuItemFont);
             JMenuItem mTKNV = new JMenuItem("Thống kê");
             mTKNV.setFont(menuItemFont);
             menuNV.add(mQLNV);
-//            menuNV.add(mTCNV);
             menuNV.addSeparator();
             menuNV.add(mTKNV);
             menuBar.add(menuNV);
             allMenuItems.add(mQLNV);
-//            allMenuItems.add(mTCNV);
             allMenuItems.add(mTKNV);
+            
         } else {
-            // Receptionist: limited menus relevant to reception
             JMenu menuBan = new JMenu("Bàn");
             menuBan.setFont(menuFont);
             JMenuItem mQuanLyDatBan = new JMenuItem("Quản lý đặt bàn");
-            mQuanLyDatBan.setFont(menuItemFont);
+            mQuanLyDatBan.setFont(menuItemFont);     
+
+            JMenuItem mAnTrucTiep = new JMenuItem("Ăn tại chỗ"); 
+            mAnTrucTiep.setFont(menuItemFont);
+            
             menuBan.add(mQuanLyDatBan);
+            menuBan.add(mAnTrucTiep); 
             menuBar.add(menuBan);
             allMenuItems.add(mQuanLyDatBan);
+            allMenuItems.add(mAnTrucTiep);
 
             JMenu menuThucDon = new JMenu("Thực đơn");
             menuThucDon.setFont(menuFont);
             JMenuItem mDatMon = new JMenuItem("Quản lý đặt món");
             mDatMon.setFont(menuItemFont);
-//            JMenuItem mTraCuuMonAn = new JMenuItem("Tra cứu món ăn");
-//            mTraCuuMonAn.setFont(menuItemFont);
             menuThucDon.add(mDatMon);
-//            menuThucDon.add(mTraCuuMonAn);
             menuBar.add(menuThucDon);
             allMenuItems.add(mDatMon);
-//            allMenuItems.add(mTraCuuMonAn);
 
             JMenu menuHoaDon = new JMenu("Hóa đơn");
             menuHoaDon.setFont(menuFont);
             JMenuItem mQuanLyHoaDon = new JMenuItem("Quản lý hóa đơn");
             mQuanLyHoaDon.setFont(menuItemFont);
-//            JMenuItem mTraCuuHoaDon = new JMenuItem("Tra cứu hóa đơn");
-//            mTraCuuHoaDon.setFont(menuItemFont);
-//            JMenuItem mTCKM = new JMenuItem("Tra cứu khuyến mãi");
-//            mTCKM.setFont(menuItemFont);
             menuHoaDon.add(mQuanLyHoaDon);
-//            menuHoaDon.add(mTraCuuHoaDon);
-//            menuHoaDon.add(mTCKM);
             menuBar.add(menuHoaDon);
             allMenuItems.add(mQuanLyHoaDon);
-//            allMenuItems.add(mTraCuuHoaDon);
-//            allMenuItems.add(mTCKM);
         }
 
         
@@ -316,15 +283,9 @@ public class TrangChu_View extends JPanel {
     }
 
     private void setupContentPanel(Role role, TaiKhoan tk) {
-        
-        // Chỉ khởi tạo và thêm view HỆ THỐNG mặc định
         contentPanel.add(new HeThong_View(), CARD_HOME);
-
     }
     
-    // =================================================================
-    // === HÀM ĐÃ SỬA LỖI ===
-    // =================================================================
     private ActionListener createSwitchPanelAction() {
         return e -> {
             JMenuItem src = (JMenuItem) e.getSource();
@@ -335,6 +296,18 @@ public class TrangChu_View extends JPanel {
             String cardName;
 
             switch (text) {
+             
+                case "Ăn tại chỗ":
+                    cardName = CARD_AN_TRUC_TIEP;
+                    if (anTrucTiepView == null) {
+                        anTrucTiepView = new AnTrucTiep_View();
+                        contentPanel.add(anTrucTiepView, cardName);
+                    }
+                    if(anTrucTiepView != null) {
+                        anTrucTiepView.refreshData();
+                    }
+                    break;
+                    
                 case "Quản lý bàn":
                     cardName = CARD_QUAN_LY_BAN;
                     if (banView == null) {
@@ -342,8 +315,7 @@ public class TrangChu_View extends JPanel {
                         contentPanel.add(banView, cardName);
                     }
                     if(banView != null) {
-                        // === SỬA LỖI Ở ĐÂY ===
-                        banView.refreshData(); // Gọi đúng tên hàm (không có "Table")
+                        banView.refreshData(); 
                     }
                     break;
                     
@@ -354,7 +326,7 @@ public class TrangChu_View extends JPanel {
                         contentPanel.add(datBanView, cardName);
                     }
                     if(datBanView != null) {
-                        datBanView.refreshData(); // (Hàm này đã đúng)
+                        datBanView.refreshData(); 
                     }
                     break;
                     
@@ -381,7 +353,7 @@ public class TrangChu_View extends JPanel {
                         contentPanel.add(hoaDonView, cardName);
                     }
                     if(hoaDonView != null) {
-                        hoaDonView.refreshTableData(); // (Giả sử hàm này tên là refreshTableData)
+                        hoaDonView.refreshTableData(); 
                     }
                     break;
 
@@ -400,7 +372,7 @@ public class TrangChu_View extends JPanel {
                         contentPanel.add(khachHangView, cardName);
                     }
                     if(khachHangView != null) {
-                        khachHangView.refreshTableData(); // (Giả sử hàm này tên là refreshTableData)
+                        khachHangView.refreshTableData();
                     }
                     break;
                     
@@ -424,13 +396,10 @@ public class TrangChu_View extends JPanel {
                     cardName = CARD_HOME;
                     break;
             }
-            // Lệnh show card luôn ở cuối cùng
+           
             cardLayout.show(contentPanel, cardName);
         };
     }
-    // =================================================================
-    // === KẾT THÚC SỬA LỖI ===
-    // =================================================================
 
     private ActionListener createLogoutAction() {
         return e -> {

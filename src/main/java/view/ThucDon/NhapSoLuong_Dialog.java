@@ -6,10 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.geom.RoundRectangle2D;
 import java.beans.PropertyChangeListener; // SỬA: THÊM IMPORT
 
-/**
- * JDialog độc lập dùng để nhập số lượng và ghi chú cho một món ăn.
- * Trả về một Object[] nếu thành công, hoặc null nếu hủy.
- */
+
 public class NhapSoLuong_Dialog extends JDialog {
     private JSpinner spnSoLuong;
     private JTextField txtGhiChu;
@@ -99,23 +96,70 @@ public class NhapSoLuong_Dialog extends JDialog {
     /**
      * Xử lý sự kiện khi nhấn nút "Đặt"
      */
-    // ===== HÀM ĐÃ SỬA (Thêm validation) =====
+    // ========================================================
+    // === HÀM ĐÃ SỬA: FIX LỖI TRÀN SỐ VÀ THÔNG BÁO LỖI ===
+    // ========================================================
     private void dat(ActionEvent e) {
+        String soLuongText;
+        JComponent editor = spnSoLuong.getEditor();
+
+        // Lấy text thô từ editor của JSpinner
+        if (editor instanceof JSpinner.DefaultEditor) {
+            soLuongText = ((JSpinner.DefaultEditor) editor).getTextField().getText().trim();
+        } else {
+            // Fallback (ít khi xảy ra, nhưng để an toàn)
+            try {
+                spnSoLuong.commitEdit();
+                soLuongText = String.valueOf(spnSoLuong.getValue());
+            } catch (java.text.ParseException ex) {
+                 JOptionPane.showMessageDialog(this, 
+                    "Vui lòng nhập một số nguyên hợp lệ.", 
+                    "Lỗi định dạng", 
+                    JOptionPane.ERROR_MESSAGE);
+                 spnSoLuong.setValue(1);
+                 return;
+            }
+        }
+
+        long soLuongLong;
         int soLuong;
+
+        // BƯỚC 1: Kiểm tra định dạng (phải là số, không phải "abc")
         try {
-            // Lấy giá trị user gõ vào (quan trọng)
-            spnSoLuong.commitEdit(); 
-            soLuong = (int) spnSoLuong.getValue();
-        } catch (java.text.ParseException ex) {
+            // Thử parse sang Long để bắt số cực lớn
+            soLuongLong = Long.parseLong(soLuongText);
+        } catch (NumberFormatException ex) {
+            // Nếu parse Long thất bại -> chắc chắn là lỗi định dạng (ví dụ: "abc", "1.5")
             JOptionPane.showMessageDialog(this, 
-                "Vui lòng nhập một số nguyên hợp lệ.", 
+                "Số lượng phải là một con số nguyên (ví dụ: 1, 2, 3).", 
                 "Lỗi định dạng", 
                 JOptionPane.ERROR_MESSAGE);
             spnSoLuong.setValue(1); // Reset
             return; // Không đóng
         }
+
+        // BƯỚC 2: Kiểm tra tràn số (quá lớn/quá nhỏ cho kiểu int)
+        if (soLuongLong > Integer.MAX_VALUE) {
+            JOptionPane.showMessageDialog(this, 
+                "Số lượng nhập vào quá lớn (tràn số).\nVui lòng nhập số nhỏ hơn.", 
+                "Lỗi tràn số", 
+                JOptionPane.ERROR_MESSAGE);
+            spnSoLuong.setValue(100); // Reset về max logic (100)
+            return; // Không đóng
+        }
+        if (soLuongLong < Integer.MIN_VALUE) {
+            JOptionPane.showMessageDialog(this, 
+                "Số lượng nhập vào quá nhỏ (tràn số).", 
+                "Lỗi tràn số", 
+                JOptionPane.ERROR_MESSAGE);
+            spnSoLuong.setValue(1); // Reset về min logic
+            return; // Không đóng
+        }
         
-        // SỬA: Check > 100
+        // Nếu qua 2 bước trên, số đã hợp lệ, ép kiểu về int
+        soLuong = (int) soLuongLong;
+
+        // BƯỚC 3: Kiểm tra logic nghiệp vụ (1 -> 100)
         if (soLuong > 100) {
             JOptionPane.showMessageDialog(this, 
                 "Số lượng không được vượt quá 100.", 
@@ -125,9 +169,8 @@ public class NhapSoLuong_Dialog extends JDialog {
             return; // Không đóng dialog
         }
         
-        // SỬA: Check < 1
         if (soLuong < 1) { 
-             JOptionPane.showMessageDialog(this, 
+            JOptionPane.showMessageDialog(this, 
                 "Số lượng phải lớn hơn 0.", 
                 "Lỗi số lượng", 
                 JOptionPane.ERROR_MESSAGE);
@@ -135,10 +178,14 @@ public class NhapSoLuong_Dialog extends JDialog {
             return; // Không đóng dialog
         }
         
+        // Nếu mọi thứ OK, gán kết quả và đóng
         String ghiChu = txtGhiChu.getText().trim();
         this.ketQua = new Object[]{soLuong, ghiChu};
         dispose(); // Đóng dialog
     }
+    // ========================================================
+    // === KẾT THÚC SỬA LỖI ===
+    // ========================================================
 
     /**
      * Hiển thị dialog và trả về kết quả.
