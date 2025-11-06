@@ -74,7 +74,26 @@ public class HoaDon_DAO {
         }
         return dsHoaDon;
     }
+    
+    public List<HoaDon> getRecentHoaDon() {
+        List<HoaDon> dsHoaDon = new ArrayList<>();
+        // THÊM "TOP 100" VÀO CÂU SQL
+        String sql = "SELECT TOP 100 MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, ISNULL(TongTienTruocThue, 0) AS TongTienTruocThue, ISNULL(TongGiamGia, 0) AS TongGiamGia, DaThanhToan " +
+                     "FROM HOADON ORDER BY NgayLapHoaDon DESC, GioVao DESC";
 
+        try (Connection conn = ConnectDB.getInstance().getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                dsHoaDon.add(createHoaDonFromResultSet(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi lấy danh sách hóa đơn gần đây: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return dsHoaDon;
+    }
     public boolean addHoaDon(HoaDon hd) {
         String sql = "INSERT INTO HOADON(MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, TongTienTruocThue, TongGiamGia, DaThanhToan)" +
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";

@@ -23,26 +23,35 @@ public class TrangChu_View extends JPanel {
     private final List<JMenuItem> allMenuItems = new ArrayList<>();
     private JMenuItem currentMenuItem = null;
     private final JFrame mainFrame;
+
     private KhachHang_View khachHangView;
-	private HoaDon_View hoaDonView;
+    private HoaDon_View hoaDonView;
+    private Ban_View banView;
+    private DatBan_View datBanView;
+    private DatMonAn_View datMonAnView;
+    private ThucDon_View thucDonView;
+    private KhuyenMai_View khuyenMaiView;
+    private NhanVien_View nhanVienView;
+    private ThongKe_View thongKeView;
+
 
     private static final String CARD_HOME = "HE_THONG";
     private static final String CARD_QUAN_LY_BAN = "QUAN_LY_BAN";
     private static final String CARD_QUAN_LY_DAT_BAN = "QUAN_LY_DAT_BAN";
     private static final String CARD_QUAN_LY_DAT_MON = "QUAN_LY_DAT_MON";
     private static final String CARD_QUAN_LY_THUC_DON = "QUAN_LY_THUC_DON";
-//    private static final String CARD_TRA_CUU_MON_AN = "TRA_CUU_MON_AN";
+    //    private static final String CARD_TRA_CUU_MON_AN = "TRA_CUU_MON_AN";
     private static final String CARD_QUAN_LY_HOADON = "QUAN_LY_HOADON";
-//    private static final String CARD_TRA_CUU_THUE = "TRA_CUU_THUE";
+    //    private static final String CARD_TRA_CUU_THUE = "TRA_CUU_THUE";
     private static final String CARD_QUAN_LY_KHUYENMAI = "QUAN_LY_KHUYENMAI";
-//    private static final String CARD_TRA_CUU_KHUYENMAI = "TRA_CUU_KHUYENMAI";
+    //    private static final String CARD_TRA_CUU_KHUYENMAI = "TRA_CUU_KHUYENMAI";
     
-//    private static final String CARD_TRA_CUU_HOADON = "TRA_CUU_HOADON";
+    //    private static final String CARD_TRA_CUU_HOADON = "TRA_CUU_HOADON";
     private static final String CARD_QUAN_LY_KH = "QUAN_LY_KH";
-//    private static final String CARD_DIEM_KH = "DIEM_TICHLUY";
-//    private static final String CARD_TRA_CUU_KH = "TRA_CUU_KH";
+    //    private static final String CARD_DIEM_KH = "DIEM_TICHLUY";
+    //    private static final String CARD_TRA_CUU_KH = "TRA_CUU_KH";
     private static final String CARD_QUAN_LY_NHANVIEN = "QUAN_LY_NHAN_VIEN";
-//    private static final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
+    //    private static final String CARD_TRA_CUU_NV = "TRA_CUU_NV";
     private static final String CARD_THONGKE = "THONG_KE";
 
     private enum Role { MANAGER, RECEPTIONIST }
@@ -57,6 +66,7 @@ public class TrangChu_View extends JPanel {
         JMenuBar menuBar = createMenuBar(tk, role);
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
+        
         setupContentPanel(role, tk);
 
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -69,8 +79,6 @@ public class TrangChu_View extends JPanel {
         cardLayout.show(contentPanel, CARD_HOME);
     }
 
-    // Normalize role detection:
-    // prefer tk.getVaiTro() if set; otherwise fall back to passed vaiTro string.
     private Role determineRole(TaiKhoan tk, String vaiTro) {
         String src = null;
         if (tk != null && tk.getVaiTro() != null && !tk.getVaiTro().trim().isEmpty()) {
@@ -147,7 +155,7 @@ public class TrangChu_View extends JPanel {
         JMenuItem mDoiMatKhau = new JMenuItem("Đổi mật khẩu");
         mDoiMatKhau.setFont(menuItemFont);
 
-        // FIX LỖI MÃ NHÂN VIÊN: Lấy MaNV trực tiếp từ TaiKhoan
+        
         mDoiMatKhau.addActionListener(e -> {
             String maNVForDialog = (tk != null && tk.getNhanVien() != null) 
                     ? tk.getNhanVien().getMaNhanVien().trim() // Sử dụng MaNV nếu có
@@ -309,31 +317,14 @@ public class TrangChu_View extends JPanel {
 
     private void setupContentPanel(Role role, TaiKhoan tk) {
         
+        // Chỉ khởi tạo và thêm view HỆ THỐNG mặc định
         contentPanel.add(new HeThong_View(), CARD_HOME);
-        contentPanel.add(new DatBan_View(), CARD_QUAN_LY_DAT_BAN);
-//        contentPanel.add(new HoaDon_TraCuu_View(), CARD_TRA_CUU_HOADON);
-//        contentPanel.add(new MonAn_TraCuu_View(), CARD_TRA_CUU_MON_AN);
-//        contentPanel.add(new KhachHang_TraCuu_View(), CARD_TRA_CUU_KH);
-        contentPanel.add(new DatMonAn_View(), CARD_QUAN_LY_DAT_MON);
-        hoaDonView= new HoaDon_View();
-        contentPanel.add(hoaDonView, CARD_QUAN_LY_HOADON);
-//        contentPanel.add(new KhuyenMai_TraCuu_View(),CARD_TRA_CUU_KHUYENMAI);
-        khachHangView = new KhachHang_View();
-        contentPanel.add(khachHangView, CARD_QUAN_LY_KH);
-//        contentPanel.add(new KhachHang_DiemTichLuy_View(), CARD_DIEM_KH);
 
-        if (role == Role.MANAGER) {
-           
-            contentPanel.add(new Ban_View(), CARD_QUAN_LY_BAN);
-            contentPanel.add(new ThucDon_View(), CARD_QUAN_LY_THUC_DON);
-//            contentPanel.add(new Thue_TraCuu_View(),CARD_TRA_CUU_THUE);
-            contentPanel.add(new KhuyenMai_View(),CARD_QUAN_LY_KHUYENMAI);
-            contentPanel.add(new NhanVien_View(), CARD_QUAN_LY_NHANVIEN);
-//            contentPanel.add(new NhanVien_TraCuu_View(), CARD_TRA_CUU_NV);
-            contentPanel.add(new ThongKe_View(), CARD_THONGKE);
-        } 
     }
-
+    
+    // =================================================================
+    // === HÀM ĐÃ SỬA LỖI ===
+    // =================================================================
     private ActionListener createSwitchPanelAction() {
         return e -> {
             JMenuItem src = (JMenuItem) e.getSource();
@@ -342,68 +333,104 @@ public class TrangChu_View extends JPanel {
 
             String text = (src.getText() == null) ? "" : src.getText().trim();
             String cardName;
+
             switch (text) {
                 case "Quản lý bàn":
                     cardName = CARD_QUAN_LY_BAN;
+                    if (banView == null) {
+                        banView = new Ban_View();
+                        contentPanel.add(banView, cardName);
+                    }
+                    if(banView != null) {
+                        // === SỬA LỖI Ở ĐÂY ===
+                        banView.refreshData(); // Gọi đúng tên hàm (không có "Table")
+                    }
                     break;
+                    
                 case "Quản lý đặt bàn":
                     cardName = CARD_QUAN_LY_DAT_BAN;
+                    if (datBanView == null) {
+                        datBanView = new DatBan_View();
+                        contentPanel.add(datBanView, cardName);
+                    }
+                    if(datBanView != null) {
+                        datBanView.refreshData(); // (Hàm này đã đúng)
+                    }
                     break;
+                    
                 case "Quản lý đặt món":
                     cardName = CARD_QUAN_LY_DAT_MON;
+                    if (datMonAnView == null) {
+                        datMonAnView = new DatMonAn_View();
+                        contentPanel.add(datMonAnView, cardName);
+                    }
                     break;
+                    
                 case "Quản lý thực đơn":
                     cardName = CARD_QUAN_LY_THUC_DON;
+                    if (thucDonView == null) {
+                        thucDonView = new ThucDon_View();
+                        contentPanel.add(thucDonView, cardName);
+                    }
                     break;
-//                case "Tra cứu món ăn":
-//                    cardName = CARD_TRA_CUU_MON_AN;
-//                    break;
+                    
                 case "Quản lý hóa đơn":
                     cardName = CARD_QUAN_LY_HOADON;
-                    if (hoaDonView != null) {
-                    	hoaDonView.refreshTableData();
+                    if (hoaDonView == null) {
+                        hoaDonView = new HoaDon_View();
+                        contentPanel.add(hoaDonView, cardName);
+                    }
+                    if(hoaDonView != null) {
+                        hoaDonView.refreshTableData(); // (Giả sử hàm này tên là refreshTableData)
                     }
                     break;
-//                case "Tra cứu hóa đơn":
-//                    cardName = CARD_TRA_CUU_HOADON;
-//                    break;
-//                case "Tra cứu thuế":
-//                    cardName = CARD_TRA_CUU_THUE;
-//                    break;
+
                 case "Quản lý khuyến mãi":
                     cardName = CARD_QUAN_LY_KHUYENMAI;
-                    break;                
-//                case "Tra cứu khuyến mãi":
-//                    cardName = CARD_TRA_CUU_KHUYENMAI;
-//                    break;
-                case "Quản lý khách hàng":
-                    cardName = CARD_QUAN_LY_KH;
-                    if (khachHangView != null) {
-                        khachHangView.refreshTableData();
+                    if (khuyenMaiView == null) {
+                        khuyenMaiView = new KhuyenMai_View();
+                        contentPanel.add(khuyenMaiView, cardName);
                     }
                     break;
-//                case "Quản lý điểm tích lũy":
-//                    cardName = CARD_DIEM_KH;
-//                    break;
-//                case "Tra cứu khách hàng":
-//                    cardName = CARD_TRA_CUU_KH;
-//                    break;
+                    
+                case "Quản lý khách hàng":
+                    cardName = CARD_QUAN_LY_KH;
+                    if (khachHangView == null) {
+                        khachHangView = new KhachHang_View();
+                        contentPanel.add(khachHangView, cardName);
+                    }
+                    if(khachHangView != null) {
+                        khachHangView.refreshTableData(); // (Giả sử hàm này tên là refreshTableData)
+                    }
+                    break;
+                    
                 case "Quản lý nhân viên":
                     cardName = CARD_QUAN_LY_NHANVIEN;
+                    if (nhanVienView == null) {
+                        nhanVienView = new NhanVien_View();
+                        contentPanel.add(nhanVienView, cardName);
+                    }
                     break;
-//                case "Tra cứu nhân viên":
-//                    cardName = CARD_TRA_CUU_NV;
-//                    break;
+
                 case "Thống kê":
                     cardName = CARD_THONGKE;
+                    if (thongKeView == null) {
+                        thongKeView = new ThongKe_View();
+                        contentPanel.add(thongKeView, cardName);
+                    }
                     break;
+                    
                 default:
                     cardName = CARD_HOME;
                     break;
             }
+            // Lệnh show card luôn ở cuối cùng
             cardLayout.show(contentPanel, cardName);
         };
     }
+    // =================================================================
+    // === KẾT THÚC SỬA LỖI ===
+    // =================================================================
 
     private ActionListener createLogoutAction() {
         return e -> {

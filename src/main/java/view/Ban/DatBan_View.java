@@ -57,9 +57,8 @@ public class DatBan_View extends JPanel implements ActionListener {
     private final JSpinner spinnerGioDat;
     private final JTextField txtSearchPDB, txtTenKhach, txtSdtKhach, txtGhiChu;
     
-    // SỬA: Thêm btnHuyDatBan và btnTimBanTheoGio
     private final JButton btnSearchPDB, btnDatBan, btnRefresh, btnXemDanhSachPDB, btnThanhToan, btnHuyDatBan;
-    private JButton btnTimBanTheoGio; // Nút để lọc bàn theo thời gian
+    private JButton btnTimBanTheoGio; 
     private final DefaultTableModel modelPhieuDat;
     private final JTable tblPhieuDat;
     
@@ -70,10 +69,12 @@ public class DatBan_View extends JPanel implements ActionListener {
     private final JLabel lblMaBanValue, lblKhuVucValue, lblLoaiBanValue, lblSoChoValue;
 
     // Data
-    private Map<String, List<Ban>> danhSachBanTheoKhuVuc;
-    private List<String> tenKhuVuc;
+    // === FIX: Khởi tạo rỗng để tránh NullPointerException ===
+    private Map<String, List<Ban>> danhSachBanTheoKhuVuc = new LinkedHashMap<>();
+    private List<String> tenKhuVuc = new ArrayList<>();
+    private List<PhieuDatBan> danhSachPhieuDatDangHoatDong = new ArrayList<>();
+    // === HẾT FIX ===
     private String khuVucHienTai;
-    private List<PhieuDatBan> danhSachPhieuDatDangHoatDong;
 
     private Ban banDangChon = null;
     private PhieuDatBan phieuDangChon = null;
@@ -98,13 +99,25 @@ public class DatBan_View extends JPanel implements ActionListener {
 
     private final Timer clockTimer;
 
+    // === FIX: Lớp nội bộ để chứa dữ liệu tải trong nền ===
+    private class BackgroundData {
+        final Map<String, List<Ban>> banTheoKhuVuc;
+        final List<PhieuDatBan> phieuDatDangHoatDong;
+        final List<String> tenKhuVuc;
+        
+        BackgroundData(Map<String, List<Ban>> ban, List<PhieuDatBan> phieu) {
+            this.banTheoKhuVuc = (ban != null) ? ban : new LinkedHashMap<>();
+            this.phieuDatDangHoatDong = (phieu != null) ? phieu : new ArrayList<>();
+            this.tenKhuVuc = new ArrayList<>(this.banTheoKhuVuc.keySet());
+        }
+    }
+    // === HẾT FIX ===
+
     public DatBan_View() {
         banDAO = new Ban_DAO();
-		hoaDonDAO = new HoaDon_DAO();
+        hoaDonDAO = new HoaDon_DAO();
         phieuDatBanDAO = new PhieuDatBan_DAO();
-        danhSachBanTheoKhuVuc = new LinkedHashMap<>();
-        tenKhuVuc = new ArrayList<>();
-        danhSachPhieuDatDangHoatDong = new ArrayList<>();
+        // Xóa khởi tạo danh sách ở đây, chúng sẽ được khởi tạo trong worker
 
         txtSearchPDB = new JTextField(20);
         txtSearchPDB.setToolTipText("Mã PDB, SĐT hoặc Tên khách");
@@ -129,7 +142,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         btnSearchPDB = new RoundedButton("Tìm kiếm PDB", MAU_XANH_DUONG, COLOR_WHITE);
         btnSearchPDB.setPreferredSize(new Dimension(140, 38));
 
-        // THÊM MỚI: Khởi tạo nút "Tìm bàn"
         btnTimBanTheoGio = new RoundedButton("Tìm bàn", MAU_XANH_LA, COLOR_WHITE);
         btnTimBanTheoGio.setPreferredSize(new Dimension(110, 38)); 
 
@@ -187,10 +199,16 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         thietLapGiaoDien();
         ganSuKien(); 
-        taiDuLieuVaHienThiBanDau(true);
+        
+        // === FIX: Gọi hàm tải bất đồng bộ thay vì hàm cũ ===
+        // taiDuLieuVaHienThiBanDau(true); // XÓA HÀM CŨ
+        loadDataAsync(true); // GỌI HÀM MỚI
+        // === HẾT FIX ===
     }
-
-    private void thietLapGiaoDien() {
+    
+    // ... (Tất cả các hàm từ thietLapGiaoDien đến taoStyledTable giữ nguyên) ...
+    // ... (Mình sẽ ẩn các hàm này đi cho gọn)
+        private void thietLapGiaoDien() {
         setLayout(new BorderLayout());
         setBackground(BG_VIEW);
         setBorder(new EmptyBorder(0,0,0,0));
@@ -229,15 +247,12 @@ public class DatBan_View extends JPanel implements ActionListener {
         return panelHeaderWrapper;
     }
 
-    // =============================================================
-    // THAY THẾ TOÀN BỘ HÀM NÀY
-    // =============================================================
     private JPanel taoPanelTimKiem() {
         JPanel pnlSearch = new RoundedPanel(15, COLOR_WHITE, new GridBagLayout());
         pnlSearch.setBorder(new EmptyBorder(12, 15, 12, 15));
         
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(5, 8, 5, 8); // SỬA: Giảm khoảng cách
+        gbc.insets = new Insets(5, 8, 5, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
 
@@ -245,19 +260,19 @@ public class DatBan_View extends JPanel implements ActionListener {
         pnlSearch.add(new JLabel("Tìm kiếm PDB:"), gbc);
         
         gbc.gridx = 1; gbc.weightx = 0.1;
-        txtSearchPDB.setPreferredSize(new Dimension(120, 38)); // SỬA: Giảm chiều rộng
+        txtSearchPDB.setPreferredSize(new Dimension(120, 38));
         styleComponent(txtSearchPDB);
         pnlSearch.add(txtSearchPDB, gbc);
         
         gbc.gridx = 2; gbc.weightx = 0;
-        btnSearchPDB.setPreferredSize(new Dimension(120, 38)); // SỬA: Giảm chiều rộng
+        btnSearchPDB.setPreferredSize(new Dimension(120, 38));
         pnlSearch.add(btnSearchPDB, gbc);
 
         gbc.gridx = 3; gbc.gridy = 0; gbc.weightx = 0;
         pnlSearch.add(new JLabel("Số khách:"), gbc);
         
         gbc.gridx = 4;
-        cboSoKhach.setPreferredSize(new Dimension(70, 38)); // SỬA: Giảm chiều rộng
+        cboSoKhach.setPreferredSize(new Dimension(70, 38)); 
         styleComponent(cboSoKhach);
         pnlSearch.add(cboSoKhach, gbc);
 
@@ -265,7 +280,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         pnlSearch.add(new JLabel("Khu vực:"), gbc);
         
         gbc.gridx = 6; gbc.weightx = 0.1;
-        cboFilterKhuVuc.setPreferredSize(new Dimension(120, 38)); // SỬA: Giảm chiều rộng
+        cboFilterKhuVuc.setPreferredSize(new Dimension(120, 38)); 
         styleComponent(cboFilterKhuVuc);
         pnlSearch.add(cboFilterKhuVuc, gbc);
 
@@ -273,7 +288,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         pnlSearch.add(new JLabel("Ngày đặt:"), gbc);
         
         gbc.gridx = 8; gbc.weightx = 0.1;
-        datePicker.setPreferredSize(new Dimension(130, 38)); // SỬA: Đặt kích thước chuẩn
+        datePicker.setPreferredSize(new Dimension(130, 38)); 
         styleComponent(datePicker);
         pnlSearch.add(datePicker, gbc);
 
@@ -292,10 +307,7 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         return pnlSearch;
     }
-    // =============================================================
-    // KẾT THÚC THAY THẾ
-    // =============================================================
-
+    
     private void styleComponent(JComponent comp) {
         comp.setFont(FONT_CHU);
         comp.setBorder(BorderFactory.createCompoundBorder(new LineBorder(MAU_VIEN, 1), new EmptyBorder(5, 10, 5, 10)));
@@ -463,8 +475,9 @@ public class DatBan_View extends JPanel implements ActionListener {
         table.getTableHeader().setPreferredSize(new Dimension(table.getTableHeader().getWidth(), 40));
         return table;
     }
-    
-    private JPanel taoTheBan(Ban ban) {
+
+    // ... (Hàm taoTheBan, createBanIconLabel, createFallbackIcon giữ nguyên) ...
+        private JPanel taoTheBan(Ban ban) {
         RoundedPanel card = new RoundedPanel(15, COLOR_WHITE, new BorderLayout(8, 0));
         card.setBorder(new EmptyBorder(6, 8, 6, 10));
         card.setPreferredSize(new Dimension(200, 70));
@@ -535,7 +548,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         try {
             iconBan = new ImageIcon(iconPath); 
         } catch (Exception e) {
-           
+            
         }
 
         if (iconBan != null && iconBan.getIconWidth() > 0) {
@@ -566,37 +579,98 @@ public class DatBan_View extends JPanel implements ActionListener {
         return lblIcon;
     }
 
-    private void taiDuLieuVaHienThiBanDau(boolean resetKhuVuc) {
-        // 1. Tải dữ liệu thô từ CSDL
-        taiDuLieuKhuVuc();
-        taiDuLieuDatBan();
+    // === FIX: XÓA CÁC HÀM TẢI DỮ LIỆU CŨ ===
+    // private void taiDuLieuVaHienThiBanDau(boolean resetKhuVuc) { ... }
+    // private void taiDuLieuVaHienThiBanDau() { ... }
+    // private void taiDuLieuKhuVuc() { ... }
+    // private void taiDuLieuDatBan() { ... }
+    // === HẾT FIX ===
+
+
+    // === FIX: HÀM MỚI TẢI DỮ LIỆU BẰNG SWINGWORKER ===
+    /**
+     * Tải dữ liệu (bàn, phiếu đặt) trong nền để tránh làm lag UI.
+     * Cập nhật UI sau khi tải xong.
+     * @param resetKhuVuc true nếu muốn reset bộ lọc khu vực về "Tất cả"
+     */
+    private void loadDataAsync(boolean resetKhuVuc) {
+        // 1. Hiển thị trạng thái "Đang tải"
+        pnlLuoiBan.removeAll();
+        pnlLuoiBan.setLayout(new FlowLayout(FlowLayout.CENTER));
+        JLabel lblLoading = new JLabel("Đang tải dữ liệu sơ đồ bàn, vui lòng chờ...");
+        lblLoading.setFont(FONT_CHU);
+        pnlLuoiBan.add(lblLoading);
+        pnlLuoiBan.revalidate();
+        pnlLuoiBan.repaint();
         
-        // 2. Cập nhật trạng thái bàn dựa trên thời gian đang được chọn trên bộ lọc.
-        capNhatTrangThaiBanTheoThoiGian(); 
-
-        // 3. Cập nhật ComboBox Khu vực
+        lblThongKeBan.setText("Đang tải...");
+        modelPhieuDat.setRowCount(0); // Xóa bảng
+        
+        // Lấy khu vực đang chọn (nếu có) để giữ lại sau khi tải
         String khuVucDaChon = (String) cboFilterKhuVuc.getSelectedItem();
-        capNhatCboKhuVuc();
 
-        // 4. Thiết lập lại khu vực đang chọn
-        if (resetKhuVuc || khuVucDaChon == null) {
-            cboFilterKhuVuc.setSelectedItem("Tất cả");
-            khuVucHienTai = "Tất cả";
-        } else {
-            cboFilterKhuVuc.setSelectedItem(khuVucDaChon);
-            khuVucHienTai = khuVucDaChon;
-        }
+        // 2. Tạo SwingWorker
+        SwingWorker<BackgroundData, Void> worker = new SwingWorker<BackgroundData, Void>() {
+            
+            @Override
+            protected BackgroundData doInBackground() throws Exception {
+                // Tải dữ liệu trong nền
+                // Logic từ taiDuLieuKhuVuc()
+                Map<String, List<Ban>> banData = phieuDatBanDAO.getAllBanByFloor();
+                
+                // Logic từ taiDuLieuDatBan()
+                List<PhieuDatBan> phieuData = phieuDatBanDAO.getAllPhieuDatBan();
 
-        // 5. Vẽ lại giao diện
-        capNhatHienThiLuoiBan();
-        capNhatThongKeBan();
-        capNhatTablePhieuDat();
+                return new BackgroundData(banData, phieuData);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    // 3. Lấy dữ liệu khi đã tải xong (chạy trên luồng EDT)
+                    BackgroundData data = get();
+                    
+                    // 4. Cập nhật biến toàn cục
+                    danhSachBanTheoKhuVuc = data.banTheoKhuVuc;
+                    danhSachPhieuDatDangHoatDong = data.phieuDatDangHoatDong;
+                    tenKhuVuc = data.tenKhuVuc;
+
+                    // 5. Chạy các hàm cập nhật UI
+                    // (Đây là logic còn lại của hàm taiDuLieuVaHienThiBanDau)
+                    capNhatTrangThaiBanTheoThoiGian();
+                    capNhatCboKhuVuc();
+
+                    if (resetKhuVuc || khuVucDaChon == null) {
+                        cboFilterKhuVuc.setSelectedItem("Tất cả");
+                        khuVucHienTai = "Tất cả";
+                    } else {
+                        cboFilterKhuVuc.setSelectedItem(khuVucDaChon);
+                        khuVucHienTai = khuVucDaChon;
+                    }
+
+                    // 6. Vẽ lại giao diện
+                    capNhatHienThiLuoiBan();
+                    capNhatThongKeBan();
+                    capNhatTablePhieuDat();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    pnlLuoiBan.removeAll();
+                    pnlLuoiBan.add(new JLabel("Lỗi khi tải dữ liệu: " + e.getMessage()));
+                    pnlLuoiBan.revalidate();
+                    pnlLuoiBan.repaint();
+                    lblThongKeBan.setText("Tải dữ liệu thất bại!");
+                }
+            }
+        };
+        
+        // 3. Thực thi worker
+        worker.execute();
     }
-    
-    private void taiDuLieuVaHienThiBanDau() {
-         taiDuLieuVaHienThiBanDau(false);
-    }
+    // === HẾT FIX ===
 
+
+    // === FIX: Cập nhật hàm refreshData để gọi hàm async mới ===
     public void refreshData() {
         SwingUtilities.invokeLater(() -> {
             if (cardBanDangChon != null && banDangChon != null) {
@@ -607,7 +681,7 @@ public class DatBan_View extends JPanel implements ActionListener {
                          ((RoundedPanel) cardBanDangChon).setBorderColor(TrangThaiBan.fromString(banMoi.getTrangThai()).getColor());
                      }
                  } catch (Exception e) {
-                      // Bỏ qua
+                     // Bỏ qua
                  }
                 ((RoundedPanel) cardBanDangChon).setBackground(COLOR_WHITE);
                 cardBanDangChon.repaint();
@@ -617,36 +691,20 @@ public class DatBan_View extends JPanel implements ActionListener {
             phieuDangChon = null;
             
             xoaRongFormVaResetBan(); 
-            taiDuLieuVaHienThiBanDau(false); 
+            // taiDuLieuVaHienThiBanDau(false); // XÓA HÀM CŨ
+            loadDataAsync(false); // GỌI HÀM MỚI
         });
     }
     
+    // === FIX: Cập nhật hàm refreshDataGridOnly để gọi hàm async mới ===
     public void refreshDataGridOnly() {
         SwingUtilities.invokeLater(() -> {
-            taiDuLieuVaHienThiBanDau(false); 
+            // taiDuLieuVaHienThiBanDau(false); // XÓA HÀM CŨ
+            loadDataAsync(false); // GỌI HÀM MỚI
         });
     }
+    // === HẾT FIX ===
 
-
-    private void taiDuLieuKhuVuc() {
-        try {
-            danhSachBanTheoKhuVuc = phieuDatBanDAO.getAllBanByFloor();
-            tenKhuVuc = new ArrayList<>(danhSachBanTheoKhuVuc.keySet());
-        } catch (Exception e) {
-            System.err.println("Lỗi khi tải dữ liệu khu vực: " + e.getMessage());
-            danhSachBanTheoKhuVuc = new LinkedHashMap<>();
-            tenKhuVuc = new ArrayList<>();
-        }
-    }
-
-    private void taiDuLieuDatBan() {
-        try {
-            danhSachPhieuDatDangHoatDong = phieuDatBanDAO.getAllPhieuDatBan();
-            if (danhSachPhieuDatDangHoatDong == null) danhSachPhieuDatDangHoatDong = new ArrayList<>();
-        } catch (Exception e) {
-            danhSachPhieuDatDangHoatDong = new ArrayList<>();
-        }
-    }
 
     /**
      * Cập nhật trạng thái của tất cả các bàn dựa trên
@@ -803,13 +861,9 @@ public class DatBan_View extends JPanel implements ActionListener {
         }
     }
     
-    // =============================================================
-    // THAY THẾ TOÀN BỘ HÀM NÀY
-    // =============================================================
-    /**
-     * Gán các sự kiện (listeners) cho các component (nút, combobox, ...).
-     */
-    private void ganSuKien() {
+    // ... (Hàm ganSuKien, timCardBan, actionPerformed giữ nguyên như code bạn gửi) ...
+    // ... (Các hàm này bạn đã sửa đúng) ...
+        private void ganSuKien() {
         // 1. Gán sự kiện cho các nút chính
         btnDatBan.addActionListener(this);
         btnSearchPDB.addActionListener(this);
@@ -844,28 +898,9 @@ public class DatBan_View extends JPanel implements ActionListener {
         });
         
         // ===================================
-        // XÓA BỎ CÁC LISTENER TỰ ĐỘNG
-        // ===================================
-        /* // Listener cho JDateChooser (chọn ngày)
-        datePicker.addPropertyChangeListener("date", new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if ("date".equals(evt.getPropertyName())) {
-                    locBanTheoThoiGian();
-                }
-            }
-        });
-
-        // Listener cho JSpinner (chọn giờ)
-        spinnerGioDat.addChangeListener(e -> {
-            locBanTheoThoiGian();
-        });
-        */
+        // XÓA BỎ CÁC LISTENER TỰ ĐỘNG (Bạn đã làm đúng)
         // ===================================
     }
-    // =============================================================
-    // KẾT THÚC THAY THẾ
-    // =============================================================
 
     private JPanel timCardBan(String maBan) {
         for (Component comp : pnlLuoiBan.getComponents()) {
@@ -886,9 +921,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         return null;
     }
 
-    // =============================================================
-    // SỬA ĐỔI HÀM NÀY
-    // =============================================================
     @Override
     public void actionPerformed(ActionEvent e) {
         Object o = e.getSource();
@@ -904,16 +936,18 @@ public class DatBan_View extends JPanel implements ActionListener {
             xuLyThanhToan(); 
         } else if (o == btnHuyDatBan) { 
             xuLyHuyDatBan();
-        } else if (o == btnTimBanTheoGio) { // THÊM MỚI
+        } else if (o == btnTimBanTheoGio) { // THÊM MỚI (Bạn đã làm đúng)
             // Gọi hàm lọc bàn khi nhấn nút
             locBanTheoThoiGian();
         }
     }
-    // =============================================================
-    // KẾT THÚC SỬA ĐỔI
-    // =============================================================
-    
-    private void hienThiDanhSachPhieuDat() {
+
+    // ... (Tất cả các hàm xử lý logic còn lại giữ nguyên) ...
+    // ... (hienThiDanhSachPhieuDat, xoaRongFormVaResetBan, timKiemPhieuDat, ...)
+    // ... (xuLyChonBan, xuLyNutDatBan, datBanMoi, goiMon, xuLyThanhToan, ...)
+    // ... (xuLyHuyDatBan, 2 lớp inner class RoundedPanel, RoundedButton) ...
+    // ... (và các hàm helper: getThoiGianDaChon, locBanTheoThoiGian) ...
+        private void hienThiDanhSachPhieuDat() {
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Danh sách Phiếu Đặt Bàn", true);
         dialog.setSize(600, 400);
         dialog.setLocationRelativeTo(this);
@@ -1042,7 +1076,7 @@ public class DatBan_View extends JPanel implements ActionListener {
                 btnThanhToan.setVisible(false);
                 btnHuyDatBan.setVisible(true);
             }
-           
+            
 
             SwingWorker<PhieuDatBan, Void> worker = new SwingWorker<PhieuDatBan, Void>() {
                 @Override
@@ -1096,7 +1130,7 @@ public class DatBan_View extends JPanel implements ActionListener {
                                 String.format("Bàn %s đang phục vụ khách!\nBạn có thể gọi thêm món hoặc thanh toán.", ban.getMaBan().trim()),
                                 "Bàn đang sử dụng", JOptionPane.INFORMATION_MESSAGE);
                         }
-                     
+                       
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -1321,7 +1355,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         dialog.setVisible(true);
     }
     
-   
+    
     private void xuLyHuyDatBan() {
         // Kiểm tra điều kiện
         if (banDangChon == null || phieuDangChon == null) {
@@ -1337,7 +1371,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         // Xác nhận
         int confirm = JOptionPane.showConfirmDialog(this, 
             String.format("Bạn có chắc muốn HỦY phiếu đặt '%s' cho bàn '%s' không?\nThao tác này sẽ trả bàn về trạng thái 'Trống'.", 
-                        phieuDangChon.getMaPhieu(), banDangChon.getMaBan().trim()),
+                            phieuDangChon.getMaPhieu(), banDangChon.getMaBan().trim()),
             "Xác nhận hủy đặt bàn", 
             JOptionPane.YES_NO_OPTION, 
             JOptionPane.WARNING_MESSAGE);
@@ -1366,7 +1400,7 @@ public class DatBan_View extends JPanel implements ActionListener {
                     boolean updateBanOK = banDAO.capNhatBan(banDangChon);
 
                     if (!updateBanOK) {
-                       
+                        
                         phieuDangChon.setTrangThaiPhieu("Chưa đến");
                         phieuDatBanDAO.updatePhieuDatBan(phieuDangChon);
                         throw new Exception("Lỗi khi cập nhật trạng thái Bàn.");

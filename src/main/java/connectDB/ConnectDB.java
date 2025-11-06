@@ -5,7 +5,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class ConnectDB {
-    // BỎ STATIC CONNECTION: con không còn là biến static nữa để mỗi DAO có thể quản lý kết nối riêng của nó
     
     private static final String URL = "jdbc:sqlserver://localhost:1433;"
             + "databaseName=PTUD-JOJO-Restaurant;"
