@@ -61,7 +61,7 @@ public class HoaDon_DAO {
         String sql = "SELECT MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, ISNULL(TongTienTruocThue, 0) AS TongTienTruocThue, ISNULL(TongGiamGia, 0) AS TongGiamGia, DaThanhToan " +
                 "FROM HOADON ORDER BY NgayLapHoaDon DESC, GioVao DESC";
 
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -81,7 +81,7 @@ public class HoaDon_DAO {
         String sql = "SELECT TOP 100 MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, ISNULL(TongTienTruocThue, 0) AS TongTienTruocThue, ISNULL(TongGiamGia, 0) AS TongGiamGia, DaThanhToan " +
                      "FROM HOADON ORDER BY NgayLapHoaDon DESC, GioVao DESC";
 
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
@@ -94,12 +94,103 @@ public class HoaDon_DAO {
         }
         return dsHoaDon;
     }
+    
+    /**
+     * Phương thức tối ưu để lấy hóa đơn cho View - JOIN với KHACHHANG và tính tổng tiền trong 1 query duy nhất
+     * Chỉ lấy 200 hóa đơn gần nhất, đã thanh toán
+     * @return Map<HoaDon, Object[]> - Object[] chứa [tenKH, tongTien]
+     */
+    public Map<HoaDon, Object[]> getHoaDonWithDetailsForView() {
+        Map<HoaDon, Object[]> result = new LinkedHashMap<>();
+        
+        String sql = "SELECT TOP 200 " +
+                "    h.MaHD, h.MaNV, h.MaKH, h.maBan, h.NgayLapHoaDon, h.GioVao, h.GioRa, " +
+                "    h.phuongThucThanhToan, h.MaKM, h.MaThue, h.MaPhieu, " +
+                "    ISNULL(h.TongTienTruocThue, 0) AS TongTienTruocThue, " +
+                "    ISNULL(h.TongGiamGia, 0) AS TongGiamGia, h.DaThanhToan, " +
+                "    ISNULL(kh.TenKH, N'Khách lẻ') AS TenKH, " +
+                "    ISNULL(( " +
+                "        SELECT SUM(ct.SoLuong * ct.DonGiaBan) " +
+                "        FROM CHITIETHOADON ct " +
+                "        WHERE ct.MaHD = h.MaHD " +
+                "    ), 0) AS TongTienMonAn " +
+                "FROM HOADON h " +
+                "LEFT JOIN KHACHHANG kh ON h.MaKH = kh.MaKH " +
+                "WHERE h.DaThanhToan = 1 " +
+                "ORDER BY h.NgayLapHoaDon DESC, h.GioVao DESC";
+        
+        try (Connection conn = ConnectDB.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            while (rs.next()) {
+                HoaDon hd = createHoaDonFromResultSet(rs);
+                String tenKH = rs.getString("TenKH");
+                double tongTien = rs.getDouble("TongTienMonAn");
+                
+                // Tính tổng tiền cuối cùng (đã bao gồm thuế và giảm giá)
+                double tongTienTruocThue = tongTien;
+                double tienThue = 0;
+                double tienGiamGia = hd.getTongGiamGia();
+                
+                // Lấy thuế suất nếu có
+                if (hd.getThue() != null && hd.getThue().getMaSoThue() != null) {
+                    Thue thue = thueDAO.getThueById(hd.getThue().getMaSoThue());
+                    if (thue != null) {
+                        tienThue = tongTienTruocThue * (thue.getTyLeThue() / 100.0);
+                    }
+                }
+                
+                double tongTienCuoi = tongTienTruocThue + tienThue - tienGiamGia;
+                
+                result.put(hd, new Object[]{tenKH, tongTienCuoi});
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi lấy danh sách hóa đơn với chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return result;
+    }
+    
+    /**
+     * Phương thức tối ưu để lấy tổng thống kê (tổng hóa đơn và doanh thu) trong 1 query
+     * @return double[] - [tongSoHoaDon, tongDoanhThu]
+     */
+    public double[] getThongKeNhanh() {
+        double[] result = new double[2]; // [0] = tổng số HD, [1] = tổng doanh thu
+        
+        String sql = "SELECT " +
+                "    COUNT(DISTINCT h.MaHD) AS TongSoHD, " +
+                "    ISNULL(SUM(ct.SoLuong * ct.DonGiaBan), 0) AS TongDoanhThu " +
+                "FROM HOADON h " +
+                "LEFT JOIN CHITIETHOADON ct ON h.MaHD = ct.MaHD " +
+                "WHERE h.DaThanhToan = 1";
+        
+        try (Connection conn = ConnectDB.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            if (rs.next()) {
+                result[0] = rs.getDouble("TongSoHD");
+                result[1] = rs.getDouble("TongDoanhThu");
+            }
+            
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi lấy thống kê: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        return result;
+    }
+    
     public boolean addHoaDon(HoaDon hd) {
         String sql = "INSERT INTO HOADON(MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, TongTienTruocThue, TongGiamGia, DaThanhToan)" +
                 " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (
-                Connection conn = ConnectDB.getInstance().getConnection();
+                Connection conn = ConnectDB.getConnection();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, hd.getMaHD());
@@ -160,7 +251,7 @@ public class HoaDon_DAO {
                 "MaThue = ?, GioVao = ?, GioRa = ?, MaPhieu = ?, TongTienTruocThue = ?, TongGiamGia = ?, DaThanhToan = ? " +
                 "WHERE MaHD = ?";
 
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, hd.getNhanVien().getMaNhanVien());
@@ -212,7 +303,7 @@ public class HoaDon_DAO {
         String sqlDeleteHoaDon = "DELETE FROM HOADON WHERE MaHD = ?";
         Connection conn = null;
         try {
-            conn = ConnectDB.getInstance().getConnection();
+            conn = ConnectDB.getConnection();
             conn.setAutoCommit(false);
 
             try (PreparedStatement ps1 = conn.prepareStatement(sqlDeleteChiTiet)) {
@@ -254,7 +345,7 @@ public class HoaDon_DAO {
 
     public boolean updateTrangThaiThanhToan(String maHoaDon, boolean daThanhToan) {
         String sql = "UPDATE HOADON SET DaThanhToan = ? WHERE MaHD = ?";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setBoolean(1, daThanhToan);
             pstmt.setString(2, maHoaDon);
@@ -269,7 +360,7 @@ public class HoaDon_DAO {
     public HoaDon findByMaHD(String maHD) {
         String sql = "SELECT MaHD, MaNV, MaKH, maBan, NgayLapHoaDon, GioVao, GioRa, phuongThucThanhToan, MaKM, MaThue, MaPhieu, ISNULL(TongTienTruocThue, 0) AS TongTienTruocThue, ISNULL(TongGiamGia, 0) AS TongGiamGia, DaThanhToan " +
                 "FROM HOADON WHERE MaHD = ?";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, maHD);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -290,7 +381,7 @@ public class HoaDon_DAO {
                 "FROM CHITIETHOADON ct JOIN MONAN ma ON ct.maMonAn = ma.maMonAn " +
                 "WHERE ct.MaHD = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, maHoaDon);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -318,7 +409,7 @@ public class HoaDon_DAO {
 
         String sql = "SELECT TOP 1 MaHD FROM HOADON WHERE MaHD LIKE ? ORDER BY MaHD DESC";
 
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement pstmt = con.prepareStatement(sql)) {
             
             pstmt.setString(1, datePrefix + "%"); 
@@ -346,7 +437,7 @@ public class HoaDon_DAO {
                 " FROM HOADON hd INNER JOIN CHITIETHOADON cthd ON hd.MaHD = cthd.MaHD" +
                 " WHERE hd.DaThanhToan = 1 AND hd.NgayLapHoaDon BETWEEN ? AND ?";
 
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setDate(1, toSqlDate(from));
@@ -370,7 +461,7 @@ public class HoaDon_DAO {
         
         String sql = "SELECT COUNT(*) AS SoLuong FROM HOADON WHERE DaThanhToan = 1 AND NgayLapHoaDon BETWEEN ? AND ?";
 
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setDate(1, toSqlDate(from));
@@ -392,7 +483,7 @@ public class HoaDon_DAO {
                 " FROM HOADON hd INNER JOIN CHITIETHOADON cthd ON hd.MaHD = cthd.MaHD" +
                 " WHERE hd.DaThanhToan = 1";
 
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              Statement stmt = con.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) {
@@ -407,7 +498,7 @@ public class HoaDon_DAO {
     public int getTongDonHang() {
         String sql = "SELECT COUNT(*) AS SoLuong FROM HOADON WHERE DaThanhToan = 1";
         
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              Statement stmt = con.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             if (rs.next()) {
@@ -448,7 +539,7 @@ public class HoaDon_DAO {
                 " GROUP BY CONVERT(VARCHAR, NgayLapHoaDon, 103), HOADON.NgayLapHoaDon" +
                 " ORDER BY HOADON.NgayLapHoaDon";
 
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setDate(1, toSqlDate(from));
@@ -474,7 +565,7 @@ public class HoaDon_DAO {
                      "WHERE MaPhieu = ? " +
                      "ORDER BY GioVao DESC"; 
 
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu.trim());
@@ -499,7 +590,7 @@ public class HoaDon_DAO {
                 "WHERE maBan = ? AND DaThanhToan = 0 " +
                 "ORDER BY NgayLapHoaDon DESC, GioVao DESC";
 
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, maBan.trim());
@@ -590,7 +681,7 @@ public class HoaDon_DAO {
         String sqlSelect = "SELECT maMonAn, soLuongMonAn, DonGiaBan FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         String sqlInsert = "INSERT INTO CHITIETHOADON (MaHD, MaMonAn, DonGiaBan, SoLuong) VALUES (?, ?, ?, ?)";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement psSelect = conn.prepareStatement(sqlSelect);
              PreparedStatement psInsert = conn.prepareStatement(sqlInsert)) {
             
@@ -624,7 +715,7 @@ public class HoaDon_DAO {
         String sqlTinhTong = "SELECT SUM(DonGiaBan * SoLuong) AS TongTien FROM CHITIETHOADON WHERE MaHD = ?";
         String sqlUpdate = "UPDATE HOADON SET TongTienTruocThue = ? WHERE MaHD = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement psTinh = conn.prepareStatement(sqlTinhTong);
              PreparedStatement psUpdate = conn.prepareStatement(sqlUpdate)) {
             
@@ -689,7 +780,7 @@ public class HoaDon_DAO {
         }
 
         String sql = "UPDATE HOADON SET MaKM = ?, TongGiamGia = ? WHERE MaHD = ?";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, maKM.trim());
@@ -711,7 +802,7 @@ public class HoaDon_DAO {
 
     public boolean huyMaKhuyenMai(String maHD) {
         String sql = "UPDATE HOADON SET MaKM = ?, TongGiamGia = 0 WHERE MaHD = ?";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, "KM00000000"); 
@@ -728,7 +819,7 @@ public class HoaDon_DAO {
     public boolean thanhToanHoaDon(String maHD, String phuongThucThanhToan) {
         String sql = "UPDATE HOADON SET DaThanhToan = 1, phuongThucThanhToan = ?, GioRa = GETDATE() WHERE MaHD = ?";
 
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setString(1, phuongThucThanhToan);
@@ -818,7 +909,7 @@ public class HoaDon_DAO {
 
         String sql = "UPDATE HOADON SET MaKH = ?, MaKM = ?, TongGiamGia = ? WHERE MaHD = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maKH.trim());

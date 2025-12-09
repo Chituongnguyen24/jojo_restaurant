@@ -1,27 +1,49 @@
 package view;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.BorderLayout;
+import java.awt.CardLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Image;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.UIManager;
+
 import entity.TaiKhoan;
-import view.Ban.*;
-import view.HoaDon.*;
-import view.KhachHang.*;
+import view.Ban.AnTrucTiep_View;
+import view.Ban.Ban_View;
+import view.Ban.DatBan_View;
+import view.HoaDon.HoaDon_View;
+import view.HoaDon.KhuyenMai_View;
+import view.KhachHang.KhachHang_View;
 import view.Login.DangNhap_View;
 import view.Login.DoiMatKhau_View;
 import view.NhanVien.NhanVien_View;
 import view.NhanVien.ThongKe_View;
-import view.ThucDon.*;
+import view.ThucDon.DatMonAn_View;
+import view.ThucDon.ThucDon_View;
 
 public class TrangChu_View extends JPanel {
 
     private final JPanel contentPanel;
     private final CardLayout cardLayout;
     private final List<JMenuItem> allMenuItems = new ArrayList<>();
-    private JMenuItem currentMenuItem = null;
     private final JFrame mainFrame;
 
     // Khai báo các View
@@ -58,18 +80,15 @@ public class TrangChu_View extends JPanel {
 
         Role role = determineRole(tk, vaiTro);
 
-        JPanel headerPanel = createHeaderPanel(tk, role);
+        // Xóa headerPanel riêng, gộp tất cả vào menuBar
         JMenuBar menuBar = createMenuBar(tk, role);
         cardLayout = new CardLayout();
         contentPanel = new JPanel(cardLayout);
         
         setupContentPanel(role, tk);
 
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.add(headerPanel, BorderLayout.NORTH);
-        topPanel.add(menuBar, BorderLayout.SOUTH);
-
-        add(topPanel, BorderLayout.NORTH);
+        // Chỉ cần add menuBar trực tiếp, không cần topPanel nữa
+        add(menuBar, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
 
         cardLayout.show(contentPanel, CARD_HOME);
@@ -91,55 +110,21 @@ public class TrangChu_View extends JPanel {
         }
     }
 
-    private JPanel createHeaderPanel(TaiKhoan tk, Role role) {
-        JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(245, 245, 245));
-        headerPanel.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
-
-        ImageIcon logoIcon = new ImageIcon("images/banner1.png");
-        Image img = logoIcon.getImage().getScaledInstance(40, 40, Image.SCALE_SMOOTH);
-        logoIcon = new ImageIcon(img);
-
-        String roleLabel = (role == Role.MANAGER) ? "Quản lý" : "Tiếp tân";
-        JLabel logoLabel = new JLabel(" Nhà hàng JOJO - Hệ thống quản lý nội bộ", logoIcon, JLabel.LEFT);
-        logoLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        logoLabel.setForeground(new Color(50, 50, 50));
-        headerPanel.add(logoLabel, BorderLayout.WEST);
-
-        JPanel userPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        userPanel.setOpaque(false);
-
-        String userName = (tk != null && tk.getTenDangNhap() != null) ? tk.getTenDangNhap().trim() : "Người dùng";
-        JLabel userLabel = new JLabel("Xin chào, " + userName + " (" + roleLabel + ")");
-        userLabel.setFont(new Font("Arial", Font.PLAIN, 13));
-        userPanel.add(userLabel);
-
-        JButton logoutBtn = new JButton("Đăng xuất");
-        styleLogoutButton(logoutBtn);
-        logoutBtn.addActionListener(createLogoutAction());
-        userPanel.add(logoutBtn);
-        headerPanel.add(userPanel, BorderLayout.EAST);
-
-        return headerPanel;
-    }
-
-    private void styleLogoutButton(JButton btn) {
-        btn.setOpaque(true);
-        btn.setBorderPainted(false);
-        btn.setBackground(new Color(200, 50, 50));
-        btn.setForeground(Color.WHITE);
-        btn.setFocusPainted(false);
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(110, 28));
-    }
-
     private JMenuBar createMenuBar(TaiKhoan tk, Role role) {
         JMenuBar menuBar = new JMenuBar();
         menuBar.setBackground(new Color(230, 230, 230));
-        menuBar.setBorder(BorderFactory.createEmptyBorder(3, 10, 3, 10));
+        menuBar.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
 
         Font menuFont = new Font("Arial", Font.BOLD, 14);
         Font menuItemFont = new Font("Arial", Font.PLAIN, 14);
+
+        // Logo icon ở đầu
+        ImageIcon logoIcon = new ImageIcon("images/banner1.png");
+        Image img = logoIcon.getImage().getScaledInstance(30, 30, Image.SCALE_SMOOTH);
+        logoIcon = new ImageIcon(img);
+        JLabel logoLabel = new JLabel(logoIcon);
+        logoLabel.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 15));
+        menuBar.add(logoLabel);
 
         // Hệ thống menu
         JMenu menuHeThong = new JMenu("Hệ thống");
@@ -154,8 +139,8 @@ public class TrangChu_View extends JPanel {
         
         mDoiMatKhau.addActionListener(e -> {
             String maNVForDialog = (tk != null && tk.getNhanVien() != null) 
-                    ? tk.getNhanVien().getMaNhanVien().trim() // Sử dụng MaNV nếu có
-                    : (tk != null ? tk.getTenDangNhap().trim() : ""); // Fallback sang Tên đăng nhập
+                    ? tk.getNhanVien().getMaNhanVien().trim()
+                    : (tk != null ? tk.getTenDangNhap().trim() : "");
 
             if (maNVForDialog.isEmpty()) {
                 JOptionPane.showMessageDialog(mainFrame, "Không tìm thấy thông tin đăng nhập.", "Lỗi", JOptionPane.ERROR_MESSAGE);
@@ -272,6 +257,29 @@ public class TrangChu_View extends JPanel {
             menuBar.add(menuHoaDon);
             allMenuItems.add(mQuanLyHoaDon);
         }
+
+        // Thêm glue để đẩy phần user info sang bên phải
+        menuBar.add(Box.createHorizontalGlue());
+
+        // Thêm thông tin user và nút đăng xuất ở cuối menuBar
+        String userName = (tk != null && tk.getTenDangNhap() != null) ? tk.getTenDangNhap().trim() : "Người dùng";
+        String roleLabel = (role == Role.MANAGER) ? "Quản lý" : "Tiếp tân";
+        JLabel userLabel = new JLabel("Xin chào, " + userName + " (" + roleLabel + ")  ");
+        userLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+        userLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
+        menuBar.add(userLabel);
+
+        JButton logoutBtn = new JButton("Đăng xuất");
+        logoutBtn.setOpaque(true);
+        logoutBtn.setBorderPainted(false);
+        logoutBtn.setBackground(new Color(200, 50, 50));
+        logoutBtn.setForeground(Color.WHITE);
+        logoutBtn.setFocusPainted(false);
+        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        logoutBtn.setPreferredSize(new Dimension(100, 28));
+        logoutBtn.setFont(new Font("Arial", Font.PLAIN, 12));
+        logoutBtn.addActionListener(createLogoutAction());
+        menuBar.add(logoutBtn);
 
         
         ActionListener switchPanelAction = createSwitchPanelAction();
@@ -419,7 +427,6 @@ public class TrangChu_View extends JPanel {
             item.setOpaque(true);
             item.setBackground(new Color(60, 120, 200));
             item.setForeground(Color.WHITE);
-            currentMenuItem = item;
         }
     }
 
@@ -431,6 +438,5 @@ public class TrangChu_View extends JPanel {
                 item.setForeground(UIManager.getColor("MenuItem.foreground"));
             }
         }
-        currentMenuItem = null;
     }
 }

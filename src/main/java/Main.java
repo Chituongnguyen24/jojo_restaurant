@@ -1,4 +1,3 @@
-
 import javax.swing.*;
 import dao.TaiKhoan_DAO;
 import entity.TaiKhoan;
@@ -41,7 +40,6 @@ public class Main {
                     return;
                 }
 
-                loginView.showMessage("Đăng nhập thành công! Xin chào " + tk.getVaiTro());
                 loginView.dispose();
 
                 switch (tk.getVaiTro().toUpperCase()) {

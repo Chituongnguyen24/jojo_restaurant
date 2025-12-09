@@ -1,23 +1,40 @@
 package view.ThucDon;
 
-import javax.swing.*;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.LayoutManager;
+import java.awt.RenderingHints;
+import java.awt.event.ActionListener;
+import java.awt.geom.RoundRectangle2D;
+import java.util.List;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 
 import dao.MonAn_DAO;
 import entity.MonAn;
-import java.awt.BasicStroke;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.LayoutManager;
-import java.awt.RenderingHints;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.Image;
-
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.time.LocalDate;
-import java.util.List;
 
 public class ThucDon_View extends JPanel implements ActionListener {
     private JPanel panelDanhSach;
@@ -587,12 +604,11 @@ public class ThucDon_View extends JPanel implements ActionListener {
 
     private class RoundedButton extends JButton {
         private int cornerRadius = 20;
-        private Color bg, fg;
+        private Color bg;
 
         public RoundedButton(String text, Color bg, Color fg) {
             super(text);
             this.bg = bg;
-            this.fg = fg;
             setContentAreaFilled(false); 
             setFocusPainted(false); 
             setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); 

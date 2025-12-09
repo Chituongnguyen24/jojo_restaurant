@@ -1,25 +1,50 @@
 package view.Ban;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Cursor;
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Window;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Locale;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.MatteBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+
 import dao.HoaDon_DAO;
 import dao.PhieuDatBan_DAO;
 import entity.Ban;
 import entity.ChiTietPhieuDatBan;
+import entity.HoaDon;
 import entity.KhachHang;
 import entity.PhieuDatBan;
-import entity.HoaDon;
 import view.ThucDon.ChonMon_Dialog;
-
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.JTableHeader;
-import java.awt.*;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.util.Locale;
 
 public class ChiTietPhieuDatBan_View extends JPanel {
     private JTable table;
@@ -33,7 +58,6 @@ public class ChiTietPhieuDatBan_View extends JPanel {
     private JPanel orderDetailsCard;
 
     private static final Color PRIMARY_COLOR = new Color(37, 99, 235);
-    private static final Color SECONDARY_COLOR = new Color(59, 130, 246);
     private static final Color SUCCESS_COLOR = new Color(34, 197, 94);
     private static final Color BACKGROUND_COLOR = new Color(248, 250, 252);
     private static final Color CARD_COLOR = Color.WHITE;
@@ -154,7 +178,6 @@ public class ChiTietPhieuDatBan_View extends JPanel {
             }
         }
 
-        Container top = this;
         for (Component c : getComponents()) {
             if (c instanceof JScrollPane) {
                 JScrollPane sp = (JScrollPane) c;
@@ -164,7 +187,7 @@ public class ChiTietPhieuDatBan_View extends JPanel {
                     for (int i = 0; i < mainPanel.getComponentCount(); i++) {
                         Component child = mainPanel.getComponent(i);
                         if (child instanceof JPanel) {
-                            JPanel p = (JPanel) child;
+                            // Panel processing
                         }
                     }
                     remove(sp);

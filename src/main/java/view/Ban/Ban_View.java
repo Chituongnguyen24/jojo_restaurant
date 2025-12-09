@@ -1,5 +1,47 @@
 package view.Ban;
 
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.Image;
+import java.awt.LayoutManager;
+import java.awt.RenderingHints;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+
 import dao.Ban_DAO;
 import dao.KhuVuc_DAO;
 import entity.Ban;
@@ -7,31 +49,12 @@ import entity.KhuVuc;
 import enums.LoaiBan;
 import enums.TrangThaiBan;
 
-import java.awt.BasicStroke;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.LayoutManager;
-import java.awt.RenderingHints;
-import java.awt.geom.RoundRectangle2D;
-import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.util.stream.Collectors;
-
 public class Ban_View extends JPanel implements ActionListener {
 
     private Ban_DAO banDAO;
     private KhuVuc_DAO khuVucDAO;
     private Map<String, List<Ban>> danhSachBanTheoKhuVuc;
+    @SuppressWarnings("unused")
     private Map<String, Integer> soLuongBanTheoKhuVuc;
     private List<String> tenKhuVuc;
     private String khuVucHienTai;
@@ -517,7 +540,6 @@ public class Ban_View extends JPanel implements ActionListener {
     }
     
     private boolean validateData() {
-        String maBan = txtMaBan.getText().trim();
         String soChoStr = txtSoCho.getText().trim();
         
         // Sửa: Không cần validate mã bàn khi thêm mới nữa
@@ -738,11 +760,9 @@ public class Ban_View extends JPanel implements ActionListener {
     
     private class RoundedButton extends JButton {
         private int doBoGoc;
-        private Color bg;
         
         public RoundedButton(String text, Color bg, Color fg) {
             super(text);
-            this.bg = bg;
             this.doBoGoc = 20;
             setBackground(bg);
             setContentAreaFilled(false); 

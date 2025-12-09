@@ -22,7 +22,7 @@ public class Thue_DAO {
         List<Thue> dsThue = new ArrayList<>();
         String sql = "SELECT * FROM THUE ORDER BY maSoThue";
         // FIX: Chuẩn hóa cách gọi Connection
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -38,7 +38,7 @@ public class Thue_DAO {
         List<Thue> dsThue = new ArrayList<>();
         String sql = "SELECT * FROM THUE WHERE trangThai = 1 ORDER BY maSoThue";
         // FIX: Chuẩn hóa cách gọi Connection
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
@@ -57,7 +57,7 @@ public class Thue_DAO {
         Thue thue = null;
         String sql = "SELECT * FROM THUE WHERE maSoThue = ?";
         // FIX: Chuẩn hóa cách gọi Connection
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, maThue);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -76,7 +76,7 @@ public class Thue_DAO {
      */
     public boolean addThue(Thue thue) {
         String sql = "INSERT INTO THUE (maSoThue, tenThue, tyLeThue, moTa, trangThai) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, thue.getMaSoThue());
@@ -94,7 +94,7 @@ public class Thue_DAO {
 
     public boolean updateThue(Thue thue) {
         String sql = "UPDATE THUE SET tenThue = ?, tyLeThue = ?, moTa = ?, trangThai = ? WHERE maSoThue = ?";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, thue.getTenThue());

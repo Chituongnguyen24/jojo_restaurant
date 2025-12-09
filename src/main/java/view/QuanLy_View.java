@@ -11,6 +11,13 @@ public class QuanLy_View extends JFrame {
         setSize(1280, 800);
         setLocationRelativeTo(null);
 
+        // Set icon cho cửa sổ
+        try {
+            setIconImage(new ImageIcon("images/logo.png").getImage());
+        } catch (Exception e) {
+            System.err.println("Không tìm thấy logo: " + e.getMessage());
+        }
+
         setContentPane(new TrangChu_View(this, tk, "Quản lý"));
         setVisible(true);
     }

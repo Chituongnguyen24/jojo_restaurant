@@ -26,7 +26,7 @@ public class MonAn_DAO {
         // Lấy tất cả, bao gồm cả các món đã vô hiệu hóa (trangThai = 0)
         String sql = "SELECT maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn FROM MonAn ORDER BY maMonAn"; 
 
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
@@ -44,7 +44,7 @@ public class MonAn_DAO {
      */
      public MonAn getMonAnTheoMa(String maMonAn) {
         String sql = "SELECT maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn FROM MonAn WHERE maMonAn = ?";
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
             
             stmt.setString(1, maMonAn.trim());
@@ -64,7 +64,7 @@ public class MonAn_DAO {
      */
     public boolean updateMonAn(MonAn monAn) {
         String sql = "UPDATE MonAn SET tenMonAn = ?, donGia = ?, trangThai = ?, imagePath = ?, loaiMonAn = ? WHERE maMonAn = ?";
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setString(1, monAn.getTenMonAn());
@@ -86,7 +86,7 @@ public class MonAn_DAO {
      */
     public boolean disableMonAn(String maMonAn) {
         String sql = "UPDATE MonAn SET trangThai = 0 WHERE maMonAn = ?";
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setString(1, maMonAn.trim());
@@ -102,7 +102,7 @@ public class MonAn_DAO {
      */
     public boolean themMonAn(MonAn monAn) {
         String sql = "INSERT INTO MonAn (maMonAn, tenMonAn, donGia, trangThai, imagePath, loaiMonAn) VALUES (?, ?, ?, ?, ?, ?)";
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setString(1, monAn.getMaMonAn().trim());
@@ -126,7 +126,7 @@ public class MonAn_DAO {
         String newID = "MA0001"; 
         String sql = "SELECT TOP 1 maMonAn FROM MonAn WHERE maMonAn LIKE 'MA[0-9][0-9][0-9][0-9]' ORDER BY maMonAn DESC";
 
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
@@ -182,7 +182,7 @@ public class MonAn_DAO {
 
         sqlBuilder.append(" ORDER BY maMonAn"); 
 
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sqlBuilder.toString())) {
 
             for (int i = 0; i < params.size(); i++) {
@@ -206,7 +206,7 @@ public class MonAn_DAO {
     public List<String> getUniqueLoaiMonAn() {
         List<String> loaiMonAnList = new ArrayList<>();
         String sql = "SELECT DISTINCT loaiMonAn FROM MonAn WHERE loaiMonAn IS NOT NULL ORDER BY loaiMonAn";
-        try (Connection con = ConnectDB.getInstance().getConnection();
+        try (Connection con = ConnectDB.getConnection();
              Statement stmt = con.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             

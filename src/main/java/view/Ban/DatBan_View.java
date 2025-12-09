@@ -468,6 +468,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         table.setRowHeight(35);
         table.setFont(FONT_CHU);
         table.setSelectionBackground(new Color(230, 240, 255));
+        table.setSelectionForeground(new Color(0, 0, 0)); // Thêm màu chữ đen khi chọn
         table.setGridColor(MAU_VIEN);
         table.getTableHeader().setFont(FONT_TIEUDE_NHO);
         table.getTableHeader().setBackground(new Color(248, 249, 250));

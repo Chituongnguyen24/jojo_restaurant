@@ -1,10 +1,31 @@
 package view.ThucDon;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.geom.RoundRectangle2D;
-import java.beans.PropertyChangeListener; // SỬA: THÊM IMPORT
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 
 
 public class NhapSoLuong_Dialog extends JDialog {
@@ -21,11 +42,7 @@ public class NhapSoLuong_Dialog extends JDialog {
     private static final Font FONT_LABEL = new Font("Segoe UI", Font.PLAIN, 14);
     private static final Font FONT_BUTTON = new Font("Segoe UI", Font.BOLD, 13);
     
-    /**
-     * Constructor đã được cập nhật để nhận tên món ăn
-     * @param parent Frame cha
-     * @param tenMonAn Tên món ăn (hiển thị trên tiêu đề)
-     */
+
     public NhapSoLuong_Dialog(Frame parent, String tenMonAn) {
         super(parent, "Nhập số lượng cho: " + tenMonAn, true);
         

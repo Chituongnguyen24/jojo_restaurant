@@ -292,6 +292,7 @@ public class AnTrucTiep_View extends JPanel implements ActionListener {
         tblBanCoKhach.setRowHeight(35);
         tblBanCoKhach.setFont(FONT_CHU);
         tblBanCoKhach.setSelectionBackground(new Color(230, 240, 255));
+        tblBanCoKhach.setSelectionForeground(new Color(0, 0, 0)); // Thêm màu chữ đen khi chọn
         tblBanCoKhach.setGridColor(MAU_VIEN);
         tblBanCoKhach.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 14));
         tblBanCoKhach.getTableHeader().setBackground(new Color(248, 249, 250));

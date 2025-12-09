@@ -1,12 +1,16 @@
 package view.KhachHang;
 
-import dao.KhachHang_DAO;
-import entity.KhachHang;
-
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.table.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -16,6 +20,26 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+
+import dao.KhachHang_DAO;
+import entity.KhachHang;
 
 public class KhachHang_View extends JPanel implements ActionListener {
     private JTable table;
@@ -335,8 +359,8 @@ public class KhachHang_View extends JPanel implements ActionListener {
              ((JTextField) component).setEditable(isEditable);
              ((JTextField) component).setFont(FONT_CHU);
         } else if (component instanceof JComboBox) {
-             ((JComboBox) component).setEnabled(isEditable);
-             ((JComboBox) component).setFont(FONT_CHU);
+             ((JComboBox<?>) component).setEnabled(isEditable);
+             ((JComboBox<?>) component).setFont(FONT_CHU);
         }
        
         if (component instanceof JComboBox || component instanceof JTextField) {

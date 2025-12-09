@@ -1,31 +1,45 @@
 package view.HoaDon;
 
-import dao.HoaDon_DAO;
-import dao.KhachHang_DAO;
-import entity.ChiTietHoaDon;
-import entity.HoaDon;
-import entity.KhachHang;
+import java.awt.BasicStroke;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GridLayout;
+import java.awt.LayoutManager;
+import java.awt.RenderingHints;
+import java.awt.event.ActionListener;
+import java.awt.geom.RoundRectangle2D;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
-import java.awt.BasicStroke;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.LayoutManager;
-import java.awt.RenderingHints;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.Component;
-
-import java.awt.*;
-import java.awt.event.ActionListener;
-import java.util.stream.Collectors; 
-import java.time.format.DateTimeFormatter;
-import java.util.List;
+import dao.HoaDon_DAO;
+import dao.KhachHang_DAO;
+import entity.ChiTietHoaDon;
+import entity.HoaDon;
+import entity.KhachHang;
 
 public class HoaDon_View extends JPanel implements ActionListener {
     
@@ -56,7 +70,6 @@ public class HoaDon_View extends JPanel implements ActionListener {
 
     private static final Color COLOR_TONG_HD = new Color(34, 139, 230);
     private static final Color COLOR_DA_TT = new Color(76, 175, 80);
-    private static final Color COLOR_CHUA_TT = new Color(244, 67, 54);
     private static final Color COLOR_DOANH_THU = new Color(255, 152, 0);
 
     public HoaDon_View() {
@@ -198,6 +211,7 @@ public class HoaDon_View extends JPanel implements ActionListener {
         table.setRowHeight(35);
         table.setFont(FONT_CHU);
         table.setSelectionBackground(new Color(230, 240, 255));
+        table.setSelectionForeground(new Color(0, 0, 0)); // Thêm màu chữ đen khi chọn
         table.setGridColor(MAU_VIEN);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
         
@@ -248,28 +262,16 @@ public class HoaDon_View extends JPanel implements ActionListener {
         if (txtTimNhanh != null && txtTimNhanh.getText() != null) {
             keyword = txtTimNhanh.getText().trim().toLowerCase();
         }
-        List<HoaDon> list = hoaDonDAO.getAllHoaDon();
-
-        List<HoaDon> filteredList = list.stream()
-            .filter(HoaDon::isDaThanhToan)
-            .collect(Collectors.toList());
-
-        for (HoaDon hd : filteredList) {
-        	String tenKH = "Khách lẻ";
-        	try {
-                if (hd != null && hd.getKhachHang() != null && hd.getKhachHang().getMaKH() != null) {
-                    
-                    KhachHang kh = khachHangDAO.getKhachHangById(hd.getKhachHang().getMaKH());
-                    
-                    if (kh != null && kh.getTenKH() != null && !kh.getMaKH().trim().equals("KH00000000")) {
-                        tenKH = kh.getTenKH();
-                    }
-                }
-            } catch (Exception e) {
-                System.err.println("Lỗi khi lấy Tên KH cho HD: " + (hd != null ? hd.getMaHD() : "NULL") + " - " + e.getMessage());
-            }
-
-            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD());
+        
+        // SỬ DỤNG PHƯƠNG THỨC MỚI TỐI ƯU - Chỉ 1 query thay vì N queries
+        Map<HoaDon, Object[]> hoaDonMap = hoaDonDAO.getHoaDonWithDetailsForView();
+        
+        for (Map.Entry<HoaDon, Object[]> entry : hoaDonMap.entrySet()) {
+            HoaDon hd = entry.getKey();
+            Object[] details = entry.getValue(); // [0] = tenKH, [1] = tongTien
+            
+            String tenKH = (String) details[0];
+            double tongTien = (double) details[1];
             
             String maHD = (hd != null && hd.getMaHD() != null) ? hd.getMaHD() : "Lỗi-MaHD";
 
@@ -277,10 +279,10 @@ public class HoaDon_View extends JPanel implements ActionListener {
                 || maHD.toLowerCase().contains(keyword) 
                 || tenKH.toLowerCase().contains(keyword);
             
-            String maBan = (hd.getBan() != null && hd.getBan().getMaBan() != null) ? hd.getBan().getMaBan().trim() : "N/A";
-            String maPDB = (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null) ? hd.getPhieuDatBan().getMaPhieu().trim() : "Không";
-            
             if (matchKeyword) {
+                String maBan = (hd.getBan() != null && hd.getBan().getMaBan() != null) ? hd.getBan().getMaBan().trim() : "N/A";
+                String maPDB = (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null) ? hd.getPhieuDatBan().getMaPhieu().trim() : "Không";
+                
                 modelDanhSachHD.addRow(new Object[]{
                     maHD,
                     hd.getNgayLapHoaDon().format(DATE_FORMATTER),
@@ -289,27 +291,19 @@ public class HoaDon_View extends JPanel implements ActionListener {
                     maPDB, 
                     tenKH, 
                     String.format("%,.0f₫", tongTien),
-                    "Đã thanh toán"                 });
+                    "Đã thanh toán"
+                });
             }
         }
     }
      
     private void loadThongKe() {
-        List<HoaDon> dsHD = hoaDonDAO.getAllHoaDon();
-        int chuaTT = 0, daTT = 0;
-        double doanhThu = 0;
-        for (HoaDon hd : dsHD) {
-            double tongTien = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD()); 
-            if (hd.isDaThanhToan()) { 
-                daTT++; 
-                doanhThu += tongTien; 
-            }
-            else { 
-                chuaTT++; 
-            }
-        }
-//        lblDaTT.setText(String.valueOf(daTT));
-        lblTongHD.setText(String.valueOf(dsHD.size()));
+        // SỬ DỤNG PHƯƠNG THỨC MỚI TỐI ƯU - Chỉ 1 query thay vì N queries
+        double[] stats = hoaDonDAO.getThongKeNhanh();
+        int tongSoHD = (int) stats[0];
+        double doanhThu = stats[1];
+        
+        lblTongHD.setText(String.valueOf(tongSoHD));
         lblDoanhThu.setText(String.format("%,.0f VNĐ", doanhThu));
     }
      
@@ -372,10 +366,6 @@ public class HoaDon_View extends JPanel implements ActionListener {
             this.bgColor = color;
             setOpaque(false);
         }
-         
-        public void setBorderColor(Color color) {
-            this.borderColor = color;
-        }
 
         @Override
         protected void paintComponent(Graphics g) {
@@ -400,12 +390,13 @@ public class HoaDon_View extends JPanel implements ActionListener {
 
     private class RoundedButton extends JButton {
         private int cornerRadius = 20;
-        private Color bg, fg;
+        private Color bg;
+        private Color fgColor; // Lưu màu chữ gốc
 
         public RoundedButton(String text, Color bgColor, Color fg) {
             super(text);
             this.bg = bgColor;
-            this.fg = fg;
+            this.fgColor = fg; // Lưu lại màu chữ
             setContentAreaFilled(false); 
             setFocusPainted(false); 
             setBorder(BorderFactory.createEmptyBorder(10, 20, 10, 20)); 
@@ -419,10 +410,18 @@ public class HoaDon_View extends JPanel implements ActionListener {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
             Color currentColor = bg;
-            if (getModel().isPressed()) {
-                currentColor = bg.darker();
-            } else if (getModel().isRollover()) {
-                currentColor = bg.brighter();
+            
+            // XỬ LÝ DISABLE: Background màu xám, text giữ nguyên
+            if (!isEnabled()) {
+                currentColor = new Color(200, 200, 200); // Màu xám nhạt cho background
+                setForeground(fgColor); // Giữ màu chữ gốc
+            } else {
+                setForeground(fgColor); // Màu chữ bình thường
+                if (getModel().isPressed()) {
+                    currentColor = bg.darker();
+                } else if (getModel().isRollover()) {
+                    currentColor = bg.brighter();
+                }
             }
              
             g2.setColor(currentColor);

@@ -179,7 +179,7 @@ public class KhachHang_DAO {
     public boolean congDiemTichLuy(String maKH, int diemCongThem) {
         String sql = "UPDATE KhachHang SET DiemTichLuy = DiemTichLuy + ? WHERE MaKH = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setInt(1, diemCongThem);

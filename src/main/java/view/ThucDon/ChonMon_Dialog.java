@@ -1,11 +1,38 @@
 package view.ThucDon;
 
-import dao.PhieuDatBan_DAO; 
-import dao.MonAn_DAO;
-import entity.MonAn;
-import entity.PhieuDatBan;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
+import java.awt.geom.RoundRectangle2D;
+import java.util.ArrayList;
+import java.util.EventObject;
+import java.util.List;
 
-import javax.swing.*;
+import javax.swing.AbstractCellEditor;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
@@ -13,15 +40,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.RoundRectangle2D;
-import java.util.ArrayList;
-import java.util.EventObject;
-import java.util.List;
-// SỬA: Thêm các import bị thiếu
-import java.beans.PropertyChangeListener;
-import java.text.DecimalFormat; // Cần cho NhapSoLuong_Dialog (nếu gộp)
+import dao.MonAn_DAO;
+import dao.PhieuDatBan_DAO;
+import entity.MonAn;
+import entity.PhieuDatBan;
 
 public class ChonMon_Dialog extends JDialog {
     // DAOs

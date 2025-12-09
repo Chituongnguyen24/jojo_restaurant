@@ -219,7 +219,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
         Connection conn = null;
         try {
-            conn = ConnectDB.getInstance().getConnection();
+            conn = ConnectDB.getConnection();
             conn.setAutoCommit(false);
 
             boolean successHD = hoaDonDAO.thanhToanHoaDon(hoaDonHienTai.getMaHD(), phuongThuc);

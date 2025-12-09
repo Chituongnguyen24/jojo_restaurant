@@ -49,7 +49,7 @@ public class PhieuDatBan_DAO {
         List<PhieuDatBan> dsPDB = new ArrayList<>();
         String sql = "SELECT * FROM PHIEUDATBAN ORDER BY thoiGianDenHen DESC";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             
@@ -64,7 +64,7 @@ public class PhieuDatBan_DAO {
 
     public PhieuDatBan getPhieuDatBanById(String maPhieu) {
         String sql = "SELECT * FROM PHIEUDATBAN WHERE maPhieu = ?";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu);
@@ -82,7 +82,7 @@ public class PhieuDatBan_DAO {
     public PhieuDatBan getPhieuByBan(String maBan) {
         // Sửa: Lấy phiếu "Chưa đến" HOẶC "Đã đến" (để xử lý CO_KHACH)
         String sql = "SELECT TOP 1 * FROM PHIEUDATBAN WHERE maBan = ? AND (trangThaiPhieu = N'Chưa đến' OR trangThaiPhieu = N'Đã đến') ORDER BY thoiGianDenHen DESC";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maBan);
@@ -102,7 +102,7 @@ public class PhieuDatBan_DAO {
     public boolean insertPhieuDatBan(PhieuDatBan phieu) {
         String sql = "INSERT INTO PHIEUDATBAN (maPhieu, thoiGianDenHen, maKhachHang, maNV, maBan, soNguoi, ghiChu, trangThaiPhieu) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, phieu.getMaPhieu());
@@ -129,7 +129,7 @@ public class PhieuDatBan_DAO {
     public boolean updatePhieuDatBan(PhieuDatBan phieu) {
         String sql = "UPDATE PHIEUDATBAN SET thoiGianDenHen = ?, thoiGianNhanBan = ?, thoiGianTraBan = ?, maKhachHang = ?, maNV = ?, maBan = ?, soNguoi = ?, ghiChu = ?, trangThaiPhieu = ? WHERE maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setTimestamp(1, Timestamp.valueOf(phieu.getThoiGianDenHen()));
@@ -172,7 +172,7 @@ public class PhieuDatBan_DAO {
         String sqlDeleteCT = "DELETE FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         String sqlDeletePDB = "DELETE FROM PHIEUDATBAN WHERE maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection()) {
+        try (Connection conn = ConnectDB.getConnection()) {
             conn.setAutoCommit(false);
             
             try (PreparedStatement ps1 = conn.prepareStatement(sqlDeleteCT);
@@ -206,7 +206,7 @@ public class PhieuDatBan_DAO {
         // SỬA: Query này sẽ tìm SỐ lớn nhất, bất kể độ dài chuỗi
         String sql = "SELECT MAX(CAST(SUBSTRING(maPhieu, 4, 10) AS INT)) FROM PHIEUDATBAN WHERE maPhieu LIKE 'PDB[0-9]%'";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             
@@ -292,7 +292,7 @@ public class PhieuDatBan_DAO {
         List<ChiTietPhieuDatBan> dsCT = new ArrayList<>();
         String sql = "SELECT maMonAn, soLuongMonAn, DonGiaBan, ghiChu FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu);
@@ -324,7 +324,7 @@ public class PhieuDatBan_DAO {
         String sqlUpdate = "UPDATE CHITIETPHIEUDATBAN SET soLuongMonAn = ?, ghiChu = ?, DonGiaBan = ? WHERE maPhieu = ? AND maMonAn = ?";
         String sqlInsert = "INSERT INTO CHITIETPHIEUDATBAN (maPhieu, maMonAn, soLuongMonAn, DonGiaBan, ghiChu) VALUES (?, ?, ?, ?, ?)";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement psCheck = conn.prepareStatement(sqlCheck);
              PreparedStatement psUpdate = conn.prepareStatement(sqlUpdate);
              PreparedStatement psInsert = conn.prepareStatement(sqlInsert)) {
@@ -362,7 +362,7 @@ public class PhieuDatBan_DAO {
 
     public boolean deleteChiTiet(String maPhieu, String maMonAn) {
         String sql = "DELETE FROM CHITIETPHIEUDATBAN WHERE maPhieu = ? AND maMonAn = ?";
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu);
@@ -382,7 +382,7 @@ public class PhieuDatBan_DAO {
             "FROM CHITIETPHIEUDATBAN ct JOIN MONAN ma ON ct.maMonAn = ma.maMonAn " +
             "WHERE ct.maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, maPhieu);
@@ -409,7 +409,7 @@ public class PhieuDatBan_DAO {
     public boolean updateTrangThai(String maPhieu, String trangThaiMoi) {
         String sql = "UPDATE PHIEUDATBAN SET trangThaiPhieu = ? WHERE maPhieu = ?";
         
-        try (Connection conn = ConnectDB.getInstance().getConnection();
+        try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
             pstmt.setString(1, trangThaiMoi);
@@ -427,7 +427,7 @@ public class PhieuDatBan_DAO {
 		String sql="UPDATE PHIEUDATBAN"+
 					"SET thoiGianNhanBan=?, trangThaiPhieu=N'Đã đến'"+
 					"WHERE maPhieu= ?";
-		try (Connection conn = ConnectDB.getInstance().getConnection();
+		try (Connection conn = ConnectDB.getConnection();
 				PreparedStatement pstmt= conn.prepareStatement(sql)){
 					pstmt.setTimestamp(1, Timestamp.valueOf(thoiGianNhanBan));
 					pstmt.setString(2, maPhieu);
