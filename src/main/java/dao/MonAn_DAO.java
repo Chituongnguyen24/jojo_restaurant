@@ -219,4 +219,20 @@ public class MonAn_DAO {
         }
         return loaiMonAnList;
     }
+    
+    // Phương thức đếm tổng số món ăn cho Dashboard
+    public int countAllMonAn() {
+        String sql = "SELECT COUNT(*) AS Total FROM MONAN";
+        try (Connection conn = ConnectDB.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            if (rs.next()) {
+                return rs.getInt("Total");
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi khi đếm món ăn: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0;
+    }
 }

@@ -57,7 +57,7 @@ public class DatBan_View extends JPanel implements ActionListener {
     private final JSpinner spinnerGioDat;
     private final JTextField txtSearchPDB, txtTenKhach, txtSdtKhach, txtGhiChu;
     
-    private final JButton btnSearchPDB, btnDatBan, btnRefresh, btnXemDanhSachPDB, btnThanhToan, btnHuyDatBan;
+    private final JButton btnSearchPDB, btnDatBan, btnXemDanhSachPDB, btnThanhToan, btnHuyDatBan;
     private JButton btnTimBanTheoGio; 
     private final DefaultTableModel modelPhieuDat;
     private final JTable tblPhieuDat;
@@ -156,10 +156,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         btnHuyDatBan.setPreferredSize(new Dimension(150, 40));
         btnHuyDatBan.setVisible(false);
         
-        btnRefresh = new RoundedButton("Làm mới", new Color(255, 243, 224), MAU_CAM_CHINH);
-        btnRefresh.setPreferredSize(new Dimension(150, 35));
-
-        btnXemDanhSachPDB = new RoundedButton("DS Phiếu Đặt", MAU_XAM_NHE, COLOR_WHITE);
+        btnXemDanhSachPDB = new RoundedButton("Các phiếu đặt bàn", MAU_XAM_NHE, COLOR_WHITE);
         btnXemDanhSachPDB.setPreferredSize(new Dimension(150, 35));
         
         lblThongKeBan = new JLabel("Đang tải...");
@@ -234,8 +231,7 @@ public class DatBan_View extends JPanel implements ActionListener {
 
         JPanel pnlRight = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         pnlRight.setOpaque(false);
-        pnlRight.add(btnXemDanhSachPDB); 
-        pnlRight.add(btnRefresh);
+        pnlRight.add(btnXemDanhSachPDB);
 
         JPanel pnlTitleBar = new JPanel(new BorderLayout());
         pnlTitleBar.setBackground(BG_VIEW);
@@ -285,7 +281,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         pnlSearch.add(cboFilterKhuVuc, gbc);
 
         gbc.gridx = 7; gbc.weightx = 0;
-        pnlSearch.add(new JLabel("Ngày đặt:"), gbc);
+        pnlSearch.add(new JLabel("Ngày:"), gbc);
         
         gbc.gridx = 8; gbc.weightx = 0.1;
         datePicker.setPreferredSize(new Dimension(130, 38)); 
@@ -293,7 +289,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         pnlSearch.add(datePicker, gbc);
 
         gbc.gridx = 9; gbc.weightx = 0;
-        pnlSearch.add(new JLabel("Giờ đặt:"), gbc);
+        pnlSearch.add(new JLabel("Giờ:"), gbc);
         
         gbc.gridx = 10;
         spinnerGioDat.setPreferredSize(new Dimension(80, 38));
@@ -868,7 +864,6 @@ public class DatBan_View extends JPanel implements ActionListener {
         // 1. Gán sự kiện cho các nút chính
         btnDatBan.addActionListener(this);
         btnSearchPDB.addActionListener(this);
-        btnRefresh.addActionListener(this);
         btnXemDanhSachPDB.addActionListener(this); 
         btnThanhToan.addActionListener(this); 
         btnHuyDatBan.addActionListener(this); 
@@ -925,9 +920,7 @@ public class DatBan_View extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         Object o = e.getSource();
-        if (o == btnRefresh) {
-            refreshData();
-        } else if (o == btnDatBan) {
+        if (o == btnDatBan) {
             xuLyNutDatBan();
         } else if (o == btnSearchPDB) {
             timKiemPhieuDat();
@@ -937,8 +930,7 @@ public class DatBan_View extends JPanel implements ActionListener {
             xuLyThanhToan(); 
         } else if (o == btnHuyDatBan) { 
             xuLyHuyDatBan();
-        } else if (o == btnTimBanTheoGio) { // THÊM MỚI (Bạn đã làm đúng)
-            // Gọi hàm lọc bàn khi nhấn nút
+        } else if (o == btnTimBanTheoGio) {
             locBanTheoThoiGian();
         }
     }

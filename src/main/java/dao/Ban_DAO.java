@@ -401,5 +401,4 @@ public class Ban_DAO {
             return prefix + String.format(paddingFormat, 1);
         }
     }
-    
 }

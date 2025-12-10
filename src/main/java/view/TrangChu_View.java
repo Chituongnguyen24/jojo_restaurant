@@ -12,6 +12,13 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.geom.RoundRectangle2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
@@ -269,15 +276,9 @@ public class TrangChu_View extends JPanel {
         userLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 10));
         menuBar.add(userLabel);
 
-        JButton logoutBtn = new JButton("Đăng xuất");
-        logoutBtn.setOpaque(true);
-        logoutBtn.setBorderPainted(false);
-        logoutBtn.setBackground(new Color(200, 50, 50));
-        logoutBtn.setForeground(Color.WHITE);
-        logoutBtn.setFocusPainted(false);
-        logoutBtn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        logoutBtn.setPreferredSize(new Dimension(100, 28));
-        logoutBtn.setFont(new Font("Arial", Font.PLAIN, 12));
+        // Tạo nút đăng xuất đẹp với RoundedButton
+        RoundedButton logoutBtn = new RoundedButton("Đăng xuất");
+        logoutBtn.setPreferredSize(new Dimension(110, 32));
         logoutBtn.addActionListener(createLogoutAction());
         menuBar.add(logoutBtn);
 
@@ -437,6 +438,77 @@ public class TrangChu_View extends JPanel {
                 item.setBackground(UIManager.getColor("MenuItem.background"));
                 item.setForeground(UIManager.getColor("MenuItem.foreground"));
             }
+        }
+    }
+    
+    // Lớp nút bo góc đẹp cho nút đăng xuất
+    private class RoundedButton extends JButton {
+        private Color hoverBackgroundColor;
+        private Color pressedBackgroundColor;
+        private Color defaultBackgroundColor = new Color(220, 53, 69); // Màu đỏ đẹp
+        private boolean isHover = false;
+        private boolean isPressed = false;
+
+        public RoundedButton(String text) {
+            super(text);
+            setOpaque(false);
+            setFocusPainted(false);
+            setBorderPainted(false);
+            setContentAreaFilled(false);
+            setForeground(Color.WHITE);
+            setFont(new Font("Segoe UI", Font.BOLD, 13));
+            setCursor(new Cursor(Cursor.HAND_CURSOR));
+            
+            // Màu khi hover và press
+            hoverBackgroundColor = new Color(200, 35, 51);
+            pressedBackgroundColor = new Color(180, 25, 41);
+            
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    isHover = true;
+                    repaint();
+                }
+                
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    isHover = false;
+                    repaint();
+                }
+                
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    isPressed = true;
+                    repaint();
+                }
+                
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    isPressed = false;
+                    repaint();
+                }
+            });
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            
+            // Chọn màu dựa trên trạng thái
+            Color bgColor = defaultBackgroundColor;
+            if (isPressed) {
+                bgColor = pressedBackgroundColor;
+            } else if (isHover) {
+                bgColor = hoverBackgroundColor;
+            }
+            
+            // Vẽ nền bo góc
+            g2.setColor(bgColor);
+            g2.fill(new RoundRectangle2D.Double(0, 0, getWidth(), getHeight(), 20, 20));
+            
+            g2.dispose();
+            super.paintComponent(g);
         }
     }
 }
