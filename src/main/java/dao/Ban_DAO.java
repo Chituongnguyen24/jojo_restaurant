@@ -13,18 +13,17 @@ import java.util.Map;
 
 public class Ban_DAO {
     
-    // Helper để tạo đối tượng Ban từ ResultSet
+    
     private Ban createBanFromResultSet(ResultSet rs) throws SQLException {
         String maKV = rs.getString("maKhuVuc");
-        KhuVuc khuVuc = new KhuVuc(maKV); // Tạo đối tượng KhuVuc chỉ với mã
+        KhuVuc khuVuc = new KhuVuc(maKV); 
         
-        // SỬA: Thay thế maKhuVuc (String) bằng đối tượng KhuVuc
         return new Ban(
             rs.getString("maBan"),
             rs.getInt("soCho"),
             khuVuc, // ĐÃ SỬA
-            rs.getString("loaiBan"), // Lấy raw String
-            rs.getString("trangThai") // Lấy raw String
+            rs.getString("loaiBan"),
+            rs.getString("trangThai") 
         );
     }
     
@@ -62,15 +61,15 @@ public class Ban_DAO {
     }
 
     public boolean themBan(Ban ban) {
-        // LƯU Ý: Phải lấy MaKV và LoaiBan/TrangThai dưới dạng String
+        
         String sql = "INSERT INTO Ban (maBan, soCho, loaiBan, maKhuVuc, trangThai) VALUES (?, ?, ?, ?, ?)";
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setString(1, ban.getMaBan());
             stmt.setInt(2, ban.getSoCho());
-            stmt.setString(3, ban.getLoaiBan()); // Dùng String (ví dụ: "THUONG")
-            stmt.setString(4, ban.getKhuVuc().getMaKhuVuc()); // LẤY MÃ KHU VỰC
+            stmt.setString(3, ban.getLoaiBan());
+            stmt.setString(4, ban.getKhuVuc().getMaKhuVuc()); 
             stmt.setString(5, ban.getTrangThai());
 
             return stmt.executeUpdate() > 0;
@@ -87,7 +86,7 @@ public class Ban_DAO {
 
             stmt.setInt(1, ban.getSoCho());
             stmt.setString(2, ban.getLoaiBan());
-            stmt.setString(3, ban.getKhuVuc().getMaKhuVuc()); // LẤY MÃ KHU VỰC
+            stmt.setString(3, ban.getKhuVuc().getMaKhuVuc()); 
             stmt.setString(4, ban.getTrangThai());
             stmt.setString(5, ban.getMaBan());
 
@@ -261,7 +260,6 @@ public class Ban_DAO {
             e.printStackTrace();
             return false;
         }
-        // Bỏ khối finally cũ
     }
 
     public String getTenKhuVuc(String maKV) {
@@ -290,15 +288,15 @@ public class Ban_DAO {
 
             if (rs.next()) {
                 String lastID = rs.getString("maBan").trim();
-                // Lấy phần số: chỉ xem xét các mã bắt đầu bằng B
+                
                 if (lastID.startsWith("B")) {
                      String numPart = lastID.substring(1); 
                      try {
                          int num = Integer.parseInt(numPart);
                          num++; 
-                         newID = "B" + String.format("%02d", num); // Format B01, B02, ... B10
+                         newID = "B" + String.format("%02d", num); 
                      } catch (NumberFormatException e) {
-                         // Nếu không parse được, dùng mã mặc định
+                      
                      }
                 }
             }
@@ -311,7 +309,6 @@ public class Ban_DAO {
         List<Ban> ds = new ArrayList<>();
         String sql = "SELECT * FROM Ban WHERE soCho >= ? AND trangThai = ? AND maKhuVuc LIKE ?";
         
-        // Nếu chọn "Tất cả khu vực", dùng %
         String finalMaKV = (maKhuVuc == null || maKhuVuc.equals("Tất cả")) ? "%" : maKhuVuc;
 
         try (Connection con = ConnectDB.getConnection();
@@ -332,72 +329,60 @@ public class Ban_DAO {
         return ds;
     }
     
- // Trong lớp Ban_DAO.java
     public String taoMaBanMoiTheoKhuVuc(String maKhuVuc) {
         String prefix = "";
-        String paddingFormat = ""; // Định dạng số (VD: %02d hoặc %03d)
+        String paddingFormat = ""; 
 
-        // 1. Xác định Tiền tố (prefix) và Định dạng (padding) dựa trên maKhuVuc
         switch (maKhuVuc.trim()) {
             case "VIP":
                 prefix = "VIP";
-                paddingFormat = "%02d"; // VIP01, VIP15
+                paddingFormat = "%02d"; 
                 break;
             case "TRET":
                 prefix = "B";
-                paddingFormat = "%03d"; // B001, B020
+                paddingFormat = "%03d"; 
                 break;
             case "TANG2":
                 prefix = "B2";
-                paddingFormat = "%02d"; // B201, B220
+                paddingFormat = "%02d"; 
                 break;
             case "SANTHUONG":
                 prefix = "ST";
-                paddingFormat = "%02d"; // ST01, ST15
+                paddingFormat = "%02d";
                 break;
             case "SANVUON":
                 prefix = "SV";
-                paddingFormat = "%02d"; // SV01, SV20
+                paddingFormat = "%02d"; 
                 break;
             default:
-                // Nếu không xác định, dùng 'B' làm mặc định
                 prefix = "B";
                 paddingFormat = "%03d";
         }
 
-        // 2. Tìm mã bàn lớn nhất có cùng tiền tố
-        // (Dùng TOP 1 ... ORDER BY DESC an toàn hơn MAX() khi có padding)
         String sql = "SELECT TOP 1 maBan FROM BAN WHERE maBan LIKE ? ORDER BY maBan DESC";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
-            stmt.setString(1, prefix + "%"); // Ví dụ: "VIP%"
+            stmt.setString(1, prefix + "%"); 
             
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next() && rs.getString(1) != null) {
-                    // Đã tìm thấy mã lớn nhất, ví dụ: "VIP15"
+                    
                     String maxMaBan = rs.getString(1).trim();
-                    
-                    // 3. Tách phần số ra
-                    String numPart = maxMaBan.substring(prefix.length()); // "15"
-                    
-                    // 4. Chuyển thành số, cộng 1
-                    int soHienTai = Integer.parseInt(numPart); // 15
+                    String numPart = maxMaBan.substring(prefix.length()); 
+
+                    int soHienTai = Integer.parseInt(numPart);
                     int soMoi = soHienTai + 1; // 16
-                    
-                    // 5. Trả về mã mới đã định dạng
-                    return prefix + String.format(paddingFormat, soMoi); // "VIP" + "16" = "VIP16"
+
+                    return prefix + String.format(paddingFormat, soMoi); 
 
                 } else {
-                    // Không tìm thấy mã nào (khu vực này chưa có bàn)
-                    // Trả về mã đầu tiên, ví dụ "VIP01"
                     return prefix + String.format(paddingFormat, 1);
                 }
             }
         } catch (SQLException | NumberFormatException e) {
             e.printStackTrace();
-            // Xử lý lỗi: Trả về mã mặc định (an toàn)
             return prefix + String.format(paddingFormat, 1);
         }
     }
