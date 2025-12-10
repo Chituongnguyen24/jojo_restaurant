@@ -15,10 +15,7 @@ public class HeThong_View extends JPanel {
 
         setLayout(new BorderLayout());
         setOpaque(false);
-        JLabel label = new JLabel("Chào mừng đến với Hệ thống quản lý Nhà hàng JOJO!", JLabel.CENTER);
-        label.setFont(new Font("Arial", Font.BOLD, 26)); 
-        label.setForeground(Color.WHITE);
-        label.setOpaque(false);
+     
 
         // Đồng hồ
         clockLabel = new JLabel();
@@ -32,7 +29,6 @@ public class HeThong_View extends JPanel {
         topPanel.add(clockLabel, BorderLayout.EAST);
 
         add(topPanel, BorderLayout.NORTH);
-        add(label, BorderLayout.CENTER);
 
         startClock();
     }
@@ -46,14 +42,8 @@ public class HeThong_View extends JPanel {
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         if (backgroundImage != null) {
             g.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         }
-
-        Graphics2D g2d = (Graphics2D) g.create();
-        g2d.setColor(new Color(0, 0, 0, 100));
-        g2d.fillRect(0, 0, getWidth(), getHeight());
-        g2d.dispose();
     }
 }
