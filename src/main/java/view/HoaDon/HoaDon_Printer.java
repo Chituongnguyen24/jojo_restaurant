@@ -1,6 +1,7 @@
 package view.HoaDon;
 
 import dao.Ban_DAO;
+import dao.HoaDon_DAO;
 import dao.KhachHang_DAO;
 import dao.NhanVien_DAO;
 import dao.Thue_DAO; 
@@ -46,32 +47,28 @@ public class HoaDon_Printer {
     public static String generateInvoiceText(HoaDon hoaDon, List<ChiTietHoaDon> chiTietList) {
         return generateInvoiceText(hoaDon, chiTietList, LINE_WIDTH);
     }
-
     public static String generateInvoiceText(HoaDon hoaDon, List<ChiTietHoaDon> chiTietList, int pageWidth) {
         StringBuilder sb = new StringBuilder();
 
-        // Lấy thông tin chi tiết (thử tránh ném lỗi DAO)
         NhanVien nv = null;
         Ban ban = null;
-        // === SỬA: Lấy danh sách thuế, không lấy 1 thuế ===
-        List<Thue> danhSachThueApDung = null; 
         KhuyenMai km = null;
         KhachHang kh = null;
+        HoaDon_DAO hoaDonDAO = new HoaDon_DAO();  
+
         try {
             if (hoaDon.getNhanVien() != null) {
-                nv = nhanVienDAO.getNhanVienById(hoaDon.getNhanVien().getMaNhanVien()); 
+                nv = nhanVienDAO.getNhanVienById(hoaDon.getNhanVien().getMaNhanVien());
             }
             if (hoaDon.getBan() != null) {
                 ban = banDAO.getBanTheoMa(hoaDon.getBan().getMaBan());
             }
-            // === SỬA: Lấy tất cả thuế active ===
-            danhSachThueApDung = thueDAO.getAllActiveTaxes(); 
-            
+
             if (hoaDon.getKhuyenMai() != null && !safeTrim(hoaDon.getKhuyenMai().getMaKM()).equals("KM00000000")) {
                 km = khuyenMaiDAO.getKhuyenMaiById(hoaDon.getKhuyenMai().getMaKM());
             }
             if (hoaDon.getKhachHang() != null) {
-                 kh = khachHangDAO.getKhachHangById(hoaDon.getKhachHang().getMaKH()); 
+                 kh = khachHangDAO.getKhachHangById(hoaDon.getKhachHang().getMaKH());
             }
         } catch (Exception ignored) {}
 
@@ -84,20 +81,20 @@ public class HoaDon_Printer {
         sb.append(repeat('-', LINE_WIDTH)).append("\n");
 
         // Thông tin hóa đơn
-        sb.append(padRight("Số HD: " + safeTrim(hoaDon.getMaHD()), LINE_WIDTH)).append("\n"); 
-        String ngay = hoaDon.getNgayLapHoaDon() != null ? hoaDon.getNgayLapHoaDon().format(dateFormatter) : ""; 
+        sb.append(padRight("Số HD: " + safeTrim(hoaDon.getMaHD()), LINE_WIDTH)).append("\n");
+        String ngay = hoaDon.getNgayLapHoaDon() != null ? hoaDon.getNgayLapHoaDon().format(dateFormatter) : "";
         String gioVao = hoaDon.getGioVao() != null ? hoaDon.getGioVao().format(timeFormatter) : "";
         String gioRa = hoaDon.getGioRa() != null ? hoaDon.getGioRa().format(timeFormatter) : "";
-        sb.append(padRight("Ngày: " + ngay + "  Giờ vào: " + gioVao, LINE_WIDTH)).append("\n");
+        sb.append(padRight("Ngày: " + ngay + " Giờ vào: " + gioVao, LINE_WIDTH)).append("\n");
         sb.append(padRight("Giờ ra: " + gioRa, LINE_WIDTH)).append("\n");
         if (ban != null) sb.append(padRight("Bàn: " + safeTrim(ban.getMaBan()), LINE_WIDTH)).append("\n");
-        if (nv != null) sb.append(padRight("Thu ngân: " + nv.getHoTen(), LINE_WIDTH)).append("\n"); 
+        if (nv != null) sb.append(padRight("Thu ngân: " + nv.getHoTen(), LINE_WIDTH)).append("\n");
 
         // Khách hàng
-        if (kh != null && !"KH00000000".equals(safeTrim(kh.getMaKH()))) { 
-            sb.append(padRight("Khách hàng: " + kh.getTenKH(), LINE_WIDTH)).append("\n"); 
+        if (kh != null && !"KH00000000".equals(safeTrim(kh.getMaKH()))) {
+            sb.append(padRight("Khách hàng: " + kh.getTenKH(), LINE_WIDTH)).append("\n");
             if (kh.getSoDienThoai() != null && !kh.getSoDienThoai().trim().isEmpty() && !"0000000000".equals(kh.getSoDienThoai().trim())) {
-                sb.append(padRight("SĐT KH: " + kh.getSoDienThoai(), LINE_WIDTH)).append("\n"); 
+                sb.append(padRight("SĐT KH: " + kh.getSoDienThoai(), LINE_WIDTH)).append("\n");
             }
         } else {
             sb.append(padRight("Khách hàng: Khách lẻ", LINE_WIDTH)).append("\n");
@@ -117,7 +114,7 @@ public class HoaDon_Printer {
         double tongTienMonAn = 0;
         if (chiTietList != null) {
             for (ChiTietHoaDon ct : chiTietList) {
-                double thanhTien = ct.getSoLuong() * ct.getDonGiaBan(); 
+                double thanhTien = ct.getSoLuong() * ct.getDonGiaBan();
                 String itemName = ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "";
                 List<String> wrapped = wrapText(itemName, nameCol);
                 for (int i = 0; i < wrapped.size(); i++) {
@@ -132,90 +129,76 @@ public class HoaDon_Printer {
         }
         sb.append(repeat('-', LINE_WIDTH)).append("\n");
 
-        // Tổng kết
+        // Tổng kết - Sử dụng giá trị từ DAO để nhất quán
         sb.append(formatLine("Tổng tiền:", formatCurrency(tongTienMonAn), LINE_WIDTH)).append("\n");
-        double tienGiam = 0;
-        double tongTienSauGiam = tongTienMonAn;
+        double tienGiam = hoaDon.getTongGiamGia();  // Lấy trực tiếp từ entity (đã lưu từ DAO)
+        double tongTienSauGiam = tongTienMonAn - tienGiam;
+        if (tongTienSauGiam < 0) tongTienSauGiam = 0;
 
-        if (km != null) {
-            String tenKM = km.getMoTa() != null ? km.getMoTa() : "Khuyến mãi"; 
-            double mucKM = km.getMucKM(); 
-            if (mucKM < 1.0) { 
-                tienGiam = tongTienMonAn * mucKM;
+        if (km != null && tienGiam > 0) {
+            String tenKM = km.getMoTa() != null ? km.getMoTa() : "Khuyến mãi";
+            double mucKM = tienGiam / tongTienMonAn;  // Tính tỷ lệ để hiển thị (nếu cần)
+            if (mucKM < 1.0) {
                 sb.append(formatLine(tenKM + String.format(" (%.0f%%):", mucKM * 100), "-" + formatCurrency(tienGiam), LINE_WIDTH)).append("\n");
-            } else { 
-                tienGiam = mucKM;
+            } else {
                 sb.append(formatLine(tenKM + ":", "-" + formatCurrency(tienGiam), LINE_WIDTH)).append("\n");
             }
-            tongTienSauGiam -= tienGiam;
-            if (tongTienSauGiam < 0) tongTienSauGiam = 0;
         }
 
-        // === SỬA LOGIC TÍNH THUẾ (KHỚP VỚI DAO) ===
-        double tienPhiDichVu = 0; 
-        double tienVAT = 0;       
-        double tyLePhiDichVu = 0; 
-        double tyLeVAT = 0;
-        String tenPhiDichVu = "Phí Dịch Vụ";
-        String tenVAT = "VAT";
+        // Sử dụng DAO để tính phí, VAT và tổng cuối (nhất quán với View)
+        double tienPhiDichVu = hoaDonDAO.tinhPhiDichVu(hoaDon.getMaHD());
+        double tienVAT = hoaDonDAO.tinhVAT(hoaDon.getMaHD());
+        double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hoaDon.getMaHD());
 
-        if (danhSachThueApDung != null) {
-            for (Thue thue : danhSachThueApDung) { 
-                if (thue.getMaSoThue().equals("PHIPK5")) {
-                    tyLePhiDichVu = thue.getTyLeThue(); // 0.05
-                    tenPhiDichVu = thue.getTenThue(); // "Phí phục vụ 5%"
-                } else if (thue.getMaSoThue().equals("VAT08")) {
-                    tyLeVAT = thue.getTyLeThue(); // 0.08
-                    tenVAT = thue.getTenThue(); // "VAT 8%"
+        // Hiển thị phí và VAT nếu > 0
+        if (tienPhiDichVu > 0) {
+            List<Thue> danhSachThueApDung = thueDAO.getAllActiveTaxes();  // Giữ để lấy tên thuế
+            String tenPhiDichVu = "Phí Dịch Vụ";
+            double tyLePhiDichVu = 0.05;
+            if (danhSachThueApDung != null) {
+                for (Thue thue : danhSachThueApDung) {
+                    if (thue.getMaSoThue().equals("PHIPK5")) {
+                        tyLePhiDichVu = thue.getTyLeThue();
+                        tenPhiDichVu = thue.getTenThue();
+                        break;
+                    }
                 }
             }
-        }
-        
-        // 4a. Áp dụng Phí dịch vụ (tính trên tiền sau giảm)
-        if (tyLePhiDichVu > 0) {
-            tienPhiDichVu = tongTienSauGiam * tyLePhiDichVu;
             sb.append(formatLine(tenPhiDichVu + String.format(" (%.0f%%):", tyLePhiDichVu * 100), formatCurrency(tienPhiDichVu), LINE_WIDTH)).append("\n");
         }
-        
-        // 4b. Tiền để tính VAT = (Tiền sau giảm + Phí dịch vụ)
-        double soTienDeTinhVAT = tongTienSauGiam + tienPhiDichVu; 
-        
-        // 4c. Áp dụng VAT
-        if (tyLeVAT > 0) {
-            tienVAT = soTienDeTinhVAT * tyLeVAT;
+
+        if (tienVAT > 0) {
+            List<Thue> danhSachThueApDung = thueDAO.getAllActiveTaxes();  // Giữ để lấy tên thuế
+            String tenVAT = "VAT";
+            double tyLeVAT = 0.08;
+            if (danhSachThueApDung != null) {
+                for (Thue thue : danhSachThueApDung) {
+                    if (thue.getMaSoThue().equals("VAT08")) {
+                        tyLeVAT = thue.getTyLeThue();
+                        tenVAT = thue.getTenThue();
+                        break;
+                    }
+                }
+            }
             sb.append(formatLine(tenVAT + String.format(" (%.0f%%):", tyLeVAT * 100), formatCurrency(tienVAT), LINE_WIDTH)).append("\n");
         }
 
-        // 5. Tính tổng cuối cùng
-        double tongThanhToan = tongTienSauGiam + tienPhiDichVu + tienVAT; 
-        // === KẾT THÚC SỬA LOGIC THUẾ ===
-
-
         sb.append(repeat('-', LINE_WIDTH)).append("\n");
 
-        // Làm tròn đến 1000 đồng gần nhất
-        // Lưu ý: DAO đã làm tròn, nhưng chúng ta tính lại ở đây cho chắc chắn
-        long rounded = Math.round(tongThanhToan); // Lấy số tiền DAO đã tính (đã tròn)
-        
-        // Hiển thị tổng tiền (đã làm tròn)
-        sb.append(center("=> " + padBoth("THÀNH TIỀN", formatCurrency(rounded), LINE_WIDTH - 4), LINE_WIDTH)).append("\n");
-        
-        // (Bỏ qua logic làm tròn riêng của Printer vì DAO đã làm)
-        
+        // Hiển thị tổng tiền (đã làm tròn từ DAO, không cần round lại)
+        sb.append(center("=> " + padBoth("THÀNH TIỀN", formatCurrency(tongThanhToan), LINE_WIDTH - 4), LINE_WIDTH)).append("\n");
+
         sb.append(repeat('-', LINE_WIDTH)).append("\n");
 
         // Footer
         sb.append(center("Cảm ơn quý khách! Hẹn gặp lại!", LINE_WIDTH)).append("\n");
         sb.append("\n");
-        sb.append(padRight("In lúc: " + LocalDateTime.now().format(timeFormatter) + "  " + LocalDate.now().format(dateFormatter), LINE_WIDTH)).append("\n");
+        sb.append(padRight("In lúc: " + LocalDateTime.now().format(timeFormatter) + " " + LocalDate.now().format(dateFormatter), LINE_WIDTH)).append("\n");
 
         String block = sb.toString();
         return centerBlock(block, pageWidth);
     }
-
-    /**
-     * Hiển thị preview trong một dialog được tạo bên trong lớp này.
-     */
+    
     public static void showPreview(Frame owner, HoaDon hoaDon, List<ChiTietHoaDon> chiTietList) {
         final JDialog dialog = new JDialog(owner, "Xem trước Hóa Đơn", true);
 
