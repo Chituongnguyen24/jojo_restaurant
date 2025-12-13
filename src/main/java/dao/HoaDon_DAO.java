@@ -137,6 +137,14 @@ public class HoaDon_DAO {
                     else if (t.getMaSoThue().equals("VAT08")) tyLeVAT = t.getTyLeThue();
                 }
 
+                if (tyLePhi == 0) {
+                    tyLePhi = 0.05;
+                    System.out.println("DEBUG: Default tyLePhiDichVu = 0.05");
+                }
+                if (tyLeVAT == 0) {
+                    tyLeVAT = 0.08;
+                    System.out.println("DEBUG: Default tyLeVAT = 0.08");
+                }
                 BigDecimal bdSauGiam = BigDecimal.valueOf(tienSauGiam);
                 BigDecimal bdTyLePhi = BigDecimal.valueOf(tyLePhi);
                 BigDecimal bdTyLeVAT = BigDecimal.valueOf(tyLeVAT);
@@ -861,6 +869,10 @@ public class HoaDon_DAO {
         for (Thue t : taxes) {
             if (t.getMaSoThue().equals("PHIPK5")) tyLePhi = t.getTyLeThue();
             else if (t.getMaSoThue().equals("VAT08")) tyLeVAT = t.getTyLeThue();
+        }
+        if (tyLePhi == 0) {
+            tyLePhi = 0.05; // Default 5%
+            System.out.println("DEBUG tinhVAT: Sử dụng default tyLePhi = 0.05");
         }
         if (tyLeVAT == 0) {
             tyLeVAT = 0.08;  // Default 8%

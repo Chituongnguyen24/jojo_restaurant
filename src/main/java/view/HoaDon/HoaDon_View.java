@@ -18,7 +18,6 @@ import java.awt.geom.RoundRectangle2D;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -39,7 +38,6 @@ import dao.HoaDon_DAO;
 import dao.KhachHang_DAO;
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
-import entity.KhachHang;
 
 public class HoaDon_View extends JPanel implements ActionListener {
     
