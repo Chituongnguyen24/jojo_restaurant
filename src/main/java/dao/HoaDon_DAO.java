@@ -3,6 +3,8 @@ package dao;
 import connectDB.ConnectDB;
 import entity.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -94,70 +96,68 @@ public class HoaDon_DAO {
         }
         return dsHoaDon;
     }
-    
-    /**
-     * Phương thức tối ưu để lấy hóa đơn cho View - JOIN với KHACHHANG và tính tổng tiền trong 1 query duy nhất
-     * Chỉ lấy 200 hóa đơn gần nhất, đã thanh toán
-     * @return Map<HoaDon, Object[]> - Object[] chứa [tenKH, tongTien]
-     */
     public Map<HoaDon, Object[]> getHoaDonWithDetailsForView() {
         Map<HoaDon, Object[]> result = new LinkedHashMap<>();
-        
+
         String sql = "SELECT TOP 200 " +
-                "    h.MaHD, h.MaNV, h.MaKH, h.maBan, h.NgayLapHoaDon, h.GioVao, h.GioRa, " +
-                "    h.phuongThucThanhToan, h.MaKM, h.MaThue, h.MaPhieu, " +
-                "    ISNULL(h.TongTienTruocThue, 0) AS TongTienTruocThue, " +
-                "    ISNULL(h.TongGiamGia, 0) AS TongGiamGia, h.DaThanhToan, " +
-                "    ISNULL(kh.TenKH, N'Khách lẻ') AS TenKH, " +
-                "    ISNULL(( " +
-                "        SELECT SUM(ct.SoLuong * ct.DonGiaBan) " +
-                "        FROM CHITIETHOADON ct " +
-                "        WHERE ct.MaHD = h.MaHD " +
-                "    ), 0) AS TongTienMonAn " +
+                " h.MaHD, h.MaNV, h.MaKH, h.maBan, h.NgayLapHoaDon, h.GioVao, h.GioRa, " +
+                " h.phuongThucThanhToan, h.MaKM, h.MaThue, h.MaPhieu, " +
+                " ISNULL(h.TongTienTruocThue, 0) AS TongTienTruocThue, " +
+                " ISNULL(h.TongGiamGia, 0) AS TongGiamGia, h.DaThanhToan, " +
+                " ISNULL(kh.TenKH, N'Khách lẻ') AS TenKH, " +
+                " ISNULL(( " +
+                " SELECT SUM(ct.SoLuong * ct.DonGiaBan) " +
+                " FROM CHITIETHOADON ct " +
+                " WHERE ct.MaHD = h.MaHD " +
+                " ), 0) AS TongTienMonAn " +
                 "FROM HOADON h " +
                 "LEFT JOIN KHACHHANG kh ON h.MaKH = kh.MaKH " +
                 "WHERE h.DaThanhToan = 1 " +
                 "ORDER BY h.NgayLapHoaDon DESC, h.GioVao DESC";
-        
+
         try (Connection conn = ConnectDB.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            
+
             while (rs.next()) {
                 HoaDon hd = createHoaDonFromResultSet(rs);
                 String tenKH = rs.getString("TenKH");
-                double tongTien = rs.getDouble("TongTienMonAn");
-                
-                // Tính tổng tiền cuối cùng (đã bao gồm thuế và giảm giá)
+                double tongTien = rs.getDouble("TongTienMonAn");  // Từ chi tiết
+
                 double tongTienTruocThue = tongTien;
-                double tienThue = 0;
                 double tienGiamGia = hd.getTongGiamGia();
-                
-                // Lấy thuế suất nếu có
-                if (hd.getThue() != null && hd.getThue().getMaSoThue() != null) {
-                    Thue thue = thueDAO.getThueById(hd.getThue().getMaSoThue());
-                    if (thue != null) {
-                        tienThue = tongTienTruocThue * (thue.getTyLeThue() / 100.0);
-                    }
+                double tienSauGiam = tongTienTruocThue - tienGiamGia;
+                if (tienSauGiam < 0) tienSauGiam = 0;
+
+                // SỬA: Tính cả 2 thuế, bỏ /100, dùng BigDecimal
+                double tyLePhi = 0, tyLeVAT = 0;
+                List<Thue> taxes = thueDAO.getAllActiveTaxes();
+                for (Thue t : taxes) {
+                    if (t.getMaSoThue().equals("PHIPK5")) tyLePhi = t.getTyLeThue();
+                    else if (t.getMaSoThue().equals("VAT08")) tyLeVAT = t.getTyLeThue();
                 }
-                
-                double tongTienCuoi = tongTienTruocThue + tienThue - tienGiamGia;
-                
+
+                BigDecimal bdSauGiam = BigDecimal.valueOf(tienSauGiam);
+                BigDecimal bdTyLePhi = BigDecimal.valueOf(tyLePhi);
+                BigDecimal bdTyLeVAT = BigDecimal.valueOf(tyLeVAT);
+
+                BigDecimal tienPhi = bdSauGiam.multiply(bdTyLePhi).setScale(0, RoundingMode.HALF_UP);
+                BigDecimal coSoVAT = bdSauGiam.add(tienPhi);
+                BigDecimal tienVAT = coSoVAT.multiply(bdTyLeVAT).setScale(0, RoundingMode.HALF_UP);
+
+                double tongTienCuoi = bdSauGiam.add(tienPhi).add(tienVAT).setScale(0, RoundingMode.HALF_UP).doubleValue();
+
                 result.put(hd, new Object[]{tenKH, tongTienCuoi});
             }
-            
+
         } catch (SQLException e) {
             System.err.println("Lỗi khi lấy danh sách hóa đơn với chi tiết: " + e.getMessage());
             e.printStackTrace();
         }
-        
+
         return result;
     }
     
-    /**
-     * Phương thức tối ưu để lấy tổng thống kê (tổng hóa đơn và doanh thu) trong 1 query
-     * @return double[] - [tongSoHoaDon, tongDoanhThu]
-     */
     public double[] getThongKeNhanh() {
         double[] result = new double[2]; // [0] = tổng số HD, [1] = tổng doanh thu
         
@@ -298,50 +298,6 @@ public class HoaDon_DAO {
         return false;
     }
 
-    public boolean deleteHoaDon(String maHD) {
-        String sqlDeleteChiTiet = "DELETE FROM CHITIETHOADON WHERE MaHD = ?";
-        String sqlDeleteHoaDon = "DELETE FROM HOADON WHERE MaHD = ?";
-        Connection conn = null;
-        try {
-            conn = ConnectDB.getConnection();
-            conn.setAutoCommit(false);
-
-            try (PreparedStatement ps1 = conn.prepareStatement(sqlDeleteChiTiet)) {
-                ps1.setString(1, maHD);
-                ps1.executeUpdate();
-            }
-
-            int affected = 0;
-            try (PreparedStatement ps2 = conn.prepareStatement(sqlDeleteHoaDon)) {
-                ps2.setString(1, maHD);
-                affected = ps2.executeUpdate();
-            }
-
-            conn.commit();
-            return affected > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Lỗi khi xóa hóa đơn: " + e.getMessage());
-            e.printStackTrace();
-            if (conn != null) {
-                try {
-                    System.err.println("Transaction đang được rollback...");
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    System.err.println("Lỗi khi rollback: " + ex.getMessage());
-                }
-            }
-            return false;
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.setAutoCommit(true);
-                } catch (SQLException e) {
-                    System.err.println("Lỗi khi reset autoCommit: " + e.getMessage());
-                }
-            }
-        }
-    }
 
     public boolean updateTrangThaiThanhToan(String maHoaDon, boolean daThanhToan) {
         String sql = "UPDATE HOADON SET DaThanhToan = ? WHERE MaHD = ?";
@@ -815,7 +771,26 @@ public class HoaDon_DAO {
         }
         return false;
     }
-
+    
+    private double getTongTienTruocThueFromChiTiet(String maHoaDon) {
+        String sql = "SELECT ISNULL(SUM(DonGiaBan * SoLuong), 0) AS TongTien FROM CHITIETHOADON WHERE MaHD = ?";
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, maHoaDon);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    double tong = rs.getDouble("TongTien");
+                    System.out.println("DEBUG: TongTien from chi tiet: " + tong);  // Debug tạm
+                    return tong;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Lỗi tính SUM chi tiết: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return 0.0;
+    }
+    
     public boolean thanhToanHoaDon(String maHD, String phuongThucThanhToan) {
         String sql = "UPDATE HOADON SET DaThanhToan = 1, phuongThucThanhToan = ?, GioRa = GETDATE() WHERE MaHD = ?";
 
@@ -839,40 +814,116 @@ public class HoaDon_DAO {
             return false;
         }
     }
+    public double tinhPhiDichVu(String maHoaDon) {
+        HoaDon hd = findByMaHD(maHoaDon);
+        if (hd == null) return 0;
+        double tongTienMon = hd.getTongTienTruocThue();
+        if (tongTienMon == 0.0) {  // SỬA: Fallback tính từ chi tiết nếu entity = 0
+            tongTienMon = getTongTienTruocThueFromChiTiet(maHoaDon);
+        }
+        double tongGiamGia = hd.getTongGiamGia();  // Giả sử giamGia đã update đúng
+        double tienSauGiam = tongTienMon - tongGiamGia;
+        if (tienSauGiam < 0) tienSauGiam = 0;
+        System.out.println("DEBUG tinhPhi: tongMon=" + tongTienMon + ", giam=" + tongGiamGia + ", sauGiam=" + tienSauGiam);  // Debug tạm
+        
+        double tyLePhi = 0;
+        List<Thue> taxes = thueDAO.getAllActiveTaxes();
+        System.out.println("DEBUG DAO: Số taxes: " + taxes.size());  // Giữ debug
+        for (Thue t : taxes) {
+            if (t.getMaSoThue().equals("PHIPK5")) {
+                tyLePhi = t.getTyLeThue();
+                System.out.println("DEBUG DAO: tyLePhi = " + tyLePhi);
+            }
+        }
+        if (tyLePhi == 0) {
+            tyLePhi = 0.05;  // Default 5% nếu DB lỗi
+            System.out.println("DEBUG: Sử dụng default tyLePhi = 0.05");
+        }
+        BigDecimal bdSauGiam = BigDecimal.valueOf(tienSauGiam);
+        BigDecimal bdTyLePhi = BigDecimal.valueOf(tyLePhi);
+        return bdSauGiam.multiply(bdTyLePhi).setScale(0, RoundingMode.HALF_UP).doubleValue();
+    }
 
+    public double tinhVAT(String maHoaDon) {
+        HoaDon hd = findByMaHD(maHoaDon);
+        if (hd == null) return 0;
+        double tongTienMon = hd.getTongTienTruocThue();
+        if (tongTienMon == 0.0) {  // SỬA: Fallback
+            tongTienMon = getTongTienTruocThueFromChiTiet(maHoaDon);
+        }
+        double tongGiamGia = hd.getTongGiamGia();
+        double tienSauGiam = tongTienMon - tongGiamGia;
+        if (tienSauGiam < 0) tienSauGiam = 0;
+        System.out.println("DEBUG tinhVAT: tongMon=" + tongTienMon + ", sauGiam=" + tienSauGiam);  // Debug tạm
+        
+        double tyLePhi = 0, tyLeVAT = 0;
+        List<Thue> taxes = thueDAO.getAllActiveTaxes();
+        for (Thue t : taxes) {
+            if (t.getMaSoThue().equals("PHIPK5")) tyLePhi = t.getTyLeThue();
+            else if (t.getMaSoThue().equals("VAT08")) tyLeVAT = t.getTyLeThue();
+        }
+        if (tyLeVAT == 0) {
+            tyLeVAT = 0.08;  // Default 8%
+            System.out.println("DEBUG: Sử dụng default tyLeVAT = 0.08");
+        }
+        System.out.println("DEBUG DAO: tyLeVAT = " + tyLeVAT);  // Debug tạm
+        BigDecimal bdSauGiam = BigDecimal.valueOf(tienSauGiam);
+        BigDecimal bdTyLePhi = BigDecimal.valueOf(tyLePhi);
+        BigDecimal bdTyLeVAT = BigDecimal.valueOf(tyLeVAT);
+        BigDecimal tienPhi = bdSauGiam.multiply(bdTyLePhi).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal coSoVAT = bdSauGiam.add(tienPhi);
+        return coSoVAT.multiply(bdTyLeVAT).setScale(0, RoundingMode.HALF_UP).doubleValue();
+    }
+    public double tinhTongThueVaPhi(String maHoaDon) {
+    	return tinhPhiDichVu(maHoaDon) + tinhVAT(maHoaDon);
+    	}
+    
     public double tinhTongTienHoaDon(String maHoaDon) {
         HoaDon hoaDon = findByMaHD(maHoaDon);
         if (hoaDon == null) return 0;
 
-        List<Thue> danhSachThueApDung = thueDAO.getAllActiveTaxes(); 
-
         double tienMonAn = hoaDon.getTongTienTruocThue();
-        double tienGiamGia = hoaDon.getTongGiamGia();            
+        if (tienMonAn == 0.0) { 
+            tienMonAn = getTongTienTruocThueFromChiTiet(maHoaDon);
+        }
+        double tienGiamGia = hoaDon.getTongGiamGia();
 
         double tienSauGiamGia = tienMonAn - tienGiamGia;
         if (tienSauGiamGia < 0) tienSauGiamGia = 0;
+        System.out.println("DEBUG tinhTong: mon=" + tienMonAn + ", giam=" + tienGiamGia + ", sauGiam=" + tienSauGiamGia);  // Debug tạm
 
-        double tienPhiDichVu = 0; 
-        double tienVAT = 0;       
-        double tyLePhiDichVu = 0; 
+        List<Thue> danhSachThueApDung = thueDAO.getAllActiveTaxes();
+
+        double tyLePhiDichVu = 0;
         double tyLeVAT = 0;
 
-        for (Thue thue : danhSachThueApDung) { 
+        for (Thue thue : danhSachThueApDung) {
             if (thue.getMaSoThue().equals("PHIPK5")) {
-                tyLePhiDichVu = thue.getTyLeThue(); // 0.05
+                tyLePhiDichVu = thue.getTyLeThue();
             } else if (thue.getMaSoThue().equals("VAT08")) {
-                tyLeVAT = thue.getTyLeThue(); // 0.08
+                tyLeVAT = thue.getTyLeThue();
             }
         }
-
-        tienPhiDichVu = tienSauGiamGia * tyLePhiDichVu;
-        double soTienDeTinhVAT = tienSauGiamGia+ tienPhiDichVu; 
-
-        tienVAT = soTienDeTinhVAT * tyLeVAT; 
-
-        double tongTienPhaiTra = tienSauGiamGia + tienPhiDichVu + tienVAT; 
-
-        return Math.round(tongTienPhaiTra); 
+        if (tyLePhiDichVu == 0) {
+            tyLePhiDichVu = 0.05;
+            System.out.println("DEBUG: Default tyLePhiDichVu = 0.05");
+        }
+        if (tyLeVAT == 0) {
+            tyLeVAT = 0.08;
+            System.out.println("DEBUG: Default tyLeVAT = 0.08");
+        }
+        
+        // Tính trực tiếp (tránh gọi tinhTongThueVaPhi)
+        BigDecimal bdSauGiam = BigDecimal.valueOf(tienSauGiamGia);
+        BigDecimal bdTyLePhi = BigDecimal.valueOf(tyLePhiDichVu);
+        BigDecimal bdTyLeVAT = BigDecimal.valueOf(tyLeVAT);
+        
+        BigDecimal bdTienPhi = bdSauGiam.multiply(bdTyLePhi).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal bdCoSoVAT = bdSauGiam.add(bdTienPhi);
+        BigDecimal bdTienVAT = bdCoSoVAT.multiply(bdTyLeVAT).setScale(0, RoundingMode.HALF_UP);
+        
+        BigDecimal tongTienPhaiTra = bdSauGiam.add(bdTienPhi).add(bdTienVAT).setScale(0, RoundingMode.HALF_UP);
+        return tongTienPhaiTra.doubleValue();
     }
     
    
@@ -926,4 +977,5 @@ public class HoaDon_DAO {
             return false;
         }
     }
+
 }
