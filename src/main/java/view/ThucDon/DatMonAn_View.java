@@ -40,7 +40,7 @@ public class DatMonAn_View extends JPanel {
     private DefaultTableModel modelChiTietMon;
     
     // SỬA: Đổi tên/Thêm nút
-    private JButton btnGoiThemMon, btnHuyMon, btnLamMoi, btnThanhToan;
+    private JButton btnGoiThemMon, btnHuyMon, btnLamMoi, btnThanhToan, btnTrangThai;
     private JLabel lblThongTinPhieu;
 
     // Colors
@@ -313,6 +313,9 @@ public class DatMonAn_View extends JPanel {
         ));
 
         Dimension btnSize = new Dimension(170, 45);
+        
+        btnTrangThai = createButton("Xác nhận đến", WARNING_COLOR); // Màu cam
+        btnTrangThai.setPreferredSize(new Dimension(190, 45));
 
         btnGoiThemMon = createButton("Gọi thêm món", PRIMARY_COLOR);
         btnGoiThemMon.setPreferredSize(btnSize);
@@ -327,6 +330,7 @@ public class DatMonAn_View extends JPanel {
         btnHuyMon.setEnabled(false);
         btnThanhToan.setEnabled(false); // Tắt ban đầu
 
+        footerPanel.add(btnTrangThai);
         footerPanel.add(btnGoiThemMon);
         footerPanel.add(btnHuyMon);
         footerPanel.add(btnThanhToan);
@@ -449,7 +453,7 @@ public class DatMonAn_View extends JPanel {
                 xuLyChonPhieu();
             }
         });
-        
+        btnTrangThai.addActionListener(e -> xuLyCapNhatTrangThai());
         btnGoiThemMon.addActionListener(e -> moDialogDatMon());
         btnHuyMon.addActionListener(e -> xuLyHuyMon());
         btnThanhToan.addActionListener(e -> xuLyThanhToan()); // SỬA: Thêm sự kiện
@@ -463,22 +467,30 @@ public class DatMonAn_View extends JPanel {
         modelChiTietMon.setRowCount(0);
         phieuDatBanHienTai = null;
         lblThongTinPhieu.setText("Chưa chọn phiếu đặt");
+        
+        // Reset nút về trạng thái disable
         btnGoiThemMon.setEnabled(false);
         btnHuyMon.setEnabled(false);
         btnThanhToan.setEnabled(false);
+        btnTrangThai.setEnabled(false);
+        btnGoiThemMon.setEnabled(false);
         
         List<PhieuDatBan> dsPhieu = datBanDAO.getAllPhieuDatBan(); 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yy");
         
         for (PhieuDatBan phieu : dsPhieu) {
-            // SỬA: Lọc chỉ hiển thị nếu trạng thái != "Hoàn thành" (để "biến mất" sau thanh toán)
-            if (!"Hoàn thành".equals(phieu.getTrangThaiPhieu())&&!"Đã đến".equals(phieu.getTrangThaiPhieu())) {
+            String trangThai = phieu.getTrangThaiPhieu();
+            
+            // --- SỬA ĐỔI Ở ĐÂY ---
+            // Cho phép hiển thị cả "Chưa đến" và "Đã đến"
+            // Chỉ ẩn các phiếu "Hoàn thành" (đã thanh toán xong) hoặc "Hủy"
+            if ("Chưa đến".equals(trangThai) || "Đã đến".equals(trangThai)) {
                 modelPhieuDat.addRow(new Object[]{
                     phieu.getMaPhieu().trim(),
                     phieu.getBan().getMaBan().trim(),
                     phieu.getKhachHang().getTenKH(),
                     phieu.getThoiGianDenHen().format(formatter),
-                    phieu.getTrangThaiPhieu() // Thêm trạng thái
+                    trangThai 
                 });
             }
         }
@@ -486,7 +498,7 @@ public class DatMonAn_View extends JPanel {
 
     // ===== HÀM ĐÃ SỬA (Logic bật/tắt nút) =====
     private void xuLyChonPhieu() {
-        int row = tblPhieuDat.getSelectedRow();
+    	int row = tblPhieuDat.getSelectedRow();
         if (row == -1) return;
         
         String maPhieu = (String) modelPhieuDat.getValueAt(row, 0);
@@ -499,19 +511,23 @@ public class DatMonAn_View extends JPanel {
             lblThongTinPhieu.setText("Phiếu: " + maPhieu.trim() + " (Bàn: " + tenBan + " - Khách: " + tenKhach + ")");
             taiDonDatMon(maPhieu);
             
-            // SỬA: Logic bật/tắt nút
             String trangThai = this.phieuDatBanHienTai.getTrangThaiPhieu();
             
-            if (trangThai.equals("Chưa đến")) {
-                 btnGoiThemMon.setEnabled(true);
-                 btnHuyMon.setEnabled(true);
-                 btnThanhToan.setEnabled(false); // Không thể thanh toán khi chưa đến
-            } else if (trangThai.equals("Đã đến")) {
-                 btnGoiThemMon.setEnabled(true);
-                 btnHuyMon.setEnabled(true);
-                 btnThanhToan.setEnabled(true); // Có thể thanh toán
+            // --- LOGIC BẬT TẮT NÚT ---
+            if ("Chưa đến".equals(trangThai)) {
+            	 btnTrangThai.setEnabled(true);
+            	 btnTrangThai.setText("Xác nhận trạng thái");
+                 btnGoiThemMon.setEnabled(true);  // Cho phép đặt món trước
+                 btnHuyMon.setEnabled(true);      // Cho phép hủy món
+                 btnThanhToan.setEnabled(false);  // Chưa đến thì chưa thanh toán
+            } else if ("Đã đến".equals(trangThai)) {
+            	 btnTrangThai.setEnabled(false);  // <--- KHÓA NÚT NÀY (Vì đã đến rồi)
+                 btnTrangThai.setText("Khách đã vào");
+                 btnGoiThemMon.setEnabled(true);  // Khách đang ngồi vẫn được gọi thêm món
+                 btnHuyMon.setEnabled(true);      // Khách đổi ý vẫn được hủy
+                 btnThanhToan.setEnabled(true);   // Khách có thể thanh toán
             } else {
-                 // Đã thanh toán, Không đến, v.v.
+                 // Các trạng thái khác (Hoàn thành/Hủy) -> Khóa hết
                  btnGoiThemMon.setEnabled(false);
                  btnHuyMon.setEnabled(false);
                  btnThanhToan.setEnabled(false);
@@ -645,6 +661,54 @@ public class DatMonAn_View extends JPanel {
             JOptionPane.showMessageDialog(this,
                     "Đã xảy ra lỗi khi chuẩn bị thanh toán: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    private void xuLyCapNhatTrangThai() {
+        if (phieuDatBanHienTai == null) return;
+
+        // Hiển thị 2 lựa chọn
+        Object[] options = {"Khách ĐÃ ĐẾN", "Khách KHÔNG ĐẾN", "Đóng"};
+        int choice = JOptionPane.showOptionDialog(this,
+            "Xác nhận trạng thái cho phiếu: " + phieuDatBanHienTai.getMaPhieu() + "\n" +
+            "Khách hàng: " + phieuDatBanHienTai.getKhachHang().getTenKH(),
+            "Cập nhật trạng thái",
+            JOptionPane.YES_NO_CANCEL_OPTION,
+            JOptionPane.QUESTION_MESSAGE,
+            null,
+            options,
+            options[0]);
+
+        if (choice == 0) { 
+            // LỰA CHỌN 1: KHÁCH ĐÃ ĐẾN
+            // Gọi hàm DAO để cập nhật giờ nhận bàn và đổi trạng thái thành "Đã đến"
+            boolean ketQua = datBanDAO.capNhatThoiGianNhanBan(
+                phieuDatBanHienTai.getMaPhieu(), 
+                java.time.LocalDateTime.now()
+            );
+            
+            if (ketQua) {
+                JOptionPane.showMessageDialog(this, "Đã cập nhật: Khách đã nhận bàn!");
+                taiDanhSachPhieuDat(); // Tải lại để thấy thay đổi
+            } else {
+                JOptionPane.showMessageDialog(this, "Lỗi cập nhật trạng thái!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+
+        } else if (choice == 1) {
+            // LỰA CHỌN 2: KHÁCH KHÔNG ĐẾN
+            int confirm = JOptionPane.showConfirmDialog(this, 
+                "Bạn chắc chắn muốn hủy phiếu này (Khách không đến)?\nBàn sẽ được giải phóng.", 
+                "Xác nhận", JOptionPane.YES_NO_OPTION);
+                
+            if (confirm == JOptionPane.YES_OPTION) {
+                boolean ketQua = datBanDAO.updateTrangThai(phieuDatBanHienTai.getMaPhieu(), "Không đến");
+                if (ketQua) {
+                    JOptionPane.showMessageDialog(this, "Đã cập nhật: Khách không đến.");
+                    taiDanhSachPhieuDat(); // Tải lại danh sách
+                } else {
+                    JOptionPane.showMessageDialog(this, "Lỗi cập nhật trạng thái!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         }
     }
 }

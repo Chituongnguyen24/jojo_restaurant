@@ -40,6 +40,7 @@ import java.time.ZoneId;
 import java.awt.geom.RoundRectangle2D;
 import java.util.Calendar;
 import java.util.concurrent.ExecutionException;
+import java.time.LocalTime;
 
 import com.toedter.calendar.JDateChooser;
 
@@ -54,7 +55,8 @@ public class DatBan_View extends JPanel implements ActionListener {
     private final JComboBox<Integer> cboSoKhach;
     private final JComboBox<String> cboFilterKhuVuc;
     private final JDateChooser datePicker;
-    private final JSpinner spinnerGioDat;
+    private final JComboBox<String> cboCaLamViec;
+    private final JSpinner spinnerGioHenCuThe;
     private final JTextField txtSearchPDB, txtTenKhach, txtSdtKhach, txtGhiChu;
     
     private final JButton btnSearchPDB, btnDatBan, btnXemDanhSachPDB, btnThanhToan, btnHuyDatBan;
@@ -130,10 +132,20 @@ public class DatBan_View extends JPanel implements ActionListener {
         datePicker = new JDateChooser(new Date());
         datePicker.setDateFormatString("dd/MM/yyyy");
 
+        cboCaLamViec = createStyledComboBox();
+        cboCaLamViec.addItem("Sáng(08-13h)");
+        cboCaLamViec.addItem("Chiều(13-18h)");
+        cboCaLamViec.addItem("Tối(18-23h)");
+        
+        int currentHour = LocalTime.now().getHour();
+        if (currentHour >= 8 && currentHour < 13) cboCaLamViec.setSelectedIndex(0);
+        else if (currentHour >= 13 && currentHour < 18) cboCaLamViec.setSelectedIndex(1);
+        else cboCaLamViec.setSelectedIndex(2);
+        
         SpinnerDateModel modelGio = new SpinnerDateModel(new Date(), null, null, Calendar.MINUTE);
-        spinnerGioDat = new JSpinner(modelGio);
-        JSpinner.DateEditor editorGio = new JSpinner.DateEditor(spinnerGioDat, "HH:mm");
-        spinnerGioDat.setEditor(editorGio);
+        spinnerGioHenCuThe = new JSpinner(modelGio);
+        JSpinner.DateEditor editorGio = new JSpinner.DateEditor(spinnerGioHenCuThe, "HH:mm");
+        spinnerGioHenCuThe.setEditor(editorGio);
 
         txtTenKhach = createStyledTextField("Họ và tên khách hàng");
         txtSdtKhach = createStyledTextField("Số điện thoại");
@@ -289,12 +301,12 @@ public class DatBan_View extends JPanel implements ActionListener {
         pnlSearch.add(datePicker, gbc);
 
         gbc.gridx = 9; gbc.weightx = 0;
-        pnlSearch.add(new JLabel("Giờ:"), gbc);
+        pnlSearch.add(new JLabel("Ca:"), gbc); 
         
         gbc.gridx = 10;
-        spinnerGioDat.setPreferredSize(new Dimension(80, 38));
-        styleComponent((JComponent) spinnerGioDat);
-        pnlSearch.add(spinnerGioDat, gbc);
+        cboCaLamViec.setPreferredSize(new Dimension(100, 38)); // Kích thước rộng hơn chút
+        styleComponent(cboCaLamViec);
+        pnlSearch.add(cboCaLamViec, gbc);
         
         // THÊM MỚI NÚT "TÌM BÀN"
         gbc.gridx = 11; gbc.weightx = 0;
@@ -382,7 +394,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         pnlCenter.setLayout(new BoxLayout(pnlCenter, BoxLayout.Y_AXIS));
         pnlCenter.setOpaque(false);
         
-        JPanel pnlInput = new JPanel(new GridLayout(3, 2, 8, 8));
+        JPanel pnlInput = new JPanel(new GridLayout(4, 2, 8, 8));
         pnlInput.setOpaque(false);
         pnlInput.setBorder(BorderFactory.createTitledBorder(
             new LineBorder(MAU_VIEN, 1), "Thông tin khách đặt bàn",
@@ -392,6 +404,9 @@ public class DatBan_View extends JPanel implements ActionListener {
         pnlInput.add(txtTenKhach);
         pnlInput.add(taoFormLabel("SĐT/Mã KH:"));
         pnlInput.add(txtSdtKhach);
+        pnlInput.add(taoFormLabel("Giờ đến:"));
+        styleComponent((JComponent) spinnerGioHenCuThe); // Style cho đẹp
+        pnlInput.add(spinnerGioHenCuThe);
         pnlInput.add(taoFormLabel("Ghi chú:"));
         pnlInput.add(txtGhiChu);
         
@@ -704,23 +719,41 @@ public class DatBan_View extends JPanel implements ActionListener {
 
 
     /**
-     * Cập nhật trạng thái của tất cả các bàn dựa trên
-     * thời gian (ngày + giờ) người dùng đã chọn trên bộ lọc.
-     * Bàn sẽ bị đánh dấu là "Đã đặt" nếu có phiếu đặt trong vòng +/- 2 giờ
-     * so với thời gian đã chọn.
+     * Kiểm tra bàn có bị đặt trong Ca đã chọn hay không.
+     * Sáng: 8:00 - 13:00
+     * Chiều: 13:01 - 18:00
+     * Tối: 18:01 - 23:00
      */
     private void capNhatTrangThaiBanTheoThoiGian() {
-        // 1. Lấy thời gian người dùng đã chọn
-        LocalDateTime thoiGianChon = getThoiGianDaChon();
-        LocalDateTime thoiGianBatDau = thoiGianChon.minusHours(2); // Trước 2 giờ
-        LocalDateTime thoiGianKetThuc = thoiGianChon.plusHours(2); // Sau 2 giờ
+        Date dateVal = datePicker.getDate();
+        if (dateVal == null) dateVal = new Date();
+        
+        // Lấy ngày đã chọn (bỏ phần giờ phút giây)
+        LocalDateTime ngayChon = dateVal.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+                                    .withHour(0).withMinute(0).withSecond(0);
+
+        // Xác định khung giờ của Ca
+        LocalTime startCa, endCa;
+        String caChon = (String) cboCaLamViec.getSelectedItem();
+        
+        if (caChon.contains("Sáng")) {
+            startCa = LocalTime.of(8, 0);
+            endCa = LocalTime.of(13, 0);
+        } else if (caChon.contains("Chiều")) {
+            startCa = LocalTime.of(13, 1);
+            endCa = LocalTime.of(18, 0);
+        } else { // Ca Tối
+            startCa = LocalTime.of(18, 1);
+            endCa = LocalTime.of(23, 0);
+        }
+        
+        LocalDateTime thoiGianBatDauCa = LocalDateTime.of(ngayChon.toLocalDate(), startCa);
+        LocalDateTime thoiGianKetThucCa = LocalDateTime.of(ngayChon.toLocalDate(), endCa);
         LocalDateTime now = LocalDateTime.now();
 
-        // 2. Tạo danh sách các bàn bị trùng lịch
-        Set<String> maBanDaDatTrongKhungGio = new HashSet<>();
+        Set<String> maBanDaDatTrongCa = new HashSet<>();
         Set<String> maBanCoKhachHienTai = new HashSet<>();
         
-        // (danhSachPhieuDatDangHoatDong phải được tải trước khi gọi hàm này)
         if (danhSachPhieuDatDangHoatDong != null) {
             for (PhieuDatBan phieu : danhSachPhieuDatDangHoatDong) {
                 if (phieu == null || phieu.getBan() == null) continue;
@@ -729,25 +762,25 @@ public class DatBan_View extends JPanel implements ActionListener {
                 String trangThaiPhieu = phieu.getTrangThaiPhieu().trim();
                 LocalDateTime thoiGianHen = phieu.getThoiGianDenHen();
 
-                // Lưu lại các bàn đang "Có khách" (Đã đến)
+                // Bàn đang có khách ngồi thực tế
                 if ("Đã đến".equals(trangThaiPhieu)) {
                     maBanCoKhachHienTai.add(maBan);
                 }
 
-                // Kiểm tra trùng lịch:
-                // Chỉ kiểm tra các phiếu "Chưa đến" hoặc "Đã đến"
+                // Kiểm tra bàn đã đặt: Nếu giờ hẹn nằm trong khoảng của Ca
                 if (("Chưa đến".equals(trangThaiPhieu) || "Đã đến".equals(trangThaiPhieu)) && thoiGianHen != null) {
-                    // Nếu thời gian hẹn của phiếu nằm trong cửa sổ 4 giờ ( +/- 2 giờ)
-                    if (thoiGianHen.isAfter(thoiGianBatDau) && thoiGianHen.isBefore(thoiGianKetThuc)) {
-                        maBanDaDatTrongKhungGio.add(maBan);
+                    // Logic: Nếu giờ hẹn >= Bắt đầu ca VÀ Giờ hẹn <= Kết thúc ca
+                    if (!thoiGianHen.isBefore(thoiGianBatDauCa) && !thoiGianHen.isAfter(thoiGianKetThucCa)) {
+                        maBanDaDatTrongCa.add(maBan);
                     }
                 }
             }
         }
 
-        // 3. Cập nhật trạng thái cho danh sách bàn
-        // Kiểm tra xem thời gian người dùng chọn có phải là "hiện tại" không (ví dụ: trong vòng 30 phút tới)
-        boolean dangXemHienTai = thoiGianChon.isAfter(now.minusMinutes(15)) && thoiGianChon.isBefore(now.plusMinutes(30));
+        // Cập nhật trạng thái hiển thị
+        // Logic hiển thị ưu tiên: Có khách > Đã đặt > Trống
+        boolean dangXemCaHienTai = now.isAfter(thoiGianBatDauCa) && now.isBefore(thoiGianKetThucCa) 
+                                   && now.toLocalDate().isEqual(ngayChon.toLocalDate());
 
         if (danhSachBanTheoKhuVuc != null) {
             for (List<Ban> danhSachBan : danhSachBanTheoKhuVuc.values()) {
@@ -755,15 +788,12 @@ public class DatBan_View extends JPanel implements ActionListener {
                     for (Ban ban : danhSachBan) {
                         String maBanHienTai = ban.getMaBan().trim();
 
-                        // Ưu tiên 1: Hiển thị "Có khách" nếu người dùng đang xem giờ hiện tại
-                        if (dangXemHienTai && maBanCoKhachHienTai.contains(maBanHienTai)) {
+                        if (dangXemCaHienTai && maBanCoKhachHienTai.contains(maBanHienTai)) {
                             ban.setTrangThai(TrangThaiBan.CO_KHACH.toString());
                         } 
-                        // Ưu tiên 2: Hiển thị "Đã đặt" nếu bị trùng lịch trong khung giờ đã chọn
-                        else if (maBanDaDatTrongKhungGio.contains(maBanHienTai)) {
+                        else if (maBanDaDatTrongCa.contains(maBanHienTai)) {
                             ban.setTrangThai(TrangThaiBan.DA_DAT.toString());
                         } 
-                        // Ưu tiên 3: Bàn "Trống"
                         else {
                             ban.setTrangThai(TrangThaiBan.TRONG.toString());
                         }
@@ -989,7 +1019,7 @@ public class DatBan_View extends JPanel implements ActionListener {
         lblSoChoValue.setText("--");
         cboSoKhach.setSelectedIndex(0);
         datePicker.setDate(new Date());
-        spinnerGioDat.setValue(new Date());
+        spinnerGioHenCuThe.setValue(new Date());
         
         tblPhieuDat.clearSelection();
         
@@ -1109,7 +1139,7 @@ public class DatBan_View extends JPanel implements ActionListener {
                             if (phieuDangChon.getThoiGianDenHen() != null) {
                                 Date tgHen = Date.from(phieuDangChon.getThoiGianDenHen().atZone(ZoneId.systemDefault()).toInstant());
                                 datePicker.setDate(tgHen);
-                                spinnerGioDat.setValue(tgHen);
+                                spinnerGioHenCuThe.setValue(tgHen);
                             }
                         }
                         
@@ -1513,12 +1543,10 @@ public class DatBan_View extends JPanel implements ActionListener {
      * @return LocalDateTime đã chọn.
      */
     private LocalDateTime getThoiGianDaChon() {
-        Date ngayChon = datePicker.getDate();
-        Date gioChon = (Date) spinnerGioDat.getValue();
+        Date ngayChon = datePicker.getDate(); // Ngày lấy từ thanh tìm kiếm
+        Date gioChon = (Date) spinnerGioHenCuThe.getValue(); // Giờ lấy từ form nhập liệu
 
-        if (ngayChon == null) {
-            ngayChon = new Date(); // Mặc định là hôm nay nếu null
-        }
+        if (ngayChon == null) ngayChon = new Date();
 
         Calendar calNgay = Calendar.getInstance();
         calNgay.setTime(ngayChon);
