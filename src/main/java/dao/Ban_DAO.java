@@ -29,7 +29,8 @@ public class Ban_DAO {
     
     public List<Ban> getAllBan() {
         List<Ban> ds = new ArrayList<>();
-        String sql = "SELECT * FROM Ban";
+        // SỬA: Lọc bàn chưa bị xóa (giả sử dùng trạng thái hoặc check null)
+        String sql = "SELECT * FROM Ban WHERE trangThai != N'ĐÃ XÓA' OR trangThai IS NULL";
 
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql);
@@ -90,6 +91,23 @@ public class Ban_DAO {
             stmt.setString(4, ban.getTrangThai());
             stmt.setString(5, ban.getMaBan());
 
+            return stmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Ẩn bàn khỏi UI bằng cách đánh dấu trạng thái "ĐÃ XÓA"
+     * Thay vì xóa hẳn khỏi database
+     */
+    public boolean anBan(String maBan) {
+        String sql = "UPDATE Ban SET trangThai = N'ĐÃ XÓA' WHERE maBan = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setString(1, maBan);
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();

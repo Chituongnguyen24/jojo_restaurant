@@ -32,7 +32,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
 
     private JLabel lblTongNV, lblQuanLy, lblThuNgan; 
     
-    // Thêm các trường thiếu: txtNgaySinh, txtNgayVaoLam, txtCCCD
     private JTextField txtMaNV, txtTenNV, txtSdt, txtEmail, txtTenDN, txtTimNhanh, txtNgaySinh, txtNgayVaoLam, txtCCCD;
     private JComboBox<String> cboChucVu, cboGioiTinh, cboFilterChucVu, cboFilterGioiTinh, cboFilterTrangThai;
     private JButton btnThem, btnCapNhat, btnXoa, btnXoaRong, btnDoiMK; 
@@ -58,9 +57,8 @@ public class NhanVien_View extends JPanel implements ActionListener {
         add(pnlHeader, BorderLayout.NORTH);
 
         JSplitPane pnlContent = taoPanelNoiDungChinh();
-        // Giảm kích thước vùng form để xem được toàn bộ cột
-        pnlContent.setDividerLocation(0.70); 
-        pnlContent.setResizeWeight(0.70);
+        pnlContent.setDividerLocation(0.65);
+        pnlContent.setResizeWeight(0.65);
         add(pnlContent, BorderLayout.CENTER);
 
         cboFilterChucVu.setSelectedIndex(0); 
@@ -75,7 +73,8 @@ public class NhanVien_View extends JPanel implements ActionListener {
     private void ganSuKien() {
         btnThem = createRoundedButton("Thêm", COLOR_TN, MAU_TRANG);
         btnCapNhat = createRoundedButton("Cập nhật", COLOR_TONG_NV, MAU_TRANG);
-        btnXoa = createRoundedButton("Nghỉ việc", new Color(244, 67, 54), MAU_TRANG); 
+        // Đổi tên nút thành "Xóa" để đúng ý nghĩa ẩn đi
+        btnXoa = createRoundedButton("Xóa", new Color(244, 67, 54), MAU_TRANG); 
         btnXoaRong = createRoundedButton("Xóa rỗng", new Color(108, 117, 125), MAU_TRANG);
         btnDoiMK = createRoundedButton("Đổi MK", new Color(156, 39, 176), MAU_TRANG);
         
@@ -114,7 +113,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
         lblQuanLy = createStatLabel("0");
         lblThuNgan = createStatLabel("0");
 
-
         statsPanel.add(createStatBox(lblTongNV, "Tổng Nhân viên", COLOR_TONG_NV));
         statsPanel.add(createStatBox(lblQuanLy, "Chức vụ Quản lý", COLOR_QL));
         statsPanel.add(createStatBox(lblThuNgan, "Chức vụ Thu ngân", COLOR_TN)); 
@@ -126,8 +124,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
     
     private JSplitPane taoPanelNoiDungChinh() {
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true);
-        splitPane.setDividerLocation(0.65);
-        splitPane.setResizeWeight(0.65);
         splitPane.setBorder(null);
         splitPane.setBackground(BG_VIEW);
 
@@ -152,8 +148,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
         JPanel pnlTimKiemContent = taoPanelTimKiem();
         pnlTimKiemWrapper.add(pnlTimKiemContent, BorderLayout.CENTER);
         
-        
-        // Cập nhật cột: Thêm CCCD, Ngày sinh, Ngày vào làm
         String[] cols = {"Mã NV", "Tên NV", "Giới tính", "SĐT", "CCCD", "Ngày sinh", "Ngày vào làm", "Chức vụ", "Tên ĐN", "Trạng thái"};
         model = new DefaultTableModel(cols, 0) {
             @Override
@@ -166,26 +160,24 @@ public class NhanVien_View extends JPanel implements ActionListener {
         table.setRowHeight(35);
         table.setFont(FONT_CHU); 
         
-        // Thiết lập độ rộng cột nhỏ hơn để hiển thị nhiều cột
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         TableColumnModel tcm = table.getColumnModel();
-        tcm.getColumn(0).setPreferredWidth(60); // Mã NV
-        tcm.getColumn(1).setPreferredWidth(120); // Tên NV
-        tcm.getColumn(2).setPreferredWidth(60); // Giới tính
-        tcm.getColumn(3).setPreferredWidth(90); // SĐT
-        tcm.getColumn(4).setPreferredWidth(100); // CCCD
-        tcm.getColumn(5).setPreferredWidth(90); // Ngày sinh
-        tcm.getColumn(6).setPreferredWidth(95); // Ngày vào làm
-        tcm.getColumn(7).setPreferredWidth(100); // Chức vụ
-        tcm.getColumn(8).setPreferredWidth(90); // Tên ĐN
-        tcm.getColumn(9).setPreferredWidth(80); // Trạng thái
+        tcm.getColumn(0).setPreferredWidth(60); 
+        tcm.getColumn(1).setPreferredWidth(130); 
+        tcm.getColumn(2).setPreferredWidth(60); 
+        tcm.getColumn(3).setPreferredWidth(90); 
+        tcm.getColumn(4).setPreferredWidth(100); 
+        tcm.getColumn(5).setPreferredWidth(90); 
+        tcm.getColumn(6).setPreferredWidth(95); 
+        tcm.getColumn(7).setPreferredWidth(110); 
+        tcm.getColumn(8).setPreferredWidth(100); 
+        tcm.getColumn(9).setPreferredWidth(80); 
         
         JTableHeader tableHeader = table.getTableHeader();
         tableHeader.setFont(new Font("Segoe UI", Font.BOLD, 14)); 
         tableHeader.setBackground(new Color(248, 249, 250));
         tableHeader.setForeground(new Color(60, 60, 60));
         tableHeader.setPreferredSize(new Dimension(tableHeader.getWidth(), 40));
-        tableHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(220, 220, 220)));
         ((DefaultTableCellRenderer) tableHeader.getDefaultRenderer()).setHorizontalAlignment(JLabel.LEFT);
 
         table.addMouseListener(new MouseAdapter() {
@@ -235,18 +227,14 @@ public class NhanVien_View extends JPanel implements ActionListener {
         String[] chucVuOptions = {"Tất cả", "Quản lý", "Nhân viên thu ngân"};
         cboFilterChucVu = new JComboBox<>(chucVuOptions);
         cboFilterChucVu.setFont(FONT_CHU);
-        cboFilterChucVu.setBorder(new LineBorder(MAU_VIEN, 1, true));
         
         String[] gioiTinhOptions = {"Tất cả", "Nam", "Nữ"};
         cboFilterGioiTinh = new JComboBox<>(gioiTinhOptions);
         cboFilterGioiTinh.setFont(FONT_CHU);
-        cboFilterGioiTinh.setBorder(new LineBorder(MAU_VIEN, 1, true));
         
         String[] trangThaiOptions = {"Đang làm", "Đã nghỉ"};
         cboFilterTrangThai = new JComboBox<>(trangThaiOptions);
         cboFilterTrangThai.setFont(FONT_CHU);
-        cboFilterTrangThai.setBorder(new LineBorder(MAU_VIEN, 1, true));
-        
         
         pnlSearch.add(new JLabel("Từ khóa:"));
         pnlSearch.add(txtTimNhanh);
@@ -257,10 +245,11 @@ public class NhanVien_View extends JPanel implements ActionListener {
         pnlSearch.add(new JLabel("Trạng thái:"));
         pnlSearch.add(cboFilterTrangThai);
         
-        txtTimNhanh.addActionListener(e -> locDuLieu());
-        cboFilterChucVu.addActionListener(e -> locDuLieu());
-        cboFilterGioiTinh.addActionListener(e -> locDuLieu());
-        cboFilterTrangThai.addActionListener(e -> locDuLieu());
+        ActionListener filterAction = e -> locDuLieu();
+        txtTimNhanh.addActionListener(filterAction);
+        cboFilterChucVu.addActionListener(filterAction);
+        cboFilterGioiTinh.addActionListener(filterAction);
+        cboFilterTrangThai.addActionListener(filterAction);
         
         return pnlSearch;
     }
@@ -276,68 +265,53 @@ public class NhanVien_View extends JPanel implements ActionListener {
         lblFormTitle.setBorder(new EmptyBorder(0, 0, 15, 0));
         pnlForm.add(lblFormTitle, BorderLayout.NORTH);
         
-        // Đã chuyển sang GridLayout (dạng 2 cột: Label | Input)
-        JPanel pnlInput = new JPanel(new GridLayout(0, 2, 10, 8)); 
+        JPanel pnlInput = new JPanel(new GridLayout(0, 2, 10, 15)); 
         pnlInput.setOpaque(false);
         
-        // 1. Mã NV
         pnlInput.add(taoFormLabel("Mã NV:"));
         txtMaNV = new JTextField();
         txtMaNV.setEditable(false);
         pnlInput.add(taoInputComponent(txtMaNV, false));
         
-        // 2. Tên NV
         pnlInput.add(taoFormLabel("Tên NV (*):"));
         txtTenNV = new JTextField();
         pnlInput.add(taoInputComponent(txtTenNV, true));
         
-        // 3. CCCD
         pnlInput.add(taoFormLabel("CCCD (*):"));
         txtCCCD = new JTextField();
         pnlInput.add(taoInputComponent(txtCCCD, true));
 
-        // 4. Ngày sinh
-        pnlInput.add(taoFormLabel("Ngày sinh:"));
+        pnlInput.add(taoFormLabel("Ngày sinh (dd/MM/yyyy):"));
         txtNgaySinh = new JTextField();
         pnlInput.add(taoInputComponent(txtNgaySinh, true));
         
-        // 5. Ngày vào làm
-        pnlInput.add(taoFormLabel("Ngày vào làm:"));
+        pnlInput.add(taoFormLabel("Ngày vào làm (dd/MM/yyyy):"));
         txtNgayVaoLam = new JTextField();
         pnlInput.add(taoInputComponent(txtNgayVaoLam, true));
         
-        // 6. Giới tính
         pnlInput.add(taoFormLabel("Giới tính:"));
         String[] gioiTinhOptions = {"Nam", "Nữ"};
         cboGioiTinh = new JComboBox<>(gioiTinhOptions);
         pnlInput.add(taoInputComponent(cboGioiTinh, true));
         
-        // 7. SĐT
         pnlInput.add(taoFormLabel("SĐT (*):"));
         txtSdt = new JTextField();
         pnlInput.add(taoInputComponent(txtSdt, true));
         
-        // 8. Email
         pnlInput.add(taoFormLabel("Email:"));
         txtEmail = new JTextField();
         pnlInput.add(taoInputComponent(txtEmail, true));
         
-        // 9. Chức vụ
         pnlInput.add(taoFormLabel("Chức vụ (*):"));
         String[] chucVuOptions = {"Nhân viên thu ngân", "Quản lý"};
         cboChucVu = new JComboBox<>(chucVuOptions);
         pnlInput.add(taoInputComponent(cboChucVu, true));
         
-        // 10. Tên Đăng nhập
         pnlInput.add(taoFormLabel("Tên ĐN:"));
         txtTenDN = new JTextField();
         txtTenDN.setEditable(false);
         pnlInput.add(taoInputComponent(txtTenDN, false));
         
-        // (Trống giữ chỗ)
-        pnlInput.add(new JLabel("")); 
-        pnlInput.add(new JLabel(""));
-
         JPanel pnlButton = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 10));
         pnlButton.setOpaque(false);
         pnlButton.add(btnThem);
@@ -354,7 +328,7 @@ public class NhanVien_View extends JPanel implements ActionListener {
     
     private JLabel taoFormLabel (String text) {
         JLabel label = new JLabel(text);
-        label.setFont(new Font("Segoe UI", ABORT, 14)); 
+        label.setFont(new Font("Segoe UI", Font.BOLD, 14)); 
         return label;
     }
 
@@ -363,16 +337,15 @@ public class NhanVien_View extends JPanel implements ActionListener {
              ((JTextField) component).setEditable(isEditable);
              ((JTextField) component).setFont(FONT_CHU);
         } else if (component instanceof JComboBox) {
-             ((JComboBox) component).setEnabled(isEditable);
-             ((JComboBox) component).setFont(FONT_CHU);
+             ((JComboBox<?>) component).setEnabled(isEditable);
+             ((JComboBox<?>) component).setFont(FONT_CHU);
         }
-       
-        if (component instanceof JComboBox || component instanceof JTextField) {
-            component.setBorder(BorderFactory.createCompoundBorder(
-                new LineBorder(MAU_VIEN, 1),
-                new EmptyBorder(5, 10, 5, 10) 
-            ));
-        }
+        component.setPreferredSize(new Dimension(component.getPreferredSize().width, 40));
+        
+        component.setBorder(BorderFactory.createCompoundBorder(
+            new LineBorder(MAU_VIEN, 1),
+            new EmptyBorder(1, 10, 1, 10) 
+        ));
 
         return component;
     }
@@ -388,7 +361,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
 
         String currentMaNV = isAdding ? null : maNV; 
         
-        // 1. Tên
         if (ten.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Tên nhân viên không được để trống.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
             txtTenNV.requestFocus();
@@ -400,7 +372,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
             return false;
         }
         
-        // 2. CCCD
         if (cccd.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Số CCCD không được để trống.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
             txtCCCD.requestFocus();
@@ -412,7 +383,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
             return false;
         }
 
-        // 3. SĐT
         if (sdt.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Số điện thoại không được để trống.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
             txtSdt.requestFocus();
@@ -429,7 +399,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
             return false;
         }
 
-        // 4. Email
         if (!email.isEmpty()) {
             if (!email.matches(REGEX_EMAIL)) {
                 JOptionPane.showMessageDialog(this, "Địa chỉ Email không hợp lệ.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
@@ -443,7 +412,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
             }
         }
         
-        // 5. Ngày sinh
         if (!ngaySinhStr.isEmpty()) {
             try {
                 LocalDate.parse(ngaySinhStr, DATE_FORMATTER);
@@ -454,7 +422,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
             }
         }
 
-        // 6. Ngày vào làm
         if (!ngayVaoLamStr.isEmpty()) {
             try {
                 LocalDate.parse(ngayVaoLamStr, DATE_FORMATTER);
@@ -468,13 +435,13 @@ public class NhanVien_View extends JPanel implements ActionListener {
         return true;
     }
 
-    
     private void loadNhanVienData() {
         model.setRowCount(0);
         List<NhanVien> dsNV = nhanVienDAO.getAllNhanVien();
 
         for (NhanVien nv : dsNV) {
-            String gioiTinh = (nv.getGioiTinh() == Boolean.TRUE) ? "Nam" : "Nữ";
+            // Lọc dữ liệu hiển thị (DAO đã lọc 'Đã xóa', ở đây chỉ hiện lên)
+            String gioiTinh = (nv.getGioiTinh() != null && nv.getGioiTinh()) ? "Nam" : "Nữ";
             String tenDN = nv.getTaiKhoan() != null ? nv.getTaiKhoan().getTenDangNhap() : "Chưa có TK";
             String ngaySinh = nv.getNgaySinh() != null ? nv.getNgaySinh().format(DATE_FORMATTER) : "";
             String ngayVaoLam = nv.getNgayVaoLam() != null ? nv.getNgayVaoLam().format(DATE_FORMATTER) : "";
@@ -519,9 +486,9 @@ public class NhanVien_View extends JPanel implements ActionListener {
                 if ("Tất cả".equals(gioiTinhFilter)) {
                     matchGioiTinh = true;
                 } else if ("Nam".equals(gioiTinhFilter)) {
-                    matchGioiTinh = nv.getGioiTinh() == Boolean.TRUE;
+                    matchGioiTinh = Boolean.TRUE.equals(nv.getGioiTinh());
                 } else { 
-                    matchGioiTinh = nv.getGioiTinh() == Boolean.FALSE || nv.getGioiTinh() == null;
+                    matchGioiTinh = Boolean.FALSE.equals(nv.getGioiTinh()) || nv.getGioiTinh() == null;
                 }   
                 
                 boolean matchTrangThai = nv.getTrangThai().equals(trangThaiFilter);
@@ -531,7 +498,7 @@ public class NhanVien_View extends JPanel implements ActionListener {
             .collect(Collectors.toList());
 
         for (NhanVien nv : filteredList) {
-            String gioiTinh = (nv.getGioiTinh() == Boolean.TRUE) ? "Nam" : "Nữ";
+            String gioiTinh = (Boolean.TRUE.equals(nv.getGioiTinh())) ? "Nam" : "Nữ";
             String tenDN = nv.getTaiKhoan() != null ? nv.getTaiKhoan().getTenDangNhap() : "Chưa có TK";
             String ngaySinh = nv.getNgaySinh() != null ? nv.getNgaySinh().format(DATE_FORMATTER) : "";
             String ngayVaoLam = nv.getNgayVaoLam() != null ? nv.getNgayVaoLam().format(DATE_FORMATTER) : "";
@@ -554,21 +521,25 @@ public class NhanVien_View extends JPanel implements ActionListener {
     private void hienThiLenForm(int row) {
         txtMaNV.setText(model.getValueAt(row, 0).toString());
         txtTenNV.setText(model.getValueAt(row, 1).toString());
-        txtSdt.setText(model.getValueAt(row, 3).toString());
-        txtCCCD.setText(model.getValueAt(row, 4).toString());
-        txtNgaySinh.setText(model.getValueAt(row, 5).toString());
-        txtNgayVaoLam.setText(model.getValueAt(row, 6).toString());
-        txtTenDN.setText(model.getValueAt(row, 8).toString());
-        
-        txtEmail.setText(model.getValueAt(row, 4) != null ? model.getValueAt(row, 4).toString() : "");
         
         String gioiTinh = model.getValueAt(row, 2).toString();
         cboGioiTinh.setSelectedItem(gioiTinh); 
         
+        txtSdt.setText(model.getValueAt(row, 3).toString());
+        txtCCCD.setText(model.getValueAt(row, 4) != null ? model.getValueAt(row, 4).toString() : "");
+        txtNgaySinh.setText(model.getValueAt(row, 5).toString());
+        txtNgayVaoLam.setText(model.getValueAt(row, 6).toString());
+        
         String chucVu = model.getValueAt(row, 7).toString();
         cboChucVu.setSelectedItem(chucVu);
         
-        if (model.getValueAt(row, 9).toString().equals("Đã nghỉ")) {
+        txtTenDN.setText(model.getValueAt(row, 8).toString());
+        
+        NhanVien nv = nhanVienDAO.getNhanVienById(txtMaNV.getText());
+        if(nv != null) txtEmail.setText(nv.getEmail());
+        
+        String trangThai = model.getValueAt(row, 9).toString();
+        if ("Đã nghỉ".equals(trangThai)) {
              btnXoa.setEnabled(false);
              btnCapNhat.setEnabled(false);
              btnDoiMK.setEnabled(false);
@@ -590,14 +561,12 @@ public class NhanVien_View extends JPanel implements ActionListener {
         LocalDate ngaySinh = null;
         try {
             ngaySinh = LocalDate.parse(txtNgaySinh.getText().trim(), DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-        }
+        } catch (DateTimeParseException e) {}
         
         LocalDate ngayVaoLam = null;
         try {
             ngayVaoLam = LocalDate.parse(txtNgayVaoLam.getText().trim(), DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-        }
+        } catch (DateTimeParseException e) {}
 
         Boolean gioiTinh = "Nam".equals(cboGioiTinh.getSelectedItem());
         String chucVu = (String) cboChucVu.getSelectedItem();
@@ -614,7 +583,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
         nv.setChucVu(chucVu);
         nv.setTrangThai(trangThai);
         
-        // Cần truyền TaiKhoan (chỉ tên DN) cho hàm thêm/cập nhật
         TaiKhoan tk = new TaiKhoan();
         tk.setTenDangNhap(txtTenDN.getText().trim());
         nv.setTaiKhoan(tk);
@@ -633,11 +601,10 @@ public class NhanVien_View extends JPanel implements ActionListener {
             nvMoi.setMaNhanVien(newMaNV); 
             
             if (nhanVienDAO.themNhanVien(nvMoi, matKhauMacDinh)) {
-                JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công!\nTên đăng nhập: " + nvMoi.getTaiKhoan().getTenDangNhap() + "\nMật khẩu: " + matKhauMacDinh, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Thêm nhân viên thành công!\nTên đăng nhập: " + (nvMoi.getEmail().isEmpty() ? nvMoi.getSoDienThoai() : nvMoi.getEmail().split("@")[0]) + "\nMật khẩu: " + matKhauMacDinh, "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 loadNhanVienData();
                 loadThongKe();
                 xoaRong();
-                txtMaNV.setText(nhanVienDAO.taoMaNVMoi()); 
             } else {
                 JOptionPane.showMessageDialog(this, "Thêm nhân viên thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
@@ -654,7 +621,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
         
         NhanVien nvCapNhat = getNhanVienFromForm();
         if (nvCapNhat != null) {
-            
             if (nhanVienDAO.capNhatNhanVien(nvCapNhat)) {
                 JOptionPane.showMessageDialog(this, "Cập nhật nhân viên thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 loadNhanVienData();
@@ -665,41 +631,38 @@ public class NhanVien_View extends JPanel implements ActionListener {
         }
     }
     
+    // SỬA: Hàm này giờ gọi anNhanVien (ẩn khỏi UI) thay vì xoaNhanVien (đánh dấu đã nghỉ)
     private void xoaNhanVien() {
         String maNV = txtMaNV.getText().trim();
         if (maNV.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần chuyển trạng thái nghỉ!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần xóa!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Xác nhận chuyển nhân viên [" + maNV + "] sang trạng thái NGHỈ VIỆC? (Tài khoản sẽ bị vô hiệu hóa).", 
+            "Xác nhận XÓA nhân viên [" + maNV + "]?\n(Dữ liệu sẽ bị ẩn khỏi hệ thống và tài khoản bị vô hiệu hóa).", 
             "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (nhanVienDAO.xoaNhanVien(maNV)) {
-                JOptionPane.showMessageDialog(this, "Chuyển trạng thái nghỉ thành công! Tài khoản đã bị vô hiệu hóa.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-                loadNhanVienData();
+            // Gọi hàm anNhanVien (Set trạng thái 'Đã xóa')
+            if (nhanVienDAO.anNhanVien(maNV)) {
+                JOptionPane.showMessageDialog(this, "Xóa nhân viên thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                loadNhanVienData(); // Load lại bảng, nhân viên 'Đã xóa' sẽ biến mất vì logic filter trong DAO
                 loadThongKe();
                 xoaRong();
             } else {
-                JOptionPane.showMessageDialog(this, "Chuyển trạng thái nghỉ thất bại! (Có thể nhân viên còn dữ liệu liên quan).", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Xóa nhân viên thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     
     private void doiMatKhau() {
         String maNV = txtMaNV.getText().trim();
-        String tenDN = txtTenDN.getText().trim();
-        if (maNV.isEmpty() || tenDN.equals("Chưa có TK")) {
+        if (maNV.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn nhân viên cần đổi mật khẩu!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
-        // Logic đổi mật khẩu sẽ nằm trong lớp Dialog hoặc lớp DAO.
-        // Ở đây, ta giả lập thông báo:
-        JOptionPane.showMessageDialog(this, "Chức năng đổi mật khẩu đang được phát triển. Vui lòng liên hệ Admin để thực hiện reset.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        
+        JOptionPane.showMessageDialog(this, "Chức năng đổi mật khẩu đang được phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
     
     private void loadThongKe() {
@@ -709,7 +672,6 @@ public class NhanVien_View extends JPanel implements ActionListener {
         int quanLy = 0, thuNgan = 0;
 
         for (NhanVien nv : dsNV) {
-             // Chỉ đếm những người có tài khoản đang hoạt động (Đang làm)
             if ("Đang làm".equals(nv.getTrangThai())) { 
                 tong++;
                 if ("Quản lý".equals(nv.getChucVu())) quanLy++;
@@ -764,7 +726,9 @@ public class NhanVien_View extends JPanel implements ActionListener {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                if (getModel().isPressed()) {
+                if (!isEnabled()) {
+                    g2.setColor(new Color(230, 230, 230)); 
+                } else if (getModel().isPressed()) {
                     g2.setColor(bg.darker());
                 } else if (getModel().isRollover()) {
                     g2.setColor(bg.brighter());
@@ -776,8 +740,17 @@ public class NhanVien_View extends JPanel implements ActionListener {
                 g2.dispose();
                 super.paintComponent(g);
             }
+
+            @Override
+            public Color getForeground() {
+                if (!isEnabled()) {
+                    return Color.GRAY; 
+                }
+                return super.getForeground(); 
+            }
         };
-        btn.setForeground(fg);
+        
+        btn.setForeground(fg); 
         btn.setContentAreaFilled(false);
         btn.setBorderPainted(false);
         btn.setFocusPainted(false);

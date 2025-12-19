@@ -27,8 +27,8 @@ public class KhachHang_DAO {
 
     public List<KhachHang> getAllKhachHang() {
         List<KhachHang> ds = new ArrayList<>();
-        // === SỬA LỖI: Thêm "Khách vãng lai" (KH000... có LaThanhVien = 0) ===
-        String sql = "SELECT * FROM KHACHHANG WHERE LaThanhVien = 1 OR MaKH = 'KH00000000' ORDER BY CASE WHEN MaKH = 'KH00000000' THEN 0 ELSE 1 END, TenKH";
+        // SỬA: Lọc khách hàng chưa bị ẩn - chỉ lấy thành viên hoặc khách vãng lai
+        String sql = "SELECT * FROM KHACHHANG WHERE (LaThanhVien = 1 OR MaKH = 'KH00000000') AND (TrangThai IS NULL OR TrangThai != N'Đã xóa') ORDER BY CASE WHEN MaKH = 'KH00000000' THEN 0 ELSE 1 END, TenKH";
         try (Connection con = ConnectDB.getConnection();
              Statement stmt = con.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -120,6 +120,25 @@ public class KhachHang_DAO {
             stmt.setBoolean(7, kh.isLaThanhVien());
             stmt.setString(8, kh.getMaKH());
 
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /**
+     * Ẩn khách hàng khỏi UI bằng cách đánh dấu trạng thái "Đã xóa"
+     * Thay vì xóa hẳn khỏi database
+     */
+    public boolean anKhachHang(String maKH) {
+        // Giả sử bảng KHACHHANG có cột TrangThai (nếu chưa có cần ALTER TABLE)
+        String sql = "UPDATE KHACHHANG SET TrangThai = N'Đã xóa', LaThanhVien = 0 WHERE MaKH = ?";
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement stmt = con.prepareStatement(sql)) {
+
+            stmt.setString(1, maKH);
             return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {

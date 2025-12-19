@@ -623,23 +623,24 @@ public class Ban_View extends JPanel implements ActionListener {
             return;
         }
         
-         if (!TrangThaiBan.TRONG.equals(TrangThaiBan.fromString(banDuocChon.getTrangThai()))) {
-             JOptionPane.showMessageDialog(this, "Chỉ có thể xóa bàn khi trạng thái là 'Trống'.");
-             return;
-         }
+        if (!TrangThaiBan.TRONG.equals(TrangThaiBan.fromString(banDuocChon.getTrangThai()))) {
+            JOptionPane.showMessageDialog(this, "Chỉ có thể xóa bàn khi trạng thái là 'Trống'.");
+            return;
+        }
 
         int confirm = JOptionPane.showConfirmDialog(this, 
-            "Xác nhận xóa bàn [" + banDuocChon.getMaBan() + "]? Hành động này không thể hoàn tác.", 
-            "Xác nhận xóa", 
+            "Xác nhận ẩn bàn [" + banDuocChon.getMaBan() + "]? Bàn sẽ không hiển thị trong danh sách.", 
+            "Xác nhận ẩn bàn", 
             JOptionPane.YES_NO_OPTION, 
             JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            if (banDAO.xoaBan(banDuocChon.getMaBan())) {
-                JOptionPane.showMessageDialog(this, "Xóa bàn thành công!");
+            // SỬA: Gọi method anBan() thay vì xoaBan()
+            if (banDAO.anBan(banDuocChon.getMaBan())) {
+                JOptionPane.showMessageDialog(this, "Ẩn bàn thành công!");
                 taiLaiDuLieuVaLamMoiUI(); 
             } else {
-                JOptionPane.showMessageDialog(this, "Xóa bàn thất bại. Bàn có thể đã có phiếu đặt hoặc hóa đơn liên quan.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ẩn bàn thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

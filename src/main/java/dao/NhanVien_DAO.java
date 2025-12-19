@@ -12,71 +12,54 @@ import java.util.List;
 public class NhanVien_DAO {
 
     private NhanVien createNhanVienFromResultSet(ResultSet rs) throws SQLException {
+        String maNV = rs.getString("maNhanVien").trim();
+        String hoTen = rs.getString("hoTen");
+        Boolean gioiTinh = (Boolean) rs.getObject("GioiTinh");
+        String sdt = rs.getString("SoDienThoai") != null ? rs.getString("SoDienThoai").trim() : "";
+        String email = rs.getString("Email");
+        String cccd = rs.getString("SoCCCD");
+        
         LocalDate ngaySinh = rs.getDate("ngaySinh") != null ? rs.getDate("ngaySinh").toLocalDate() : null;
-        LocalDate ngayVaoLam = rs.getDate("ngayVaoLam") != null ? rs.getDate("ngayVaoLam").toLocalDate() : null;
-        Boolean gioiTinh = (Boolean) rs.getObject("gioiTinh");
-        
-        // Sửa lỗi: Bổ sung khai báo biến maNV và userID
-        String maNV = rs.getString("maNV").trim(); 
-        int userID = rs.getInt("userID");
+        LocalDate ngayVaoLam = rs.getDate("NgayVaoLam") != null ? rs.getDate("NgayVaoLam").toLocalDate() : null;
+        String trangThaiNV = rs.getString("TrangThai");
 
-        TaiKhoan tk = new TaiKhoan();
-        
-        NhanVien nv = new NhanVien();
-        nv.setMaNhanVien(maNV);
-        nv.setHoTen(rs.getString("tenNhanVien"));
+        NhanVien nv = new NhanVien(maNV);
+        nv.setHoTen(hoTen);
         nv.setGioiTinh(gioiTinh);
-        nv.setSoDienThoai(rs.getString("sdt").trim());
-        nv.setEmail(rs.getString("email"));
-        
-        nv.setNgaySinh(ngaySinh); 
-        nv.setNgayVaoLam(ngayVaoLam); 
-        nv.setSoCCCD(null);
-        // Các trường này cần được JOIN từ bảng TAIKHOAN
-        nv.setChucVu(rs.getString("vaiTro").trim().equals("NVQL") ? "Quản lý" : "Nhân viên thu ngân"); 
-        nv.setTrangThai(rs.getBoolean("trangThai") ? "Đang làm" : "Đã nghỉ"); 
-        
-        // Cần tạo TaiKhoan đầy đủ để gán
-        tk = new TaiKhoan(userID, rs.getString("tenDangNhap").trim(), rs.getString("matKhau"), rs.getString("vaiTro").trim(), rs.getBoolean("trangThai"), nv);
-        
-        nv.setTaiKhoan(tk); 
-        
+        nv.setSoDienThoai(sdt);
+        nv.setEmail(email);
+        nv.setSoCCCD(cccd);
+        nv.setNgaySinh(ngaySinh);
+        nv.setNgayVaoLam(ngayVaoLam);
+        nv.setTrangThai(trangThaiNV);
+
+        int userID = rs.getInt("userID");
+        String tenDangNhap = rs.getString("tenDangNhap") != null ? rs.getString("tenDangNhap").trim() : "";
+        String matKhau = rs.getString("matKhau");
+        String vaiTro = rs.getString("vaiTro") != null ? rs.getString("vaiTro").trim() : "";
+        Boolean trangThaiTK = rs.getBoolean("trangThaiTK");
+
+        nv.setChucVu("NVQL".equals(vaiTro) ? "Quản lý" : "Nhân viên thu ngân");
+
+        TaiKhoan tk = new TaiKhoan(userID, tenDangNhap, matKhau, vaiTro, trangThaiTK, nv);
+        nv.setTaiKhoan(tk);
+
         return nv;
     }
 
     public List<NhanVien> getAllNhanVien() {
         List<NhanVien> ds = new ArrayList<>();
-        // Sửa truy vấn: Thêm userID và trangThai để khớp với Entity TaiKhoan
-        String sql = "SELECT NV.*, TK.vaiTro, TK.tenDangNhap, TK.matKhau, TK.userID, TK.trangThai FROM NHANVIEN NV " + 
-                     "INNER JOIN TAIKHOAN TK ON NV.maNhanVien = TK.maNhanVien";
-        
+        String sql = "SELECT NV.*, TK.userID, TK.tenDangNhap, TK.matKhau, TK.vaiTro, TK.trangThai AS trangThaiTK " +
+                     "FROM NHANVIEN NV " +
+                     "LEFT JOIN TAIKHOAN TK ON NV.maNhanVien = TK.maNhanVien " +
+                     "WHERE NV.TrangThai != N'Đã xóa'";
+
         try (Connection con = ConnectDB.getConnection();
              Statement stmt = con.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                String maNV = rs.getString("maNhanVien").trim();
-                Boolean gioiTinh = (Boolean) rs.getObject("GioiTinh");
-                
-                String vaiTro = rs.getString("vaiTro").trim();
-                Boolean trangThai = rs.getBoolean("trangThai");
-                
-                NhanVien nv = new NhanVien(maNV);
-                nv.setHoTen(rs.getString("hoTen"));
-                nv.setGioiTinh(gioiTinh);
-                nv.setSoDienThoai(rs.getString("SoDienThoai").trim());
-                nv.setEmail(rs.getString("Email"));
-                nv.setNgaySinh(rs.getDate("ngaySinh") != null ? rs.getDate("ngaySinh").toLocalDate() : null);
-                nv.setNgayVaoLam(rs.getDate("NgayVaoLam") != null ? rs.getDate("NgayVaoLam").toLocalDate() : null);
-                nv.setSoCCCD(rs.getString("SoCCCD"));
-                
-                nv.setChucVu(vaiTro.equals("NVQL") ? "Quản lý" : "Nhân viên thu ngân");
-                nv.setTrangThai(rs.getString("TrangThai")); 
-                
-                TaiKhoan tk = new TaiKhoan(rs.getInt("userID"), rs.getString("tenDangNhap").trim(), rs.getString("matKhau"), vaiTro, trangThai, nv);
-                nv.setTaiKhoan(tk);
-                
-                ds.add(nv);
+                ds.add(createNhanVienFromResultSet(rs));
             }
 
         } catch (SQLException e) {
@@ -86,7 +69,7 @@ public class NhanVien_DAO {
     }
     
     public List<NhanVien> getAllNhanVienFull() {
-        return getAllNhanVien(); 
+        return getAllNhanVien();
     }
 
     public boolean isSoDienThoaiExists(String sdt, String currentMaNV) {
@@ -95,14 +78,13 @@ public class NhanVien_DAO {
              PreparedStatement stmt = con.prepareStatement(sql)) {
             
             stmt.setString(1, sdt);
-            stmt.setString(2, currentMaNV != null ? currentMaNV : "NV0000000"); 
+            stmt.setString(2, currentMaNV != null ? currentMaNV : ""); 
             
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1) > 0;
                 }
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -117,14 +99,13 @@ public class NhanVien_DAO {
              PreparedStatement stmt = con.prepareStatement(sql)) {
             
             stmt.setString(1, email);
-            stmt.setString(2, currentMaNV != null ? currentMaNV : "NV0000000"); 
+            stmt.setString(2, currentMaNV != null ? currentMaNV : ""); 
             
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
                     return rs.getInt(1) > 0;
                 }
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -132,13 +113,14 @@ public class NhanVien_DAO {
     }
 
     public boolean themNhanVien(NhanVien nv, String matKhau) {
-    	String sqlNV = "INSERT INTO NHANVIEN(maNhanVien, hoTen, ngaySinh, NgayVaoLam, SoCCCD, GioiTinh, SoDienThoai, Email, ChucVu, TrangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; 
+        String sqlNV = "INSERT INTO NHANVIEN(maNhanVien, hoTen, ngaySinh, NgayVaoLam, SoCCCD, GioiTinh, SoDienThoai, Email, ChucVu, TrangThai) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"; 
         String sqlTK = "INSERT INTO TAIKHOAN(maNhanVien, tenDangNhap, matKhau, vaiTro, trangThai) VALUES (?, ?, ?, ?, ?)";
+        
         Connection con = ConnectDB.getConnection();
         boolean success = false;
         
         try {
-            con.setAutoCommit(false); 
+            con.setAutoCommit(false);
 
             try (PreparedStatement stmtNV = con.prepareStatement(sqlNV)) {
                 stmtNV.setString(1, nv.getMaNhanVien()); 
@@ -146,7 +128,7 @@ public class NhanVien_DAO {
                 stmtNV.setDate(3, nv.getNgaySinh() != null ? Date.valueOf(nv.getNgaySinh()) : null);
                 stmtNV.setDate(4, nv.getNgayVaoLam() != null ? Date.valueOf(nv.getNgayVaoLam()) : null);
                 stmtNV.setString(5, nv.getSoCCCD());
-                stmtNV.setBoolean(6, nv.getGioiTinh() != null ? nv.getGioiTinh() : true);
+                stmtNV.setObject(6, nv.getGioiTinh()); 
                 stmtNV.setString(7, nv.getSoDienThoai()); 
                 stmtNV.setString(8, nv.getEmail());
                 stmtNV.setString(9, nv.getChucVu().equals("Quản lý") ? "NVQL" : "NVTT");
@@ -157,8 +139,9 @@ public class NhanVien_DAO {
             
             try (PreparedStatement stmtTK = con.prepareStatement(sqlTK)) {
                 String vaiTro = nv.getChucVu().equals("Quản lý") ? "NVQL" : "NVTT";
-                String tenDN = nv.getEmail() != null && !nv.getEmail().isEmpty() ? 
-                                nv.getEmail().split("@")[0] : nv.getSoDienThoai();
+                String tenDN = nv.getTaiKhoan() != null && !nv.getTaiKhoan().getTenDangNhap().isEmpty() 
+                                ? nv.getTaiKhoan().getTenDangNhap() 
+                                : (nv.getEmail() != null && !nv.getEmail().isEmpty() ? nv.getEmail().split("@")[0] : nv.getSoDienThoai());
                 
                 stmtTK.setString(1, nv.getMaNhanVien()); 
                 stmtTK.setString(2, tenDN);
@@ -167,14 +150,16 @@ public class NhanVien_DAO {
                 stmtTK.setBoolean(5, true); 
                 
                 if (stmtTK.executeUpdate() == 0) throw new SQLException("Thêm TAIKHOAN thất bại.");
+                
+                if(nv.getTaiKhoan() != null) nv.getTaiKhoan().setTenDangNhap(tenDN);
             }
             
-            con.commit(); 
+            con.commit();
             success = true;
 
         } catch (SQLException e) {
             try {
-                con.rollback(); 
+                con.rollback();
             } catch (SQLException ex) {
                 ex.printStackTrace();
             }
@@ -204,7 +189,7 @@ public class NhanVien_DAO {
                 stmtNV.setDate(2, nv.getNgaySinh() != null ? Date.valueOf(nv.getNgaySinh()) : null);
                 stmtNV.setDate(3, nv.getNgayVaoLam() != null ? Date.valueOf(nv.getNgayVaoLam()) : null);
                 stmtNV.setString(4, nv.getSoCCCD());
-                stmtNV.setBoolean(5, nv.getGioiTinh() != null ? nv.getGioiTinh() : true);
+                stmtNV.setObject(5, nv.getGioiTinh());
                 stmtNV.setString(6, nv.getSoDienThoai()); 
                 stmtNV.setString(7, nv.getEmail());
                 stmtNV.setString(8, nv.getChucVu().equals("Quản lý") ? "NVQL" : "NVTT");
@@ -242,8 +227,47 @@ public class NhanVien_DAO {
         return success;
     }
 
+    public boolean anNhanVien(String maNV) {
+        String sqlUpdateNV = "UPDATE NHANVIEN SET TrangThai = N'Đã xóa' WHERE maNhanVien = ?";
+        String sqlUpdateTK = "UPDATE TAIKHOAN SET trangThai = 0 WHERE maNhanVien = ?";
+        
+        Connection con = ConnectDB.getConnection();
+        boolean success = false;
+
+        try {
+            con.setAutoCommit(false);
+
+            try (PreparedStatement stmt1 = con.prepareStatement(sqlUpdateNV)) {
+                stmt1.setString(1, maNV);
+                stmt1.executeUpdate();
+            }
+
+            try (PreparedStatement stmt2 = con.prepareStatement(sqlUpdateTK)) {
+                stmt2.setString(1, maNV);
+                stmt2.executeUpdate();
+            }
+
+            con.commit();
+            success = true;
+
+        } catch (SQLException e) {
+            try {
+                con.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            e.printStackTrace();
+        } finally {
+            try {
+                con.setAutoCommit(true);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return success;
+    }
+
     public boolean xoaNhanVien(String maNV) {
-        // Cập nhật trạng thái TrangThai=Đã nghỉ trong bảng NHANVIEN và trangThai=0 trong TAIKHOAN
         String sqlUpdateNV = "UPDATE NHANVIEN SET TrangThai = N'Đã nghỉ' WHERE maNhanVien = ?";
         String sqlUpdateTK = "UPDATE TAIKHOAN SET trangThai = 0 WHERE maNhanVien = ?";
         
@@ -260,8 +284,7 @@ public class NhanVien_DAO {
 
             try (PreparedStatement stmt2 = con.prepareStatement(sqlUpdateTK)) {
                 stmt2.setString(1, maNV);
-                int affected = stmt2.executeUpdate();
-                if (affected == 0) throw new SQLException("Cập nhật TAIKHOAN thất bại, có thể không tồn tại.");
+                stmt2.executeUpdate();
             }
 
             con.commit();
@@ -300,56 +323,33 @@ public class NhanVien_DAO {
         }
 
         if (lastMaNV.isEmpty()) {
-            return "NVTT011"; // Bắt đầu từ mã lớn nhất tiếp theo sau NVTT010
+            return "NVTT001";
         }
         
-        String prefix = lastMaNV.substring(0, 4); // Lấy NVQL hoặc NVTT
-        String numPart = lastMaNV.substring(4); 
-        
         try {
+            String prefix = lastMaNV.substring(0, 4);
+            String numPart = lastMaNV.substring(4); 
             int newNum = Integer.parseInt(numPart) + 1;
             return prefix + String.format("%03d", newNum);
-        } catch (NumberFormatException e) {
-             return "NVTT011"; // Mã dự phòng
+        } catch (Exception e) {
+             return "NVTT001";
         }
     }
     
     public NhanVien getNhanVienById(String maNV) {
-        String sql = "SELECT NV.*, TK.vaiTro, TK.tenDangNhap, TK.matKhau, TK.userID, TK.trangThai FROM NHANVIEN NV " + 
-                     "INNER JOIN TAIKHOAN TK ON NV.maNhanVien = TK.maNhanVien WHERE NV.maNhanVien = ?";
+        String sql = "SELECT NV.*, TK.userID, TK.tenDangNhap, TK.matKhau, TK.vaiTro, TK.trangThai AS trangThaiTK " +
+                     "FROM NHANVIEN NV " +
+                     "LEFT JOIN TAIKHOAN TK ON NV.maNhanVien = TK.maNhanVien " +
+                     "WHERE NV.maNhanVien = ?";
         
         try (Connection con = ConnectDB.getConnection();
              PreparedStatement stmt = con.prepareStatement(sql)) {
 
             stmt.setString(1, maNV);
-            ResultSet rs = stmt.executeQuery();
-            
-            if (rs.next()) {
-                Boolean gioiTinh = (Boolean) rs.getObject("GioiTinh");
-                
-                int userID = rs.getInt("userID");
-                String tenDangNhap = rs.getString("tenDangNhap").trim();
-                String matKhau = rs.getString("matKhau");
-                String vaiTro = rs.getString("vaiTro").trim();
-                Boolean trangThai = rs.getBoolean("trangThai");
-                
-                NhanVien nv = new NhanVien(maNV);
-                nv.setHoTen(rs.getString("hoTen"));
-                nv.setGioiTinh(gioiTinh);
-                nv.setSoDienThoai(rs.getString("SoDienThoai").trim());
-                nv.setEmail(rs.getString("Email"));
-                nv.setNgaySinh(rs.getDate("ngaySinh") != null ? rs.getDate("ngaySinh").toLocalDate() : null);
-                nv.setNgayVaoLam(rs.getDate("NgayVaoLam") != null ? rs.getDate("NgayVaoLam").toLocalDate() : null);
-                nv.setSoCCCD(rs.getString("SoCCCD"));
-                
-                nv.setChucVu(vaiTro.equals("NVQL") ? "Quản lý" : "Nhân viên thu ngân");
-                nv.setTrangThai(rs.getString("TrangThai")); 
-                
-                TaiKhoan tk = new TaiKhoan(userID, tenDangNhap, matKhau, vaiTro, trangThai, nv);
-                
-                nv.setTaiKhoan(tk);
-                
-                return nv;
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return createNhanVienFromResultSet(rs);
+                }
             }
 
         } catch (SQLException e) {
