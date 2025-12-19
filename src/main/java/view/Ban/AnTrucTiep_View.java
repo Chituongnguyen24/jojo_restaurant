@@ -196,7 +196,8 @@ public class AnTrucTiep_View extends JPanel implements ActionListener {
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setLeftComponent(taoPanelDanhSachBan());
         splitPane.setRightComponent(taoPanelDanhSachThanhToan());
-        splitPane.setDividerLocation(850);
+        //splitPane.setDividerLocation(850);
+        splitPane.setResizeWeight(0.75);
         splitPane.setResizeWeight(0.75);
         splitPane.setBorder(null);
         splitPane.setBackground(BG_VIEW);

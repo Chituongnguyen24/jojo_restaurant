@@ -62,7 +62,7 @@ public class DatMonAn_View extends JPanel {
         this.banDAO = new Ban_DAO();
         this.datBanDAO = new PhieuDatBan_DAO(); 
         this.monAnDAO = new MonAn_DAO(); 
-        this.hoaDonDAO = new HoaDon_DAO(); // SỬA: Khởi tạo
+        this.hoaDonDAO = new HoaDon_DAO(); 
 
         setLayout(new BorderLayout(0, 0));
         setBackground(BACKGROUND_COLOR);
@@ -90,7 +90,7 @@ public class DatMonAn_View extends JPanel {
         masterScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER); 
         masterScroll.getVerticalScrollBar().setUnitIncrement(16);
 
-        add(masterScroll, BorderLayout.CENTER); 
+        add(mainContentPanel, BorderLayout.CENTER); 
 
         setupEvents();
         taiDanhSachPhieuDat();
