@@ -15,7 +15,9 @@ import entity.Thue;
 import enums.TrangThaiBan;
 
 import javax.swing.*;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
@@ -53,12 +55,12 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
     private static final DecimalFormat CURRENCY_FORMAT;
 
-    // MÀU SẮC ĐẸP MẮT
-    private static final Color COLOR_PRIMARY = new Color(59, 130, 246); // Blue
-    private static final Color COLOR_SUCCESS = new Color(34, 197, 94); // Green
-    private static final Color COLOR_DANGER = new Color(239, 68, 68); // Red
-    private static final Color COLOR_WARNING = new Color(251, 146, 60); // Orange
-    private static final Color COLOR_BG = new Color(248, 250, 252); // Light Gray
+    // MÀU SẮC GIAO DIỆN
+    private static final Color COLOR_PRIMARY = new Color(59, 130, 246);
+    private static final Color COLOR_SUCCESS = new Color(34, 197, 94);
+    private static final Color COLOR_DANGER = new Color(239, 68, 68);
+    private static final Color COLOR_WARNING = new Color(251, 146, 60);
+    private static final Color COLOR_BG = new Color(248, 250, 252);
     private static final Color COLOR_BORDER = new Color(226, 232, 240);
     private static final Color COLOR_TEXT = new Color(51, 65, 85);
     private static final Color COLOR_TEXT_LIGHT = new Color(100, 116, 139);
@@ -147,7 +149,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         JPanel rightPanel = createRightButtonPanel();
 
         panel.add(leftPanel, BorderLayout.WEST);
-        panel.add(rightPanel, BorderLayout.EAST);  // Sửa từ CENTER thành EAST để căn phải đúng
+        panel.add(rightPanel, BorderLayout.EAST);
 
         return panel;
     }
@@ -202,19 +204,17 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
             return;
         }
 
-        KhachHang khachHangMoi = (KhachHang) cbxKhachHang.getSelectedItem();
-        KhuyenMai khuyenMaiMoi = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
-        KhachHang khachHangCu = hoaDonHienTai.getKhachHang();
-        KhuyenMai khuyenMaiCu = hoaDonHienTai.getKhuyenMai();
-
-        boolean canUpdate = checkAndConfirmUpdate(khachHangMoi, khachHangCu, khuyenMaiMoi, khuyenMaiCu);
-        if (canUpdate) {
-            return;  // Nếu không xác nhận cập nhật, dừng lại
+        // --- TỰ ĐỘNG CẬP NHẬT NẾU CÓ THAY ĐỔI ---
+        boolean updateSuccess = autoUpdateInvoiceInfo();
+        if (!updateSuccess) {
+            return; // Nếu cập nhật lỗi thì dừng lại
         }
+        // ----------------------------------------
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Xác nhận thanh toán cho hóa đơn " + hoaDonHienTai.getMaHD() + "?",
+                "Xác nhận thanh toán cho hóa đơn " + hoaDonHienTai.getMaHD() + "?\nTổng tiền: " + lblTongThanhToan.getText(),
                 "Xác nhận", JOptionPane.YES_NO_OPTION);
+        
         if (confirm != JOptionPane.YES_OPTION) {
             return;
         }
@@ -222,43 +222,49 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         performPayment(phuongThuc, chiTietList);
     }
 
-    private boolean checkAndConfirmUpdate(KhachHang khachHangMoi, KhachHang khachHangCu, KhuyenMai khuyenMaiMoi, KhuyenMai khuyenMaiCu) {
+    // Hàm mới: Tự động kiểm tra và cập nhật thông tin nếu khác biệt
+    private boolean autoUpdateInvoiceInfo() {
+        KhachHang khachHangMoi = (KhachHang) cbxKhachHang.getSelectedItem();
+        KhuyenMai khuyenMaiMoi = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
+        KhachHang khachHangCu = hoaDonHienTai.getKhachHang();
+        KhuyenMai khuyenMaiCu = hoaDonHienTai.getKhuyenMai();
+
         boolean canUpdate = false;
-        if (khachHangMoi != null && !Objects.equals(khachHangMoi.getMaKH(), khachHangCu.getMaKH())) {
+        
+        // Kiểm tra Khách hàng
+        String idKHCu = (khachHangCu != null) ? khachHangCu.getMaKH() : "";
+        String idKHMoi = (khachHangMoi != null) ? khachHangMoi.getMaKH() : "";
+        if (!idKHCu.equals(idKHMoi)) {
             canUpdate = true;
         }
-        String maKMCu = (khuyenMaiCu != null) ? khuyenMaiCu.getMaKM() : null;
-        String maKMMoi = (khuyenMaiMoi != null) ? khuyenMaiMoi.getMaKM() : null;
-        if (maKMMoi == null && maKMCu != null && maKMCu.equals("KM00000000")) {
-            // Không cập nhật nếu là mặc định
-        } else if (!Objects.equals(maKMMoi, maKMCu)) {
+
+        // Kiểm tra Khuyến mãi
+        String maKMCu = (khuyenMaiCu != null && khuyenMaiCu.getMaKM() != null) ? khuyenMaiCu.getMaKM().trim() : "KM00000000";
+        String maKMMoi = (khuyenMaiMoi != null && khuyenMaiMoi.getMaKM() != null) ? khuyenMaiMoi.getMaKM().trim() : "KM00000000";
+        
+        if (!maKMCu.equalsIgnoreCase(maKMMoi)) {
             canUpdate = true;
         }
 
         if (canUpdate) {
-            int confirmUpdate = JOptionPane.showConfirmDialog(this,
-                    "Phát hiện thay đổi thông tin Khách hàng/Khuyến mãi.\nBạn có muốn lưu các thay đổi này trước khi thanh toán?",
-                    "Xác nhận cập nhật", JOptionPane.YES_NO_OPTION);
-            if (confirmUpdate == JOptionPane.YES_OPTION) {
-                boolean updateOK = hoaDonDAO.updateKhachHangVaKhuyenMai(
-                        hoaDonHienTai.getMaHD(),
-                        khachHangMoi.getMaKH(),
-                        maKMMoi
-                );
-                if (updateOK) {
-                    JOptionPane.showMessageDialog(this, "Cập nhật thông tin thành công!");
-                    this.hoaDonHienTai = hoaDonDAO.findByMaHD(hoaDonHienTai.getMaHD());
-                    tinhVaHienThiTongTien(this.hoaDonHienTai);
-                    return false;  // Cập nhật thành công, tiếp tục thanh toán
-                } else {
-                    JOptionPane.showMessageDialog(this, "Lỗi khi cập nhật thông tin. Vui lòng thử lại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                    return true;  // Dừng thanh toán
-                }
+            // Thực hiện cập nhật thầm lặng (Silent Update)
+            boolean updateOK = hoaDonDAO.updateKhachHangVaKhuyenMai(
+                    hoaDonHienTai.getMaHD(),
+                    (khachHangMoi != null) ? khachHangMoi.getMaKH() : "KH00000000",
+                    (maKMMoi != null) ? maKMMoi : "KM00000000"
+            );
+            
+            if (updateOK) {
+                // Cập nhật lại đối tượng hóa đơn hiện tại trong bộ nhớ
+                this.hoaDonHienTai = hoaDonDAO.findByMaHD(hoaDonHienTai.getMaHD());
+                tinhVaHienThiTongTien(this.hoaDonHienTai);
+                return true; 
             } else {
-                return true;  // Không cập nhật, dừng thanh toán
+                JOptionPane.showMessageDialog(this, "Lỗi khi cập nhật thông tin Khuyến mãi/Khách hàng vào hệ thống.", "Lỗi Cập Nhật", JOptionPane.ERROR_MESSAGE);
+                return false; 
             }
         }
-        return false;  // Không cần cập nhật, tiếp tục
+        return true; // Không có gì thay đổi
     }
 
     private void performPayment(String phuongThuc, List<ChiTietHoaDon> chiTietList) {
@@ -427,7 +433,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
         if (khachHangDaChon != null) {
             comboBox.setSelectedItem(khachHangDaChon);
-        } else {
+        } else if (comboBox.getItemCount() > 0) { // Fix lỗi setSelectedIndex
             comboBox.setSelectedIndex(0);
         }
         return comboBox;
@@ -614,7 +620,7 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
         if (kmDaChon != null) {
             comboBox.setSelectedItem(kmDaChon);
-        } else {
+        } else if (comboBox.getItemCount() > 0) { // Fix lỗi setSelectedIndex
             comboBox.setSelectedIndex(0);
         }
         return comboBox;
