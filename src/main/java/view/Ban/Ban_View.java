@@ -67,7 +67,7 @@ public class Ban_View extends JPanel implements ActionListener {
     private JComboBox<String> cboTrangThaiLoc;
 
     private JTextField txtMaBan, txtSoCho;
-    private JComboBox<String> cboLoaiBan, cboKhuVuc, cboTrangThai;
+    private JComboBox<String> cboLoaiBan, cboKhuVuc; // Đã xóa cboTrangThai
     private JButton btnThem, btnCapNhat, btnXoa, btnXoaRong;
 
     private static final String REGEX_SO_CHO = "^[1-9][0-9]*$";
@@ -90,20 +90,17 @@ public class Ban_View extends JPanel implements ActionListener {
     
     private static final Font FONT_TIEUDE_LON = new Font("Segoe UI", Font.BOLD, 26); 
 
-    // === FIX: Lớp nội bộ để chứa dữ liệu tải trong nền ===
     private class BackgroundData {
         final Map<String, List<Ban>> banTheoKhuVuc;
         final List<String> tenKhuVuc;
-        final List<KhuVuc> dsKhuVucTuDB; // Dùng cho combobox form
+        final List<KhuVuc> dsKhuVucTuDB; 
 
         public BackgroundData(List<Ban> tatCaBan, List<KhuVuc> dsKhuVuc) {
             this.dsKhuVucTuDB = (dsKhuVuc != null) ? dsKhuVuc : new ArrayList<>();
             
-            // Xây dựng map từ Mã KV -> Tên KV để tra cứu
             Map<String, String> kvMap = this.dsKhuVucTuDB.stream()
                 .collect(Collectors.toMap(KhuVuc::getMaKhuVuc, KhuVuc::getTenKhuVuc));
             
-            // Xây dựng map dữ liệu chính (logic từ taiDuLieuTuDB)
             Map<String, List<Ban>> mapBan = new LinkedHashMap<>();
             if (tatCaBan != null) {
                 for (Ban ban : tatCaBan) {
@@ -116,8 +113,6 @@ public class Ban_View extends JPanel implements ActionListener {
             this.tenKhuVuc = new ArrayList<>(this.banTheoKhuVuc.keySet());
         }
     }
-    // === HẾT FIX ===
-
 
     public Ban_View() {
         banDAO = new Ban_DAO();
@@ -132,11 +127,7 @@ public class Ban_View extends JPanel implements ActionListener {
         taiTatCaIconKhuVuc(); 
         thietLapGiaoDien();
         
-        // === FIX: Gọi hàm tải bất đồng bộ ===
-        // doDuLieuCbo(); // Xóa
-        // taiLaiDuLieuVaLamMoiUI(); // Xóa
-        loadDataAsync(); // Thêm hàm mới
-        // === HẾT FIX ===
+        loadDataAsync();
     }
     
     private void ganSuKien() {
@@ -167,17 +158,11 @@ public class Ban_View extends JPanel implements ActionListener {
         cboTrangThaiLoc.addActionListener(filterAction);
     }
     
-    // === FIX: XÓA HÀM NÀY (logic đã chuyển vào loadDataAsync) ===
-    // private void doDuLieuCbo() { ... }
-    
-    // === FIX: Hàm này giờ chỉ là bí danh của loadDataAsync ===
     private void taiLaiDuLieuVaLamMoiUI() { 
         loadDataAsync();
     }
     
-    // === FIX: HÀM MỚI TẢI DỮ LIỆU BẰNG SWINGWORKER ===
     private void loadDataAsync() {
-        // 1. Hiển thị trạng thái "Đang tải"
         pnlLuoiBan.removeAll();
         pnlLuoiBan.setLayout(new FlowLayout(FlowLayout.CENTER));
         JLabel lblLoading = new JLabel("Đang tải dữ liệu bàn, vui lòng chờ...");
@@ -186,41 +171,32 @@ public class Ban_View extends JPanel implements ActionListener {
         pnlLuoiBan.revalidate();
         pnlLuoiBan.repaint();
 
-        String currentKhuVuc = khuVucHienTai; // Lưu lại khu vực đang chọn
+        String currentKhuVuc = khuVucHienTai;
         
-        // 2. Tạo SwingWorker
         SwingWorker<BackgroundData, Void> worker = new SwingWorker<BackgroundData, Void>() {
             @Override
             protected BackgroundData doInBackground() throws Exception {
-                // Tải 2 loại dữ liệu trong nền
                 List<Ban> tatCaBan = banDAO.getAllBan();
                 List<KhuVuc> dsKhuVuc = khuVucDAO.getAllKhuVuc();
-                
-                // Trả về đối tượng data đã xử lý
                 return new BackgroundData(tatCaBan, dsKhuVuc);
             }
 
             @Override
             protected void done() {
                 try {
-                    // 3. Lấy dữ liệu khi đã tải xong (chạy trên luồng EDT)
                     BackgroundData data = get();
                     
-                    // 4. Cập nhật biến toàn cục
                     danhSachBanTheoKhuVuc = data.banTheoKhuVuc;
                     tenKhuVuc = data.tenKhuVuc;
-                    // Cập nhật map số lượng (dùng cho thống kê nếu cần)
                     soLuongBanTheoKhuVuc = data.banTheoKhuVuc.entrySet().stream()
-                           .collect(Collectors.toMap(
+                            .collect(Collectors.toMap(
                                Map.Entry::getKey, 
                                e -> e.getValue().size(),
                                (oldValue, newValue) -> newValue,
                                LinkedHashMap::new
-                           ));
+                            ));
                     
-                    // 5. Cập nhật TẤT CẢ combobox (logic từ doDuLieuCbo cũ)
-                    
-                    // --- Combobox cho FORM ---
+                    // Cập nhật Combobox Form
                     cboKhuVuc.removeAllItems();
                     if (data.dsKhuVucTuDB != null) {
                         for (KhuVuc kv : data.dsKhuVucTuDB) {
@@ -229,10 +205,8 @@ public class Ban_View extends JPanel implements ActionListener {
                     }
                     cboLoaiBan.removeAllItems();
                     for (LoaiBan lb : LoaiBan.values()) cboLoaiBan.addItem(lb.getTenHienThi());
-                    cboTrangThai.removeAllItems();
-                    for (TrangThaiBan ttb : TrangThaiBan.values()) cboTrangThai.addItem(ttb.getTenHienThi());
                     
-                    // --- Combobox cho FILTER ---
+                    // Cập nhật Combobox Filter
                     ActionListener[] listeners = cboKhuVucFilter.getActionListeners();
                     for(ActionListener l : listeners) cboKhuVucFilter.removeActionListener(l);
                     
@@ -243,7 +217,7 @@ public class Ban_View extends JPanel implements ActionListener {
                     
                     for(ActionListener l : listeners) cboKhuVucFilter.addActionListener(l);
                     
-                    // 6. Khôi phục khu vực đang chọn (logic từ taiLaiDuLieuVaLamMoiUI cũ)
+                    // Khôi phục khu vực
                     if (currentKhuVuc != null && tenKhuVuc.contains(currentKhuVuc)) {
                         khuVucHienTai = currentKhuVuc;
                     } else if (!tenKhuVuc.isEmpty()) {
@@ -253,7 +227,6 @@ public class Ban_View extends JPanel implements ActionListener {
                     }
                     cboKhuVucFilter.setSelectedItem(khuVucHienTai);
                     
-                    // 7. Cập nhật UI
                     capNhatHienThiLuoiBan();
                     xoaRong();
 
@@ -267,10 +240,8 @@ public class Ban_View extends JPanel implements ActionListener {
             }
         };
         
-        // 8. Thực thi worker
         worker.execute();
     }
-    // === HẾT FIX ===
 
     private JPanel taoPanelHeader() {
         JPanel panelHeaderWrapper = new JPanel(new BorderLayout(0, 15));
@@ -375,9 +346,6 @@ public class Ban_View extends JPanel implements ActionListener {
         JSplitPane pnlContent = taoPanelNoiDungChinh(); 
         add(pnlContent, BorderLayout.CENTER);
     }
-    
-    // === FIX: XÓA HÀM NÀY (logic đã chuyển vào loadDataAsync) ===
-    // private void taiDuLieuTuDB() { ... }
     
     private void capNhatHienThiLuoiBan() {
         pnlLuoiBan.removeAll(); 
@@ -507,9 +475,8 @@ public class Ban_View extends JPanel implements ActionListener {
         txtMaBan.setText(ban.getMaBan().trim());
         txtSoCho.setText(String.valueOf(ban.getSoCho()));
         
-        // Sửa: Lấy tên khu vực từ map đã tải, không cần query DB
         String tenKV = "Không rõ";
-        for (KhuVuc kv : khuVucDAO.getAllKhuVuc()) { // Giữ lại query này vì nó đơn giản
+        for (KhuVuc kv : khuVucDAO.getAllKhuVuc()) {
              if(kv.getMaKhuVuc().equals(ban.getKhuVuc().getMaKhuVuc())) {
                  tenKV = kv.getTenKhuVuc();
                  break;
@@ -518,7 +485,6 @@ public class Ban_View extends JPanel implements ActionListener {
         if (tenKV != null) cboKhuVuc.setSelectedItem(tenKV.trim());
         
         cboLoaiBan.setSelectedItem(LoaiBan.fromString(ban.getLoaiBan()).getTenHienThi());
-        cboTrangThai.setSelectedItem(TrangThaiBan.fromString(ban.getTrangThai()).getTenHienThi());
         
         capNhatTrangThaiNut();
     }
@@ -528,13 +494,21 @@ public class Ban_View extends JPanel implements ActionListener {
         int soCho = Integer.parseInt(txtSoCho.getText().trim());
         String loaiBanTen = (String) cboLoaiBan.getSelectedItem();
         String khuVucTen = (String) cboKhuVuc.getSelectedItem();
-        String trangThaiTen = (String) cboTrangThai.getSelectedItem();
         
         String maKV = khuVucDAO.getMaKhuVucTheoTen(khuVucTen);
         KhuVuc kv = new KhuVuc(maKV);
         
         String loaiBanRaw = LoaiBan.fromString(loaiBanTen).toString();
-        String trangThaiRaw = TrangThaiBan.fromString(trangThaiTen).toString();
+        
+        // Tự động xác định trạng thái
+        String trangThaiRaw;
+        if (banDuocChon != null) {
+            // Nếu đang cập nhật, giữ nguyên trạng thái cũ
+            trangThaiRaw = banDuocChon.getTrangThai();
+        } else {
+            // Nếu thêm mới, mặc định là TRỐNG
+            trangThaiRaw = TrangThaiBan.TRONG.toString();
+        }
 
         return new Ban(maBan, soCho, kv, loaiBanRaw, trangThaiRaw);
     }
@@ -542,17 +516,14 @@ public class Ban_View extends JPanel implements ActionListener {
     private boolean validateData() {
         String soChoStr = txtSoCho.getText().trim();
         
-        // Sửa: Không cần validate mã bàn khi thêm mới nữa
-        // if (maBan.isEmpty()) { ... }
-        
         if (soChoStr.isEmpty() || !soChoStr.matches(REGEX_SO_CHO)) {
             JOptionPane.showMessageDialog(this, "Số chỗ không hợp lệ (phải là số nguyên dương).", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
             txtSoCho.requestFocus();
             return false;
         }
         
-        if (cboLoaiBan.getSelectedItem() == null || cboKhuVuc.getSelectedItem() == null || cboTrangThai.getSelectedItem() == null) {
-            JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ Loại bàn, Khu vực và Trạng thái.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
+        if (cboLoaiBan.getSelectedItem() == null || cboKhuVuc.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn đầy đủ Loại bàn và Khu vực.", "Lỗi nhập liệu", JOptionPane.ERROR_MESSAGE);
             return false;
         }
         
@@ -563,21 +534,15 @@ public class Ban_View extends JPanel implements ActionListener {
         if (!validateData()) return;
 
         try {
-            // 1. Lấy thông tin từ form
             Ban banMoi = getBanFromForm();
 
-            // 2. Lấy mã khu vực đã chọn
             String khuVucTen = (String) cboKhuVuc.getSelectedItem();
             String maKV = khuVucDAO.getMaKhuVucTheoTen(khuVucTen);
 
-            // 3. Yêu cầu DAO tạo mã mới DỰA TRÊN mã khu vực
-            // (Bạn sẽ cần tạo hàm mới này trong Ban_DAO)
             String maBanMoi = banDAO.taoMaBanMoiTheoKhuVuc(maKV);
 
-            // 4. Gán mã mới cho đối tượng
             banMoi.setMaBan(maBanMoi);
 
-            // 5. Kiểm tra trùng lặp (dù tự tạo nhưng vẫn nên kiểm tra)
             if (banDAO.getBanTheoMa(maBanMoi) != null) {
                 JOptionPane.showMessageDialog(this, "Lỗi khi tạo mã tự động. Vui lòng thử lại.", "Lỗi trùng lặp", JOptionPane.ERROR_MESSAGE);
                 return;
@@ -635,7 +600,6 @@ public class Ban_View extends JPanel implements ActionListener {
             JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            // SỬA: Gọi method anBan() thay vì xoaBan()
             if (banDAO.anBan(banDuocChon.getMaBan())) {
                 JOptionPane.showMessageDialog(this, "Ẩn bàn thành công!");
                 taiLaiDuLieuVaLamMoiUI(); 
@@ -648,7 +612,7 @@ public class Ban_View extends JPanel implements ActionListener {
     private void xoaRong() {
         banDuocChon = null;
 
-        txtMaBan.setText("--Tự động tạo--"); // Đặt lại text mặc định
+        txtMaBan.setText("--Tự động tạo--"); 
         txtMaBan.setEditable(false);
         
         txtSoCho.setText("");
@@ -659,16 +623,11 @@ public class Ban_View extends JPanel implements ActionListener {
             cboKhuVuc.setSelectedItem(khuVucHienTai); 
         }
         
-        if (cboTrangThai.getItemCount() > 0) cboTrangThai.setSelectedItem(TrangThaiBan.TRONG.getTenHienThi());
-        
         capNhatTrangThaiNut();
     }
     
     private void capNhatTrangThaiNut() {
         boolean isAdding = banDuocChon == null;
-        
-        // Sửa: Không cho phép sửa Mã bàn
-        // txtMaBan.setEditable(isAdding);
         
         btnThem.setEnabled(isAdding);
         btnCapNhat.setEnabled(!isAdding);
@@ -834,7 +793,8 @@ public class Ban_View extends JPanel implements ActionListener {
         lblFormTitle.setForeground(COLOR_TITLE);
         pnlForm.add(lblFormTitle, BorderLayout.NORTH);
 
-        JPanel pnlInput = new JPanel(new GridLayout(5, 2, 10, 10)); // 5 hàng 2 cột
+        // Giảm số hàng từ 5 xuống 4 vì đã xóa Trạng thái
+        JPanel pnlInput = new JPanel(new GridLayout(4, 2, 10, 10)); 
         pnlInput.setOpaque(false);
         pnlInput.setBorder(new EmptyBorder(15, 0, 15, 0));
 
@@ -855,9 +815,7 @@ public class Ban_View extends JPanel implements ActionListener {
         cboKhuVuc = createInputComboBox(true);
         pnlInput.add(cboKhuVuc);
 
-        pnlInput.add(taoFormLabel("Trạng thái:"));
-        cboTrangThai = createInputComboBox(true);
-        pnlInput.add(cboTrangThai);
+        // Đã xóa input Trạng thái tại đây
         
         pnlForm.add(pnlInput, BorderLayout.CENTER);
         
@@ -874,14 +832,7 @@ public class Ban_View extends JPanel implements ActionListener {
         return pnlForm;
     }
 
-    // === FIX: Thêm hàm refreshTableData() mà TrangChu_View cần ===
-    /**
-     * Hàm này được gọi từ TrangChu_View khi người dùng click vào tab "Quản lý bàn".
-     * Nó sẽ gọi hàm tải dữ liệu bất đồng bộ.
-     */
     public void refreshData() {
-        // Gọi hàm async loader
         loadDataAsync();
     }
- 
 }

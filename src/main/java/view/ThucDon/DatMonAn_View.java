@@ -679,23 +679,28 @@ public class DatMonAn_View extends JPanel {
             options,
             options[0]);
 
-        if (choice == 0) { 
-            // LỰA CHỌN 1: KHÁCH ĐÃ ĐẾN
-            // Gọi hàm DAO để cập nhật giờ nhận bàn và đổi trạng thái thành "Đã đến"
+        if (choice == 0) { // LỰA CHỌN 1: KHÁCH ĐÃ ĐẾN
+            // Cập nhật giờ nhận bàn và trạng thái
             boolean ketQua = datBanDAO.capNhatThoiGianNhanBan(
                 phieuDatBanHienTai.getMaPhieu(), 
                 java.time.LocalDateTime.now()
             );
             
+            // Cập nhật trạng thái bàn sang "Có khách"
             if (ketQua) {
+                // Lấy thông tin bàn từ phiếu để cập nhật trạng thái bàn
+                Ban ban = phieuDatBanHienTai.getBan();
+                if (ban != null) {
+                    banDAO.capNhatTrangThaiBan(ban.getMaBan(), enums.TrangThaiBan.CO_KHACH);
+                }
+                
                 JOptionPane.showMessageDialog(this, "Đã cập nhật: Khách đã nhận bàn!");
-                taiDanhSachPhieuDat(); // Tải lại để thấy thay đổi
+                taiDanhSachPhieuDat(); // Tải lại danh sách
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi cập nhật trạng thái!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
-        } else if (choice == 1) {
-            // LỰA CHỌN 2: KHÁCH KHÔNG ĐẾN
+        } else if (choice == 1) { // LỰA CHỌN 2: KHÁCH KHÔNG ĐẾN
             int confirm = JOptionPane.showConfirmDialog(this, 
                 "Bạn chắc chắn muốn hủy phiếu này (Khách không đến)?\nBàn sẽ được giải phóng.", 
                 "Xác nhận", JOptionPane.YES_NO_OPTION);
@@ -703,6 +708,12 @@ public class DatMonAn_View extends JPanel {
             if (confirm == JOptionPane.YES_OPTION) {
                 boolean ketQua = datBanDAO.updateTrangThai(phieuDatBanHienTai.getMaPhieu(), "Không đến");
                 if (ketQua) {
+                    // Cập nhật trạng thái bàn về "Trống"
+                    Ban ban = phieuDatBanHienTai.getBan();
+                    if (ban != null) {
+                        banDAO.capNhatTrangThaiBan(ban.getMaBan(), enums.TrangThaiBan.TRONG);
+                    }
+
                     JOptionPane.showMessageDialog(this, "Đã cập nhật: Khách không đến.");
                     taiDanhSachPhieuDat(); // Tải lại danh sách
                 } else {
@@ -711,7 +722,6 @@ public class DatMonAn_View extends JPanel {
             }
         }
     }
-}
 
 // ===== CÁC CLASS HỖ TRỢ GIAO DIỆN (Giữ nguyên) =====
 
@@ -852,4 +862,5 @@ class SmallButtonCellEditor extends AbstractCellEditor implements javax.swing.ta
         }
         return false;
     }
+}
 }

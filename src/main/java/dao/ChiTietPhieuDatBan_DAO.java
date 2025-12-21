@@ -245,13 +245,17 @@ public class ChiTietPhieuDatBan_DAO {
     }
 
 
-    // ====================================================================
-    // PHẦN CHITIETPHIEUDATBAN (CTPDB)
-    // ====================================================================
-
     public List<ChiTietPhieuDatBan> getChiTietByPhieuId(String maPhieu) {
         List<ChiTietPhieuDatBan> dsCT = new ArrayList<>();
-        String sql = "SELECT maMonAn, soLuongMonAn, DonGiaBan, ghiChu FROM CHITIETPHIEUDATBAN WHERE maPhieu = ?";
+        
+        // SỬA SQL: Join thêm bảng PHIEUDATBAN, NHANVIEN, KHACHHANG để lấy tên
+        String sql = "SELECT ct.maMonAn, ct.soLuongMonAn, ct.DonGiaBan, ct.ghiChu, " +
+                     "nv.tenNV, kh.tenKH " + // Lấy thêm cột tên
+                     "FROM CHITIETPHIEUDATBAN ct " +
+                     "JOIN PHIEUDATBAN pdb ON ct.maPhieu = pdb.maPhieu " +
+                     "LEFT JOIN NHANVIEN nv ON pdb.maNV = nv.maNV " +
+                     "LEFT JOIN KHACHHANG kh ON pdb.maKhachHang = kh.maKH " +
+                     "WHERE ct.maPhieu = ?";
         
         try (Connection conn = ConnectDB.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -259,13 +263,27 @@ public class ChiTietPhieuDatBan_DAO {
             pstmt.setString(1, maPhieu);
             try (ResultSet rs = pstmt.executeQuery()) {
                 while (rs.next()) {
+                    // 1. Tạo đối tượng Nhân viên và set tên
+                    NhanVien nv = new NhanVien();
+                    nv.setHoTen(sql);
+
+                    // 2. Tạo đối tượng Khách hàng và set tên
+                    KhachHang kh = new KhachHang();
+                    kh.setTenKH(rs.getString("tenKH"));
+
+                    // 3. Tạo PhieuDatBan và gán NV, KH vào
                     PhieuDatBan phieu = new PhieuDatBan(maPhieu);
-                    MonAn mon = monAnDAO.getMonAnTheoMa(rs.getString("maMonAn")); // SỬA: getMonAnTheoMa
+                    phieu.setNhanVien(nv);
+                    phieu.setKhachHang(kh);
+
+                    // 4. Lấy thông tin món ăn
+                    MonAn mon = monAnDAO.getMonAnTheoMa(rs.getString("maMonAn")); 
+                    
                     int soLuong = rs.getInt("soLuongMonAn");
                     double donGiaBan = rs.getDouble("DonGiaBan");
                     String ghiChu = rs.getString("ghiChu");
                     
-                    // SỬA: Dùng constructor 5 tham số của Entity ChiTietPhieuDatBan
+                    // 5. Tạo chi tiết phiếu
                     ChiTietPhieuDatBan ct = new ChiTietPhieuDatBan(mon, phieu, soLuong, donGiaBan, ghiChu);
                     dsCT.add(ct);
                 }

@@ -6,6 +6,7 @@ import dao.PhieuDatBan_DAO;
 import entity.Ban;
 import entity.PhieuDatBan;
 import enums.TrangThaiBan;
+import view.HoaDon.HoaDon_ChiTietHoaDon_View; // Import view chi tiết hóa đơn
 import view.ThucDon.ChonMon_Dialog;
 import enums.LoaiBan;
 
@@ -63,7 +64,7 @@ public class DatBan_View extends JPanel implements ActionListener {
     private final JPanel pnlLuoiBan;
     private final JLabel lblThongKeBan;
     private final JLabel lblDateTime;
-    private JPanel pnlButton; // Panel chứa các nút chức năng
+    private JPanel pnlButton; 
 
     private final JLabel lblMaBanValue, lblKhuVucValue, lblLoaiBanValue, lblSoChoValue;
 
@@ -1146,28 +1147,56 @@ public class DatBan_View extends JPanel implements ActionListener {
         final int soNguoi = (int) cboSoKhach.getSelectedItem();
         final String ghiChu = txtGhiChu.getText().trim();
 
+        // ---- PHẦN VALIDATE DỮ LIỆU ----
+        
+        // 1. Kiểm tra số người
         if (soNguoi > banDangChon.getSoCho()) {
+            JOptionPane.showMessageDialog(this, 
+                "Số khách (" + soNguoi + ") vượt quá sức chứa của bàn (" + banDangChon.getSoCho() + ").\nVui lòng chọn bàn lớn hơn hoặc giảm số khách.", 
+                "Lỗi đặt bàn", JOptionPane.WARNING_MESSAGE);
             cboSoKhach.requestFocus();
             return;
         }
 
+        // 2. Kiểm tra tên khách (Không rỗng, chỉ chứa chữ)
         if (tenKhach.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập Tên khách hàng.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
             txtTenKhach.requestFocus();
             return;
         }
+        if (!tenKhach.matches("^[\\p{L} .'-]+$")) {
+            JOptionPane.showMessageDialog(this, "Tên khách hàng không hợp lệ (chỉ chứa chữ cái).", "Sai định dạng", JOptionPane.WARNING_MESSAGE);
+            txtTenKhach.requestFocus();
+            return;
+        }
+
+        // 3. Kiểm tra số điện thoại (10 số, bắt đầu bằng 0 hoặc Mã KH hợp lệ)
         if (sdtHoacMaKH.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Vui lòng nhập Số điện thoại hoặc Mã khách hàng.", "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            txtSdtKhach.requestFocus();
+            return;
+        }
+        // Regex: Hoặc là Mã KH (KH + số), hoặc là SĐT (10 số bắt đầu bằng 0)
+        if (!sdtHoacMaKH.toUpperCase().startsWith("KH") && !sdtHoacMaKH.matches("^0\\d{9}$")) {
+            JOptionPane.showMessageDialog(this, "Số điện thoại phải là 10 chữ số và bắt đầu bằng số 0.", "Sai định dạng SĐT", JOptionPane.WARNING_MESSAGE);
             txtSdtKhach.requestFocus();
             return;
         }
 
+        // 4. Kiểm tra thời gian hẹn (Phải >= hiện tại)
         final LocalDateTime thoiGianHenFinal = getThoiGianDaChon();
-
         if (thoiGianHenFinal.isBefore(LocalDateTime.now().minusMinutes(5))) {
-            int confirm = JOptionPane.showConfirmDialog(this, "Thời gian hẹn đã qua!\nBạn có muốn đặt luôn với thời gian hiện tại không?", "Cảnh báo", JOptionPane.YES_NO_OPTION);
+            int confirm = JOptionPane.showConfirmDialog(this, 
+                "Thời gian hẹn đang ở quá khứ (" + thoiGianHenFinal.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm dd/MM")) + ").\nBạn có muốn đặt với thời gian hiện tại không?", 
+                "Cảnh báo thời gian", JOptionPane.YES_NO_OPTION);
             if (confirm == JOptionPane.NO_OPTION) {
-                 return;
+                 return; // Hủy đặt nếu người dùng không đồng ý
             }
+            // Nếu đồng ý, có thể set lại thời gian hiện tại ở đây nếu muốn
+            // thoiGianHenFinal = LocalDateTime.now(); 
         }
+        
+        // -------------------------------
         
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 
@@ -1192,7 +1221,7 @@ public class DatBan_View extends JPanel implements ActionListener {
                     if (khachHang == null) {
                         khachHang = khachHangDAO.getKhachHangById("KH00000000");
                         if (khachHang == null) {
-                            throw new Exception("Lỗi: Không tìm thấy khách hàng vãng lai (KH00000000)!");
+                            throw new Exception("Lỗi hệ thống: Không tìm thấy khách hàng vãng lai (KH00000000)!");
                         }
                         String ghiChuFull = String.format("Khách: %s - SĐT: %s", tenKhach, sdtHoacMaKH);
                         if (!ghiChu.isEmpty()) {
@@ -1243,9 +1272,12 @@ public class DatBan_View extends JPanel implements ActionListener {
                             ((RoundedPanel) cardBanDangChon).setBackground(new Color(240, 248, 255));
                             cardBanDangChon.repaint();
                         }
+                        
+                        JOptionPane.showMessageDialog(DatBan_View.this, "Đặt bàn thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
                     }
                 } catch (ExecutionException ex) {
                     String errorMessage = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+                    JOptionPane.showMessageDialog(DatBan_View.this, errorMessage, "Lỗi đặt bàn", JOptionPane.ERROR_MESSAGE);
                 } catch (Exception ex) {
                     ex.printStackTrace();
                 }
@@ -1285,17 +1317,23 @@ public class DatBan_View extends JPanel implements ActionListener {
     }
 
     private void xuLyThanhToan() {
+        // 1. Kiểm tra bàn đang chọn
         if (banDangChon == null) {
             return;
         }
+        
+        // --- QUAN TRỌNG: Lưu bàn đang chọn vào biến tạm để tránh bị null khi chạy callback ---
+        final Ban banCanThanhToan = banDangChon; 
+        // ------------------------------------------------------------------------------------
+
         if (phieuDangChon == null) {
-            phieuDangChon = phieuDatBanDAO.getPhieuByBan(banDangChon.getMaBan());
+            phieuDangChon = phieuDatBanDAO.getPhieuByBan(banCanThanhToan.getMaBan());
             if (phieuDangChon == null) {
                 return;
             }
         }
 
-        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chi tiết bàn " + banDangChon.getMaBan(), true);
+        JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this), "Chi tiết bàn " + banCanThanhToan.getMaBan(), true);
         dialog.setSize(1000, 700);
         dialog.setLocationRelativeTo(this);
 
@@ -1303,27 +1341,59 @@ public class DatBan_View extends JPanel implements ActionListener {
         if (phieuDangChon.getNhanVien() != null) maNV = phieuDangChon.getNhanVien().getMaNhanVien();
         
         Runnable callbackSauKhiThanhToan = () -> {
-            // 1. Cập nhật trạng thái bàn về TRỐNG
-            banDangChon.setTrangThai(TrangThaiBan.TRONG.name());
-            
-            // 2. Vẽ lại giao diện bàn TRƯỚC (khi biến banDangChon vẫn còn dữ liệu)
-            capNhatGiaoDienMotBan(banDangChon);
-            
-            // 3. Sau khi vẽ xong mới xóa dữ liệu form và reset biến
-            phieuDangChon = null;
-            xoaRongFormVaResetBan(); 
-            
-            dialog.dispose();      
+            try {
+                // 1. Cập nhật trạng thái của bàn cần thanh toán về TRỐNG
+                // Sử dụng biến 'banCanThanhToan' thay vì 'banDangChon'
+                banCanThanhToan.setTrangThai(TrangThaiBan.TRONG.name());
+                
+                // 2. Vẽ lại giao diện bàn đó
+                capNhatGiaoDienMotBan(banCanThanhToan);
+                
+                // 3. Sau khi vẽ xong mới xóa dữ liệu form và reset biến toàn cục
+                phieuDangChon = null;
+                banDangChon = null; // Reset biến toàn cục
+                xoaRongFormVaResetBan(); 
+                
+                dialog.dispose();      
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         };
 
-        ChiTietPhieuDatBan_View chiTietView = new ChiTietPhieuDatBan_View(
-            banDangChon, 
-            maNV, 
-            callbackSauKhiThanhToan 
+        view.HoaDon.HoaDon_ChiTietHoaDon_View chiTietView = new view.HoaDon.HoaDon_ChiTietHoaDon_View(
+            (Frame) SwingUtilities.getWindowAncestor(this), 
+            hoaDonDAO.getHoaDonByMaPhieuDat(phieuDangChon.getMaPhieu()) // SỬA: Lấy Hóa đơn thay vì truyền biến bàn cũ
         );
         
-        dialog.setContentPane(chiTietView);
-        dialog.setVisible(true);
+        // SỬA: Logic gọi dialog thanh toán trong DatBan_View hơi khác so với HoaDon_View
+        // Vì class HoaDon_ChiTietHoaDon_View bạn gửi trước đó không có constructor nhận callback
+        // Nên mình sẽ gọi nó theo cách chuẩn:
+        
+        // --- LOGIC GỌI THANH TOÁN CHUẨN ---
+        try {
+             // Tạo/Lấy hóa đơn chưa thanh toán
+             entity.HoaDon hoaDon = hoaDonDAO.getHoaDonByBanChuaThanhToan(banCanThanhToan.getMaBan());
+             if (hoaDon == null) {
+                 boolean taoOK = hoaDonDAO.taoHoaDonTuPhieuDat(phieuDangChon, maNV);
+                 if(taoOK) hoaDon = hoaDonDAO.getHoaDonByMaPhieuDat(phieuDangChon.getMaPhieu());
+             }
+             
+             if (hoaDon != null) {
+                 view.HoaDon.HoaDon_ChiTietHoaDon_View viewThanhToan = new view.HoaDon.HoaDon_ChiTietHoaDon_View(
+                     (Frame) SwingUtilities.getWindowAncestor(this), 
+                     hoaDon
+                 );
+                 viewThanhToan.setVisible(true);
+                 
+                 // Sau khi đóng dialog thanh toán, kiểm tra xem đã thanh toán chưa
+                 entity.HoaDon checkHD = hoaDonDAO.findByMaHD(hoaDon.getMaHD());
+                 if (checkHD != null && checkHD.isDaThanhToan()) {
+                     callbackSauKhiThanhToan.run();
+                 }
+             }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
     }
     
     private void xuLyHuyDatBan() {
