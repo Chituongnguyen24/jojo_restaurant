@@ -7,6 +7,8 @@ import enums.TrangThaiBan;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -403,5 +405,24 @@ public class Ban_DAO {
             e.printStackTrace();
             return prefix + String.format(paddingFormat, 1);
         }
+    }
+    public Map<String, Ban> getAllByMaList(List<String> maList) {
+        Map<String, Ban> map = new HashMap<>();
+        if (maList.isEmpty()) return map;
+
+        String placeholders = String.join(",", Collections.nCopies(maList.size(), "?"));
+        String sql = "SELECT * FROM BAN WHERE maBan IN (" + placeholders + ")";
+
+        try (Connection con = ConnectDB.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            for (int i = 0; i < maList.size(); i++) ps.setString(i+1, maList.get(i));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Ban b = createBanFromResultSet(rs);
+                    map.put(b.getMaBan().trim(), b);
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return map;
     }
 }

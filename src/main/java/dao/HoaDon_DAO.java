@@ -96,6 +96,45 @@ public class HoaDon_DAO {
         }
         return dsHoaDon;
     }
+    
+    public List<ChiTietHoaDon> getChiTietHienTaiChoIn(String maHD) {
+        HoaDon hd = findByMaHD(maHD);
+        if (hd == null) {
+            return new ArrayList<>();
+        }
+
+        List<ChiTietHoaDon> result = new ArrayList<>();
+
+        // Ưu tiên: Có phiếu đặt bàn → lấy từ phiếu (dữ liệu mới nhất)
+        if (hd.getPhieuDatBan() != null) {
+            String maPhieu = hd.getPhieuDatBan().getMaPhieu();
+            PhieuDatBan_DAO pbdDAO = new PhieuDatBan_DAO();
+            MonAn_DAO monDAO = new MonAn_DAO();
+
+            List<Object[]> dsMonTrongPhieu = pbdDAO.getChiTietTheoMaPhieu(maPhieu);
+
+            for (Object[] row : dsMonTrongPhieu) {
+                String maMon = (String) row[0];        // maMonAn
+                // String tenMon = (String) row[1];    // không cần vì có entity MonAn
+                int soLuong = (Integer) row[2];
+
+                MonAn mon = monDAO.getMonAnTheoMa(maMon);
+                if (mon != null) {
+                    ChiTietHoaDon ct = new ChiTietHoaDon();
+                    ct.setMonAn(mon);
+                    ct.setSoLuong(soLuong);
+                    ct.setDonGiaBan(mon.getDonGia()); // giá hiện tại của món
+                    result.add(ct);
+                }
+            }
+        } else {
+            // Không có phiếu đặt bàn → dùng dữ liệu cũ trong ChiTietHoaDon
+            result = getChiTietHoaDonForPrint(maHD);
+        }
+
+        return result;
+    }
+    
     public Map<HoaDon, Object[]> getHoaDonWithDetailsForView() {
         Map<HoaDon, Object[]> result = new LinkedHashMap<>();
 
@@ -676,7 +715,9 @@ public class HoaDon_DAO {
     }
 
     public boolean capNhatTongTienHoaDon(String maHD) {
+        // 1. Tính tổng tiền thực tế từ bảng ChiTietHoaDon
         String sqlTinhTong = "SELECT SUM(DonGiaBan * SoLuong) AS TongTien FROM CHITIETHOADON WHERE MaHD = ?";
+        // 2. Cập nhật lại vào bảng HOADON
         String sqlUpdate = "UPDATE HOADON SET TongTienTruocThue = ? WHERE MaHD = ?";
         
         try (Connection conn = ConnectDB.getConnection();
@@ -684,24 +725,21 @@ public class HoaDon_DAO {
              PreparedStatement psUpdate = conn.prepareStatement(sqlUpdate)) {
             
             psTinh.setString(1, maHD);
-            double tongTien = 0.0;
-            
+            double tongTienMoi = 0;
             try (ResultSet rs = psTinh.executeQuery()) {
                 if (rs.next()) {
-                    tongTien = rs.getDouble("TongTien");
+                    tongTienMoi = rs.getDouble("TongTien");
                 }
             }
             
-            psUpdate.setDouble(1, tongTien);
+            psUpdate.setDouble(1, tongTienMoi);
             psUpdate.setString(2, maHD);
             
             return psUpdate.executeUpdate() > 0;
-            
         } catch (SQLException e) {
-            System.err.println("Lỗi khi cập nhật tổng tiền hóa đơn: " + e.getMessage());
             e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     public String apDungMaKhuyenMai(String maHD, String maKM) {
@@ -894,48 +932,40 @@ public class HoaDon_DAO {
         HoaDon hoaDon = findByMaHD(maHoaDon);
         if (hoaDon == null) return 0;
 
-        double tienMonAn = hoaDon.getTongTienTruocThue();
-        if (tienMonAn == 0.0) { 
-            tienMonAn = getTongTienTruocThueFromChiTiet(maHoaDon);
-        }
+        // 1. Lấy tổng tiền món ăn (Ưu tiên từ chi tiết để realtime)
+        double tienMonAn = getTongTienTruocThueFromChiTiet(maHoaDon);
+        
+        // 2. Lấy mức giảm giá hiện tại của hóa đơn
         double tienGiamGia = hoaDon.getTongGiamGia();
 
-        double tienSauGiamGia = tienMonAn - tienGiamGia;
-        if (tienSauGiamGia < 0) tienSauGiamGia = 0;
-        System.out.println("DEBUG tinhTong: mon=" + tienMonAn + ", giam=" + tienGiamGia + ", sauGiam=" + tienSauGiamGia);  // Debug tạm
-
+        // 3. Khởi tạo thuế suất (Lấy từ DB)
+        double tyLePhiDichVu = 0.05; 
+        double tyLeVAT = 0.08;
         List<Thue> danhSachThueApDung = thueDAO.getAllActiveTaxes();
-
-        double tyLePhiDichVu = 0;
-        double tyLeVAT = 0;
-
         for (Thue thue : danhSachThueApDung) {
-            if (thue.getMaSoThue().equals("PHIPK5")) {
-                tyLePhiDichVu = thue.getTyLeThue();
-            } else if (thue.getMaSoThue().equals("VAT08")) {
-                tyLeVAT = thue.getTyLeThue();
-            }
+            if (thue.getMaSoThue().equals("PHIPK5")) tyLePhiDichVu = thue.getTyLeThue();
+            if (thue.getMaSoThue().equals("VAT08")) tyLeVAT = thue.getTyLeThue();
         }
-        if (tyLePhiDichVu == 0) {
-            tyLePhiDichVu = 0.05;
-            System.out.println("DEBUG: Default tyLePhiDichVu = 0.05");
-        }
-        if (tyLeVAT == 0) {
-            tyLeVAT = 0.08;
-            System.out.println("DEBUG: Default tyLeVAT = 0.08");
-        }
+
+        // --- BẮT ĐẦU TÍNH TOÁN ĐỒNG NHẤT BẰNG BIGDECIMAL ---
+        BigDecimal bdMonAn = BigDecimal.valueOf(tienMonAn);
+        BigDecimal bdGiamGia = BigDecimal.valueOf(tienGiamGia);
         
-        // Tính trực tiếp (tránh gọi tinhTongThueVaPhi)
-        BigDecimal bdSauGiam = BigDecimal.valueOf(tienSauGiamGia);
-        BigDecimal bdTyLePhi = BigDecimal.valueOf(tyLePhiDichVu);
-        BigDecimal bdTyLeVAT = BigDecimal.valueOf(tyLeVAT);
+        // Tiền sau giảm
+        BigDecimal bdSauGiam = bdMonAn.subtract(bdGiamGia);
+        if (bdSauGiam.compareTo(BigDecimal.ZERO) < 0) bdSauGiam = BigDecimal.ZERO;
+
+        // Phí dịch vụ (tính trên số sau giảm)
+        BigDecimal bdTienPhi = bdSauGiam.multiply(BigDecimal.valueOf(tyLePhiDichVu)).setScale(0, RoundingMode.HALF_UP);
         
-        BigDecimal bdTienPhi = bdSauGiam.multiply(bdTyLePhi).setScale(0, RoundingMode.HALF_UP);
+        // VAT (tính trên Sau giảm + Phí dịch vụ)
         BigDecimal bdCoSoVAT = bdSauGiam.add(bdTienPhi);
-        BigDecimal bdTienVAT = bdCoSoVAT.multiply(bdTyLeVAT).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal bdTienVAT = bdCoSoVAT.multiply(BigDecimal.valueOf(tyLeVAT)).setScale(0, RoundingMode.HALF_UP);
         
-        BigDecimal tongTienPhaiTra = bdSauGiam.add(bdTienPhi).add(bdTienVAT).setScale(0, RoundingMode.HALF_UP);
-        return tongTienPhaiTra.doubleValue();
+        // Tổng cộng cuối cùng
+        BigDecimal bdTongPhaiTra = bdSauGiam.add(bdTienPhi).add(bdTienVAT);
+
+        return bdTongPhaiTra.doubleValue();
     }
     
    

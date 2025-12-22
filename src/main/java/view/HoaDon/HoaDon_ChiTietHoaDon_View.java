@@ -4,12 +4,14 @@ import dao.Ban_DAO;
 import dao.HoaDon_DAO;
 import dao.KhachHang_DAO;
 import dao.KhuyenMai_DAO;
+import dao.MonAn_DAO;
 import dao.PhieuDatBan_DAO;
 import dao.Thue_DAO;
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
 import entity.KhachHang;
 import entity.KhuyenMai;
+import entity.MonAn;
 import entity.PhieuDatBan;
 import entity.Thue;
 import enums.TrangThaiBan;
@@ -109,13 +111,20 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         return mainPanel;
     }
 
+//    private void setupEventListeners() {
+//        cbxKhachHang.addActionListener(e -> capNhatGiaTienXemTruoc());
+//        cbxKhuyenMai.addActionListener(e -> capNhatGiaTienXemTruoc());
+//        btnDong.addActionListener(e -> dispose());
+//        btnThanhToan.addActionListener(e -> xuLyThanhToan());
+//    }
+
     private void setupEventListeners() {
-        cbxKhachHang.addActionListener(e -> capNhatGiaTienXemTruoc());
-        cbxKhuyenMai.addActionListener(e -> capNhatGiaTienXemTruoc());
+        cbxKhachHang.addActionListener(e -> tinhVaHienThiTongTien(hoaDonHienTai));
+        cbxKhuyenMai.addActionListener(e -> tinhVaHienThiTongTien(hoaDonHienTai));
         btnDong.addActionListener(e -> dispose());
         btnThanhToan.addActionListener(e -> xuLyThanhToan());
     }
-
+    
     private void loadInitialData() {
         loadChiTietData(hoaDonHienTai.getMaHD());
         tinhVaHienThiTongTien(hoaDonHienTai);
@@ -349,10 +358,14 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
     }
 
     private void printHoaDon(List<ChiTietHoaDon> chiTietList) {
-        try {
+    	try {
             Frame owner = (Frame) this.getOwner();
             HoaDon hoaDonDaThanhToan = hoaDonDAO.findByMaHD(hoaDonHienTai.getMaHD());
-            HoaDon_Printer.showPreview(owner, hoaDonDaThanhToan, chiTietList);
+
+            // SỬ DỤNG DỮ LIỆU MỚI NHẤT - Đảm bảo in đúng món khách vừa ăn
+            List<ChiTietHoaDon> chiTietMoi = hoaDonDAO.getChiTietHienTaiChoIn(hoaDonHienTai.getMaHD());
+
+            HoaDon_Printer.showPreview(owner, hoaDonDaThanhToan, chiTietMoi);
         } catch (Exception e_print) {
             e_print.printStackTrace();
             JOptionPane.showMessageDialog(this, "Lỗi khi mở bản xem trước: " + e_print.getMessage());
@@ -433,39 +446,39 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
         return comboBox;
     }
 
-    private void capNhatGiaTienXemTruoc() {
-        if (hoaDonHienTai == null) return;
-
-        double tongTienMon = hoaDonHienTai.getTongTienTruocThue();
-        KhuyenMai km = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
-        double tienGiamMoi = 0;
-        if (km != null && !km.getMaKM().equals("KM00000000")) {
-            tienGiamMoi = tongTienMon * km.getMucKM();
-            if (tienGiamMoi > tongTienMon) tienGiamMoi = tongTienMon;
-        }
-
-        double tienSauGiamPreview = Math.max(0, tongTienMon - tienGiamMoi);
-
-        double tyLePhi = getTyLeThue("PHIPK5", 0.05);
-        double tyLeVAT = getTyLeThue("VAT08", 0.08);
-
-        BigDecimal bdSauGiam = BigDecimal.valueOf(tienSauGiamPreview);
-        BigDecimal bdTyLePhi = BigDecimal.valueOf(tyLePhi);
-        BigDecimal bdTyLeVAT = BigDecimal.valueOf(tyLeVAT);
-
-        BigDecimal tienPhiPreview = bdSauGiam.multiply(bdTyLePhi).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal coSoVATPreview = bdSauGiam.add(tienPhiPreview);
-        BigDecimal tienVATPreview = coSoVATPreview.multiply(bdTyLeVAT).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal tongThueVaPhiPreview = tienPhiPreview.add(tienVATPreview);
-        BigDecimal tongThanhToanPreview = bdSauGiam.add(tongThueVaPhiPreview).setScale(0, RoundingMode.HALF_UP);
-
-        updateLabels(
-                CURRENCY_FORMAT.format(tongTienMon),
-                CURRENCY_FORMAT.format(tienGiamMoi),
-                CURRENCY_FORMAT.format(tongThueVaPhiPreview.doubleValue()),
-                CURRENCY_FORMAT.format(tongThanhToanPreview.doubleValue())
-        );
-    }
+//    private void capNhatGiaTienXemTruoc() {
+//        if (hoaDonHienTai == null) return;
+//
+//        double tongTienMon = hoaDonHienTai.getTongTienTruocThue();
+//        KhuyenMai km = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
+//        double tienGiamMoi = 0;
+//        if (km != null && !km.getMaKM().equals("KM00000000")) {
+//            tienGiamMoi = tongTienMon * km.getMucKM();
+//            if (tienGiamMoi > tongTienMon) tienGiamMoi = tongTienMon;
+//        }
+//
+//        double tienSauGiamPreview = Math.max(0, tongTienMon - tienGiamMoi);
+//
+//        double tyLePhi = getTyLeThue("PHIPK5", 0.05);
+//        double tyLeVAT = getTyLeThue("VAT08", 0.08);
+//
+//        BigDecimal bdSauGiam = BigDecimal.valueOf(tienSauGiamPreview);
+//        BigDecimal bdTyLePhi = BigDecimal.valueOf(tyLePhi);
+//        BigDecimal bdTyLeVAT = BigDecimal.valueOf(tyLeVAT);
+//
+//        BigDecimal tienPhiPreview = bdSauGiam.multiply(bdTyLePhi).setScale(0, RoundingMode.HALF_UP);
+//        BigDecimal coSoVATPreview = bdSauGiam.add(tienPhiPreview);
+//        BigDecimal tienVATPreview = coSoVATPreview.multiply(bdTyLeVAT).setScale(0, RoundingMode.HALF_UP);
+//        BigDecimal tongThueVaPhiPreview = tienPhiPreview.add(tienVATPreview);
+//        BigDecimal tongThanhToanPreview = bdSauGiam.add(tongThueVaPhiPreview).setScale(0, RoundingMode.HALF_UP);
+//
+//        updateLabels(
+//                CURRENCY_FORMAT.format(tongTienMon),
+//                CURRENCY_FORMAT.format(tienGiamMoi),
+//                CURRENCY_FORMAT.format(tongThueVaPhiPreview.doubleValue()),
+//                CURRENCY_FORMAT.format(tongThanhToanPreview.doubleValue())
+//        );
+//    }
 
     private double getTyLeThue(String maThue, double defaultValue) {
         try {
@@ -630,35 +643,70 @@ public class HoaDon_ChiTietHoaDon_View extends JDialog {
 
     private void loadChiTietData(String maHoaDon) {
         modelChiTiet.setRowCount(0);
-        List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(maHoaDon);
+
+        List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHienTaiChoIn(maHoaDon);
+
         int stt = 1;
         for (ChiTietHoaDon ct : chiTietList) {
-            double donGia = ct.getDonGiaBan();
-            double thanhTien = ct.getSoLuong() * donGia;
+            double thanhTien = ct.getSoLuong() * ct.getDonGiaBan();
             modelChiTiet.addRow(new Object[]{
-                    stt++,
-                    ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "N/A",
-                    ct.getSoLuong(),
-                    donGia,
-                    thanhTien
+                stt++,
+                ct.getMonAn() != null ? ct.getMonAn().getTenMonAn() : "N/A",
+                ct.getSoLuong(),
+                ct.getDonGiaBan(),
+                thanhTien
             });
         }
     }
 
     private void tinhVaHienThiTongTien(HoaDon hd) {
-        double tongTienMon = hd.getTongTienTruocThue();
-        double giamGia = hd.getTongGiamGia();
-        double tongThanhToan = hoaDonDAO.tinhTongTienHoaDon(hd.getMaHD());
-        double tongThueVaPhi = hoaDonDAO.tinhTongThueVaPhi(hd.getMaHD());
+        List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHienTaiChoIn(hd.getMaHD());
+
+        double tongTienMon = 0;
+        for (ChiTietHoaDon ct : chiTietList) {
+            tongTienMon += ct.getSoLuong() * ct.getDonGiaBan();
+        }
+
+        // Giảm giá từ khuyến mãi đang chọn
+        KhuyenMai km = (KhuyenMai) cbxKhuyenMai.getSelectedItem();
+        double tienGiam = 0;
+        if (km != null && !km.getMaKM().equals("KM00000000")) {
+            tienGiam = tongTienMon * km.getMucKM();
+            if (tienGiam > tongTienMon) tienGiam = tongTienMon;
+        }
+
+        double tienSauGiam = tongTienMon - tienGiam;
+
+        double tyLePhi = getTyLeThue("PHIPK5", 0.05);
+        double tyLeVAT = getTyLeThue("VAT08", 0.08);
+
+        BigDecimal bdTong = BigDecimal.valueOf(tongTienMon);
+        BigDecimal bdGiam = bdTong.multiply(BigDecimal.valueOf(km.getMucKM())).setScale(0, RoundingMode.HALF_UP);
+        
+        BigDecimal bdSauGiam = bdTong.subtract(bdGiam);
+        if (bdSauGiam.compareTo(BigDecimal.ZERO) < 0) bdSauGiam = BigDecimal.ZERO;
+
+        // Lấy tỷ lệ thuế
+        double ratePhi = getTyLeThue("PHIPK5", 0.05);
+        double rateVAT = getTyLeThue("VAT08", 0.08);
+
+        // Tính Phí
+        BigDecimal bdPhi = bdSauGiam.multiply(BigDecimal.valueOf(ratePhi)).setScale(0, RoundingMode.HALF_UP);
+        
+        // Tính VAT trên (Sau Giảm + Phí)
+        BigDecimal bdVAT = bdSauGiam.add(bdPhi).multiply(BigDecimal.valueOf(rateVAT)).setScale(0, RoundingMode.HALF_UP);
+        
+        // Tổng thanh toán
+        BigDecimal bdThanhToan = bdSauGiam.add(bdPhi).add(bdVAT).setScale(0, RoundingMode.HALF_UP);
+        // KẾT THÚC SỬA
 
         updateLabels(
-                CURRENCY_FORMAT.format(tongTienMon),
-                CURRENCY_FORMAT.format(giamGia),
-                CURRENCY_FORMAT.format(tongThueVaPhi),
-                CURRENCY_FORMAT.format(tongThanhToan)
+            CURRENCY_FORMAT.format(tongTienMon),
+            CURRENCY_FORMAT.format(bdGiam), // Hiển thị số tiền giảm thay vì tỷ lệ
+            CURRENCY_FORMAT.format(bdPhi.add(bdVAT)), // Gộp thuế + phí hiển thị chung dòng
+            CURRENCY_FORMAT.format(bdThanhToan)
         );
     }
-
     // MODERN BUTTON CLASS
     private class ModernButton extends JButton {
         private Color bgColor;
