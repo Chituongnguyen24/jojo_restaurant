@@ -15,6 +15,8 @@ import java.awt.LayoutManager;
 import java.awt.RenderingHints;
 import java.awt.event.ActionListener;
 import java.awt.geom.RoundRectangle2D;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -36,13 +38,16 @@ import javax.swing.table.JTableHeader;
 
 import dao.HoaDon_DAO;
 import dao.KhachHang_DAO;
+import dao.KhuyenMai_DAO;
 import entity.ChiTietHoaDon;
 import entity.HoaDon;
+import entity.KhuyenMai;
 
 public class HoaDon_View extends JPanel implements ActionListener {
     
     private HoaDon_DAO hoaDonDAO = new HoaDon_DAO();
     private KhachHang_DAO khachHangDAO = new KhachHang_DAO();
+    private KhuyenMai_DAO khuyenMaiDAO= new KhuyenMai_DAO();
     
     private JTable tblDanhSachHD;
     private DefaultTableModel modelDanhSachHD;
@@ -261,15 +266,20 @@ public class HoaDon_View extends JPanel implements ActionListener {
             keyword = txtTimNhanh.getText().trim().toLowerCase();
         }
         
-        // SỬ DỤNG PHƯƠNG THỨC MỚI TỐI ƯU - Chỉ 1 query thay vì N queries
+        // Lấy Map hóa đơn
         Map<HoaDon, Object[]> hoaDonMap = hoaDonDAO.getHoaDonWithDetailsForView();
         
+        // Biến để tính lại tổng doanh thu thực tế
+        BigDecimal totalDoanhThu = BigDecimal.ZERO; 
+        int countHD = 0;
+
         for (Map.Entry<HoaDon, Object[]> entry : hoaDonMap.entrySet()) {
             HoaDon hd = entry.getKey();
-            Object[] details = entry.getValue(); // [0] = tenKH, [1] = tongTien
+            Object[] details = entry.getValue(); 
             
             String tenKH = (String) details[0];
-            double tongTien = (double) details[1];
+            // KHÔNG DÙNG details[1] VÌ NÓ CHỨA CẢ TIỀN MÓN HỦY
+            // double tongTienMon = (double) details[1]; 
             
             String maHD = (hd != null && hd.getMaHD() != null) ? hd.getMaHD() : "Lỗi-MaHD";
 
@@ -278,6 +288,60 @@ public class HoaDon_View extends JPanel implements ActionListener {
                 || tenKH.toLowerCase().contains(keyword);
             
             if (matchKeyword) {
+                // --- SỬA LỖI: TÍNH LẠI TỔNG TIỀN MÓN TỪ DANH SÁCH HỢP LỆ ---
+                // Gọi hàm getChiTietHienTaiChoIn vì hàm này (như file trước bạn gửi) 
+                // đã lọc bỏ món hủy để in hóa đơn.
+                List<ChiTietHoaDon> dsChiTiet = hoaDonDAO.getChiTietHienTaiChoIn(maHD);
+                
+                double tongTienMon = 0;
+                if (dsChiTiet != null) {
+                    for (ChiTietHoaDon ct : dsChiTiet) {
+                        tongTienMon += ct.getSoLuong() * ct.getDonGiaBan();
+                    }
+                }
+                // -----------------------------------------------------------
+
+                // --- BẮT ĐẦU TÍNH TOÁN THUẾ PHÍ (Logic cũ) ---
+                
+                // 1. Lấy mức khuyến mãi
+                double tiLeKM = 0;
+                if (hd.getKhuyenMai() != null) {
+                    String maKM = hd.getKhuyenMai().getMaKM();
+                    if (maKM != null && !maKM.trim().equals("KM00000000")) {
+                        try {
+                            KhuyenMai kmFull = khuyenMaiDAO.getKhuyenMaiById(maKM);
+                            if (kmFull != null) {
+                                tiLeKM = kmFull.getMucKM();
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                // 2. Tính giảm giá
+                BigDecimal bdTong = BigDecimal.valueOf(tongTienMon);
+                BigDecimal bdGiam = bdTong.multiply(BigDecimal.valueOf(tiLeKM)).setScale(0, RoundingMode.HALF_UP);
+                
+                // 3. Tính sau giảm
+                BigDecimal bdSauGiam = bdTong.subtract(bdGiam);
+                if (bdSauGiam.compareTo(BigDecimal.ZERO) < 0) bdSauGiam = BigDecimal.ZERO;
+
+                // 4. Tính Phí Dịch Vụ (5%)
+                BigDecimal bdPhi = bdSauGiam.multiply(BigDecimal.valueOf(0.05)).setScale(0, RoundingMode.HALF_UP);
+                
+                // 5. Tính VAT (8%) - Dựa trên (Sau giảm + Phí)
+                BigDecimal bdVAT = bdSauGiam.add(bdPhi).multiply(BigDecimal.valueOf(0.08)).setScale(0, RoundingMode.HALF_UP);
+                
+                // 6. Tổng thanh toán cuối cùng
+                BigDecimal bdThanhToan = bdSauGiam.add(bdPhi).add(bdVAT).setScale(0, RoundingMode.HALF_UP);
+                
+                // --- KẾT THÚC TÍNH TOÁN ---
+
+                // Cộng dồn doanh thu
+                totalDoanhThu = totalDoanhThu.add(bdThanhToan);
+                countHD++;
+
                 String maBan = (hd.getBan() != null && hd.getBan().getMaBan() != null) ? hd.getBan().getMaBan().trim() : "N/A";
                 String maPDB = (hd.getPhieuDatBan() != null && hd.getPhieuDatBan().getMaPhieu() != null) ? hd.getPhieuDatBan().getMaPhieu().trim() : "Không";
                 
@@ -288,13 +352,17 @@ public class HoaDon_View extends JPanel implements ActionListener {
                     maBan, 
                     maPDB, 
                     tenKH, 
-                    String.format("%,.0f₫", tongTien),
+                    String.format("%,.0f₫", bdThanhToan.doubleValue()), // Hiển thị số tiền chuẩn
                     "Đã thanh toán"
                 });
             }
         }
+        
+        // Cập nhật lại label thống kê
+        lblTongHD.setText(String.valueOf(countHD));
+        lblDoanhThu.setText(String.format("%,.0f VNĐ", totalDoanhThu.doubleValue()));
     }
-     
+    
     private void loadThongKe() {
         // SỬ DỤNG PHƯƠNG THỨC MỚI TỐI ƯU - Chỉ 1 query thay vì N queries
         double[] stats = hoaDonDAO.getThongKeNhanh();
@@ -331,15 +399,16 @@ public class HoaDon_View extends JPanel implements ActionListener {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn một hóa đơn để in!", "Thông báo", JOptionPane.WARNING_MESSAGE);
                 return;
             }
-            
+
             try {
-                HoaDon hd = hoaDonDuocChon; 
-                
-                List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHoaDonForPrint(hd.getMaHD()); 
-                
+                HoaDon hd = hoaDonDuocChon;
+
+                // SỬ DỤNG PHƯƠNG THỨC MỚI – ĐẢM BẢO DỮ LIỆU CHÍNH XÁC NHẤT
+                List<ChiTietHoaDon> chiTietList = hoaDonDAO.getChiTietHienTaiChoIn(hd.getMaHD());
+
                 if (chiTietList == null || chiTietList.isEmpty()) {
-                     JOptionPane.showMessageDialog(this, "Hóa đơn này không có chi tiết món ăn để in!", "Thông báo", JOptionPane.WARNING_MESSAGE);
-                     return;
+                    JOptionPane.showMessageDialog(this, "Hóa đơn này không có món ăn để in!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                    return;
                 }
 
                 HoaDon_Printer.showPreview(parentFrame, hd, chiTietList);
@@ -347,8 +416,8 @@ public class HoaDon_View extends JPanel implements ActionListener {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Đã xảy ra lỗi khi chuẩn bị in: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
-
-        } else if (o == btnXemChiTiet) { 
+        }
+        if (o == btnXemChiTiet) { 
             xuLyXemChiTiet();
         }
     }

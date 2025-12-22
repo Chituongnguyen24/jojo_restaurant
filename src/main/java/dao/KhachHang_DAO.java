@@ -4,7 +4,11 @@ import entity.KhachHang;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
 import connectDB.ConnectDB;
 
 public class KhachHang_DAO {
@@ -369,4 +373,31 @@ public class KhachHang_DAO {
         }
         return newID;
     }
+    
+    public Map<String, KhachHang> getAllByMaList(List<String> maList) {
+        Map<String, KhachHang> map = new HashMap<>();
+        if (maList.isEmpty()) return map;
+
+        String placeholders = String.join(",", Collections.nCopies(maList.size(), "?"));
+        String sql = "SELECT * FROM KHACHHANG WHERE MaKH IN (" + placeholders + ")";
+
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            for (int i = 0; i < maList.size(); i++) {
+                pstmt.setString(i + 1, maList.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    KhachHang kh = createKhachHangFromResultSet(rs); // method map của bạn
+                    map.put(kh.getMaKH().trim(), kh);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+    
 }

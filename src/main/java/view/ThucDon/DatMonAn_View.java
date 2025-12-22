@@ -511,7 +511,7 @@ public class DatMonAn_View extends JPanel {
             lblThongTinPhieu.setText("Phiếu: " + maPhieu.trim() + " (Bàn: " + tenBan + " - Khách: " + tenKhach + ")");
             taiDonDatMon(maPhieu);
             
-            String trangThai = this.phieuDatBanHienTai.getTrangThaiPhieu();
+            String trangThai = this.phieuDatBanHienTai.getTrangThaiPhieu().trim();
             
             // --- LOGIC BẬT TẮT NÚT ---
             if ("Chưa đến".equals(trangThai)) {
@@ -610,33 +610,40 @@ public class DatMonAn_View extends JPanel {
     
     // ===== HÀM MỚI (Xử lý thanh toán) =====
     private void xuLyThanhToan() {
-        if (phieuDatBanHienTai == null || !phieuDatBanHienTai.getTrangThaiPhieu().equals("Không đến")) {
-            JOptionPane.showMessageDialog(this, "Chỉ có thể thanh toán các phiếu 'Đã đến'!", "Lỗi", JOptionPane.WARNING_MESSAGE);
+        if (phieuDatBanHienTai == null) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một phiếu đặt bàn!", "Lỗi", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String trangThai = phieuDatBanHienTai.getTrangThaiPhieu().trim();
+        if (!"Đã đến".equals(trangThai)) {
+            JOptionPane.showMessageDialog(this, "Chỉ có thể thanh toán khi khách đã đến (trạng thái: Đã đến)!", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         Ban ban = phieuDatBanHienTai.getBan();
         if (ban == null) {
-             JOptionPane.showMessageDialog(this, "Lỗi: Phiếu này không liên kết với bàn nào.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Lỗi: Phiếu này không liên kết với bàn nào.", "Lỗi", JOptionPane.ERROR_MESSAGE);
             return;
         }
-        
+
         Frame mainFrame = (Frame) SwingUtilities.getAncestorOfClass(Frame.class, this);
 
         try {
             // 1. LẤY HOẶC TẠO HÓA ĐƠN
-            // Kiểm tra xem bàn đã có HĐ chưa thanh toán chưa
             HoaDon hoaDonHienTai = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan());
 
             if (hoaDonHienTai == null) {
-                String maNV = phieuDatBanHienTai.getNhanVien() != null ? phieuDatBanHienTai.getNhanVien().getMaNhanVien() : "NVTT001";
-                
+                String maNV = phieuDatBanHienTai.getNhanVien() != null 
+                    ? phieuDatBanHienTai.getNhanVien().getMaNhanVien() 
+                    : "NVTT001";
+
                 boolean taoHoaDonOK = hoaDonDAO.taoHoaDonTuPhieuDat(phieuDatBanHienTai, maNV);
                 if (!taoHoaDonOK) {
                     JOptionPane.showMessageDialog(this, "Lỗi khi tạo hóa đơn từ phiếu đặt bàn!", "Lỗi", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
-                // Lấy lại Hóa đơn vừa tạo
+                // Lấy lại hóa đơn vừa tạo
                 hoaDonHienTai = hoaDonDAO.getHoaDonByBanChuaThanhToan(ban.getMaBan());
             }
 
@@ -645,15 +652,14 @@ public class DatMonAn_View extends JPanel {
                 return;
             }
 
-            // 4. MỞ DIALOG XEM CHI TIẾT HÓA ĐƠN (Đã sửa: Thay thế HoaDon_AddDialog)
-            // LƯU Ý: Đây chỉ là dialog xem chi tiết, bạn cần thêm logic nút Thanh Toán vào view này.
+            // MỞ DIALOG CHI TIẾT HÓA ĐƠN
             view.HoaDon.HoaDon_ChiTietHoaDon_View chiTietDialog = new view.HoaDon.HoaDon_ChiTietHoaDon_View(
-                    mainFrame, 
-                    hoaDonHienTai // Truyền hóa đơn hiện tại
+                    mainFrame,
+                    hoaDonHienTai
             );
             chiTietDialog.setVisible(true);
 
-            // 5. SAU KHI ĐÓNG DIALOG -> Tải lại danh sách PĐB
+            // Sau khi đóng dialog → refresh danh sách phiếu
             taiDanhSachPhieuDat();
 
         } catch (Exception e) {
@@ -662,8 +668,7 @@ public class DatMonAn_View extends JPanel {
                     "Đã xảy ra lỗi khi chuẩn bị thanh toán: " + e.getMessage(),
                     "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
-    }
-    
+    }    
     private void xuLyCapNhatTrangThai() {
         if (phieuDatBanHienTai == null) return;
 

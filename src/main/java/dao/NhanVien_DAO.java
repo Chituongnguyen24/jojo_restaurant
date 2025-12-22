@@ -7,7 +7,10 @@ import entity.TaiKhoan;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class NhanVien_DAO {
 
@@ -356,5 +359,34 @@ public class NhanVien_DAO {
             e.printStackTrace();
         }
         return null;
+    }
+    
+    public Map<String, NhanVien> getAllByMaList(List<String> maList) {
+        Map<String, NhanVien> map = new HashMap<>();
+        if (maList.isEmpty()) return map;
+
+        String placeholders = String.join(",", Collections.nCopies(maList.size(), "?"));
+        String sql = "SELECT NV.*, TK.userID, TK.tenDangNhap, TK.matKhau, TK.vaiTro, TK.trangThai AS trangThaiTK " +
+                     "FROM NHANVIEN NV " +
+                     "LEFT JOIN TAIKHOAN TK ON NV.maNhanVien = TK.maNhanVien " +
+                     "WHERE NV.maNhanVien IN (" + placeholders + ")";
+
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            for (int i = 0; i < maList.size(); i++) {
+                pstmt.setString(i + 1, maList.get(i));
+            }
+
+            try (ResultSet rs = pstmt.executeQuery()) {
+                while (rs.next()) {
+                    NhanVien nv = createNhanVienFromResultSet(rs);
+                    map.put(nv.getMaNhanVien().trim(), nv);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return map;
     }
 }

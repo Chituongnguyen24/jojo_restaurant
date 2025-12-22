@@ -7,10 +7,10 @@ import enums.TrangThaiBan;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-
-
+import java.util.Set;
 import java.util.LinkedHashMap;
 
 public class PhieuDatBan_DAO {
@@ -61,7 +61,7 @@ public class PhieuDatBan_DAO {
         }
         return dsPDB;
     }
-
+    
     public PhieuDatBan getPhieuDatBanById(String maPhieu) {
         String sql = "SELECT * FROM PHIEUDATBAN WHERE maPhieu = ?";
         try (Connection conn = ConnectDB.getConnection();
@@ -79,6 +79,117 @@ public class PhieuDatBan_DAO {
         return null;
     }
     
+    public List<PhieuDatBan> getPhieuDatBanDangHoatDong() {
+        List<PhieuDatBan> list = new ArrayList<>();
+
+        // Danh sách tạm lưu dữ liệu thô từ ResultSet
+        List<PhieuDatBanTemp> tempList = new ArrayList<>();
+
+        Set<String> maKHSet = new HashSet<>();
+        Set<String> maNVSet = new HashSet<>();
+        Set<String> maBanSet = new HashSet<>();
+
+        String sql = """
+            SELECT maPhieu, thoiGianDenHen, thoiGianNhanBan, thoiGianTraBan,
+                   maKhachHang, maNV, maBan, soNguoi, ghiChu, trangThaiPhieu
+            FROM PHIEUDATBAN
+            WHERE trangThaiPhieu IN (N'Chưa đến', N'Đã đến')
+              AND thoiGianDenHen >= DATEADD(day, -1, GETDATE())
+              AND thoiGianDenHen <= DATEADD(day, +2, GETDATE())
+            ORDER BY thoiGianDenHen DESC
+            """;
+
+        try (Connection conn = ConnectDB.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            // Duyệt 1 lần duy nhất: vừa thu thập mã, vừa lưu dữ liệu tạm
+            while (rs.next()) {
+                String maPhieu = rs.getString("maPhieu");
+                LocalDateTime thoiGianDenHen = rs.getTimestamp("thoiGianDenHen").toLocalDateTime();
+
+                Timestamp tsNhanBan = rs.getTimestamp("thoiGianNhanBan");
+                LocalDateTime thoiGianNhanBan = (tsNhanBan != null) ? tsNhanBan.toLocalDateTime() : null;
+
+                Timestamp tsTraBan = rs.getTimestamp("thoiGianTraBan");
+                LocalDateTime thoiGianTraBan = (tsTraBan != null) ? tsTraBan.toLocalDateTime() : null;
+
+                String maKH = rs.getString("maKhachHang");
+                String maNV = rs.getString("maNV");
+                String maBan = rs.getString("maBan");
+
+                int soNguoi = rs.getInt("soNguoi");
+                String ghiChu = rs.getString("ghiChu");
+                String trangThaiPhieu = rs.getString("trangThaiPhieu");
+
+                // Lưu tạm
+                tempList.add(new PhieuDatBanTemp(maPhieu, thoiGianDenHen, thoiGianNhanBan, thoiGianTraBan,
+                        maKH, maNV, maBan, soNguoi, ghiChu, trangThaiPhieu));
+
+                // Thu thập mã
+                if (maKH != null) maKHSet.add(maKH.trim());
+                if (maNV != null) maNVSet.add(maNV.trim());
+                if (maBan != null) maBanSet.add(maBan.trim());
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return list;
+        }
+
+        // Load bulk 1 lần
+        Map<String, KhachHang> mapKH = khachHangDAO.getAllByMaList(new ArrayList<>(maKHSet));
+        Map<String, NhanVien> mapNV = nhanVienDAO.getAllByMaList(new ArrayList<>(maNVSet));
+        Map<String, Ban> mapBan = banDAO.getAllByMaList(new ArrayList<>(maBanSet));
+
+        // Duyệt danh sách tạm để tạo entity đầy đủ
+        for (PhieuDatBanTemp temp : tempList) {
+            KhachHang kh = mapKH.getOrDefault(temp.maKhachHang != null ? temp.maKhachHang.trim() : null, getKhachHangVangLai());
+            NhanVien nv = mapNV.get(temp.maNV != null ? temp.maNV.trim() : null);
+            Ban ban = mapBan.get(temp.maBan != null ? temp.maBan.trim() : null);
+
+            PhieuDatBan phieu = new PhieuDatBan(
+                    temp.maPhieu,
+                    temp.thoiGianDenHen,
+                    temp.thoiGianNhanBan,
+                    temp.thoiGianTraBan,
+                    kh, nv, ban,
+                    temp.soNguoi,
+                    temp.ghiChu,
+                    temp.trangThaiPhieu
+            );
+            list.add(phieu);
+        }
+
+        return list;
+    }
+    private static class PhieuDatBanTemp {
+        String maPhieu;
+        LocalDateTime thoiGianDenHen;
+        LocalDateTime thoiGianNhanBan;
+        LocalDateTime thoiGianTraBan;
+        String maKhachHang;
+        String maNV;
+        String maBan;
+        int soNguoi;
+        String ghiChu;
+        String trangThaiPhieu;
+
+        PhieuDatBanTemp(String maPhieu, LocalDateTime thoiGianDenHen, LocalDateTime thoiGianNhanBan,
+                        LocalDateTime thoiGianTraBan, String maKhachHang, String maNV, String maBan,
+                        int soNguoi, String ghiChu, String trangThaiPhieu) {
+            this.maPhieu = maPhieu;
+            this.thoiGianDenHen = thoiGianDenHen;
+            this.thoiGianNhanBan = thoiGianNhanBan;
+            this.thoiGianTraBan = thoiGianTraBan;
+            this.maKhachHang = maKhachHang;
+            this.maNV = maNV;
+            this.maBan = maBan;
+            this.soNguoi = soNguoi;
+            this.ghiChu = ghiChu;
+            this.trangThaiPhieu = trangThaiPhieu;
+        }
+    }
     public PhieuDatBan getPhieuByBan(String maBan) {
         // Sửa: Lấy phiếu "Chưa đến" HOẶC "Đã đến" (để xử lý CO_KHACH)
         String sql = "SELECT TOP 1 * FROM PHIEUDATBAN WHERE maBan = ? AND (trangThaiPhieu = N'Chưa đến' OR trangThaiPhieu = N'Đã đến') ORDER BY thoiGianDenHen DESC";
@@ -235,54 +346,82 @@ public class PhieuDatBan_DAO {
 
     public Map<String, List<Ban>> getAllBanByFloor() {
         Map<String, List<Ban>> banTheoKhuVuc = new LinkedHashMap<>();
-        
-        try {
-            List<Ban> allBan = banDAO.getAllBan();
-            List<PhieuDatBan> phieuDat = getAllPhieuDatBan();
-            
-            for (Ban ban : allBan) {
-                String maKV = ban.getKhuVuc().getMaKhuVuc();
-                String tenKV = banDAO.getTenKhuVuc(maKV);
-                
-                if (!banTheoKhuVuc.containsKey(tenKV)) {
-                    banTheoKhuVuc.put(tenKV, new ArrayList<>());
-                }
-                
-                // Cập nhật trạng thái từ DB
-                Ban banMoiNhat = banDAO.getBanTheoMa(ban.getMaBan());
-                ban.setTrangThai(banMoiNhat.getTrangThai());
 
-                // SỬA: Nếu PDB liên kết có trạng thái "Hoàn thành", coi bàn là TRỐNG (không ảnh hưởng DA_DAT)
-                if (!ban.getTrangThai().trim().equals(TrangThaiBan.CO_KHACH.name())) {
-                    boolean daDat = false;
-                    for (PhieuDatBan phieu : phieuDat) {
-                        if (phieu.getBan() != null && phieu.getBan().getMaBan().trim().equals(ban.getMaBan().trim())) {
-                            if ("Chưa đến".equals(phieu.getTrangThaiPhieu())) {
-                                ban.setTrangThai(TrangThaiBan.DA_DAT.name());
-                                daDat = true;
-                                break;
-                            } else if ("Hoàn thành".equals(phieu.getTrangThaiPhieu())) {
-                                // PDB hoàn thành → bàn TRỐNG
-                                ban.setTrangThai(TrangThaiBan.TRONG.name());
-                            }
-                        }
-                    }
-                    if (!daDat) {
-                        ban.setTrangThai(TrangThaiBan.TRONG.name());
-                    }
-                }
-                
-                banTheoKhuVuc.get(tenKV).add(ban);
+        String sql = """
+            SELECT 
+                b.maBan, 
+                b.soCho, 
+                b.loaiBan, 
+                b.trangThai,
+                kv.tenKhuVuc
+            FROM Ban b
+            INNER JOIN KHUVUC kv ON b.maKhuVuc = kv.maKhuVuc
+            WHERE (b.trangThai != N'ĐÃ XÓA' OR b.trangThai IS NULL)
+              AND kv.trangThai = 1
+            ORDER BY kv.tenKhuVuc, b.maBan
+            """;
+
+        try (Connection conn = ConnectDB.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                String tenKhuVuc = rs.getString("tenKhuVuc").trim();
+
+                // Tạo bàn với KhuVuc chỉ có tên (đủ dùng cho view)
+                KhuVuc khuVucTam = new KhuVuc(null, tenKhuVuc, null, true);
+
+                Ban ban = new Ban(
+                    rs.getString("maBan").trim(),
+                    rs.getInt("soCho"),
+                    khuVucTam,
+                    rs.getString("loaiBan"),
+                    rs.getString("trangThai")
+                );
+
+                banTheoKhuVuc.computeIfAbsent(tenKhuVuc, k -> new ArrayList<>()).add(ban);
             }
-            
-        } catch (Exception e) {
+
+        } catch (SQLException e) {
             e.printStackTrace();
-            return null; 
+            return new LinkedHashMap<>();
         }
-        
+
+        // === Cập nhật trạng thái realtime từ phiếu đang hoạt động ===
+        List<PhieuDatBan> phieuHoatDong = getPhieuDatBanDangHoatDong();
+
+        // Tạo map để tra cứu nhanh
+        Map<String, PhieuDatBan> mapPhieu = new LinkedHashMap<>();
+        for (PhieuDatBan p : phieuHoatDong) {
+            if (p.getBan() != null) {
+                mapPhieu.put(p.getBan().getMaBan(), p);
+            }
+        }
+
+        // Duyệt và cập nhật trạng thái
+        for (List<Ban> listBan : banTheoKhuVuc.values()) {
+            for (Ban ban : listBan) {
+                // Lấy trạng thái mới nhất từ DB (nếu admin đổi thủ công)
+                Ban banMoiNhat = banDAO.getBanTheoMa(ban.getMaBan());
+                if (banMoiNhat != null) {
+                    ban.setTrangThai(banMoiNhat.getTrangThai());
+                }
+
+                PhieuDatBan phieu = mapPhieu.get(ban.getMaBan());
+                if (phieu != null) {
+                    if ("Chưa đến".equals(phieu.getTrangThaiPhieu().trim())) {
+                        ban.setTrangThai(TrangThaiBan.DA_DAT.name());
+                    } else if ("Đã đến".equals(phieu.getTrangThaiPhieu().trim())) {
+                        ban.setTrangThai(TrangThaiBan.CO_KHACH.name());
+                    }
+                } else if (!TrangThaiBan.CO_KHACH.name().equals(ban.getTrangThai())) {
+                    ban.setTrangThai(TrangThaiBan.TRONG.name());
+                }
+            }
+        }
+
         return banTheoKhuVuc;
     }
-
 
     // ====================================================================
     // PHẦN CHITIETPHIEUDATBAN (CTPDB)
@@ -423,20 +562,24 @@ public class PhieuDatBan_DAO {
         return false;
     }
 
-	public boolean capNhatThoiGianNhanBan(String maPhieu, LocalDateTime thoiGianNhanBan) {
-		String sql="UPDATE PHIEUDATBAN"+
-					"SET thoiGianNhanBan=?, trangThaiPhieu=N'Đã đến'"+
-					"WHERE maPhieu= ?";
-		try (Connection conn = ConnectDB.getConnection();
-				PreparedStatement pstmt= conn.prepareStatement(sql)){
-					pstmt.setTimestamp(1, Timestamp.valueOf(thoiGianNhanBan));
-					pstmt.setString(2, maPhieu);
-					return pstmt.executeUpdate()>0;
-				}	catch (SQLException e) {
-					e.printStackTrace();
-				}
-		return false;
-		
-	}
+    public boolean capNhatThoiGianNhanBan(String maPhieu, LocalDateTime thoiGianNhanBan) {
+        String sql = "UPDATE PHIEUDATBAN " +
+                     "SET [thoiGianNhanBan] = ?, [trangThaiPhieu] = N'Đã đến' " +
+                     "WHERE [maPhieu] = ?";
+
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setTimestamp(1, Timestamp.valueOf(thoiGianNhanBan));
+            pstmt.setString(2, maPhieu);
+
+            int rows = pstmt.executeUpdate();
+            return rows > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
     
 }
