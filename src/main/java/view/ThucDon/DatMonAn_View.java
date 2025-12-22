@@ -689,20 +689,23 @@ public class DatMonAn_View extends JPanel {
             // Cập nhật trạng thái bàn sang "Có khách"
             if (ketQua) {
                 // Lấy thông tin bàn từ phiếu để cập nhật trạng thái bàn
-                Ban ban = phieuDatBanHienTai.getBan();
+            	System.out.println("DEBUG: Cập nhật 'Đã đến' thành công cho phiếu " + phieuDatBanHienTai.getMaPhieu());
+            	
+            	Ban ban = phieuDatBanHienTai.getBan();
                 if (ban != null) {
                     banDAO.capNhatTrangThaiBan(ban.getMaBan(), enums.TrangThaiBan.CO_KHACH);
                 }
                 
                 JOptionPane.showMessageDialog(this, "Đã cập nhật: Khách đã nhận bàn!");
-                taiDanhSachPhieuDat(); // Tải lại danh sách
+                taiDanhSachPhieuDat(); 
             } else {
-                JOptionPane.showMessageDialog(this, "Lỗi cập nhật trạng thái!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            	System.err.println("DEBUG: Cập nhật 'Đã đến' thất bại cho phiếu " + phieuDatBanHienTai.getMaPhieu());
+            	JOptionPane.showMessageDialog(this, "Lỗi cập nhật trạng thái!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
         } else if (choice == 1) { // LỰA CHỌN 2: KHÁCH KHÔNG ĐẾN
             int confirm = JOptionPane.showConfirmDialog(this, 
-                "Bạn chắc chắn muốn hủy phiếu này (Khách không đến)?\nBàn sẽ được giải phóng.", 
+                "Bạn chắc chắn muốn hủy phiếu này (Khách không đến)?\nBàn sẽ được chuyển thành bàn trống.", 
                 "Xác nhận", JOptionPane.YES_NO_OPTION);
                 
             if (confirm == JOptionPane.YES_OPTION) {

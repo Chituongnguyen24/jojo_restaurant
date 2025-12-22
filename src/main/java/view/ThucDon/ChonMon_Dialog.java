@@ -40,8 +40,10 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
+import dao.HoaDon_DAO;
 import dao.MonAn_DAO;
 import dao.PhieuDatBan_DAO;
+import entity.HoaDon;
 import entity.MonAn;
 import entity.PhieuDatBan;
 
@@ -64,7 +66,8 @@ public class ChonMon_Dialog extends JDialog {
     private JTextField txtSearch; 
 
     // Data cache
-    private List<MonAn> dsMonAn; 
+    private List<MonAn> dsMonAn;
+	private HoaDon_DAO hoaDonDAO; 
 
     // Định nghĩa màu sắc và font chữ
     private static final Color BG_COLOR = new Color(248, 249, 250);
@@ -95,6 +98,7 @@ public class ChonMon_Dialog extends JDialog {
         this.monAnDAO = new MonAn_DAO();
         this.phieuDatBanDAO = new PhieuDatBan_DAO();
         this.dsMonAn = new ArrayList<>();
+        this.hoaDonDAO = new HoaDon_DAO();
 
         // Thiết lập UI
         setSize(850, 700); 
@@ -399,6 +403,11 @@ public class ChonMon_Dialog extends JDialog {
             }
 
             if (success) {
+            	HoaDon hd = hoaDonDAO.getHoaDonByMaPhieuDat(phieuDatBan.getMaPhieu());
+                if (hd != null) {
+                    hoaDonDAO.copyChiTietMoiTuPhieuSangHoaDon(phieuDatBan.getMaPhieu(), hd.getMaHD());
+                    hoaDonDAO.capNhatTongTienHoaDon(hd.getMaHD());  // Cập nhật tổng tiền (nếu cần)
+                }
                 loadChiTietData(); // Tải lại bảng dưới
             } else {
                 JOptionPane.showMessageDialog(this, "Lỗi khi thêm món vào CSDL!", "Lỗi", JOptionPane.ERROR_MESSAGE);

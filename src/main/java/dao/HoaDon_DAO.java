@@ -990,4 +990,46 @@ public class HoaDon_DAO {
         }
     }
 
+ // Thêm method này
+    public boolean copyChiTietMoiTuPhieuSangHoaDon(String maPhieu, String maHD) {
+        String sqlSelectNew = """
+            SELECT ctp.maMonAn, ctp.soLuongMonAn, ctp.DonGiaBan 
+            FROM CHITIETPHIEUDATBAN ctp 
+            LEFT JOIN CHITIETHOADON cth ON ctp.maMonAn = cth.MaMonAn AND cth.MaHD = ?
+            WHERE ctp.maPhieu = ? AND cth.MaHD IS NULL
+            """;  // Chỉ món chưa copy
+        String sqlInsert = "INSERT INTO CHITIETHOADON (MaHD, MaMonAn, DonGiaBan, SoLuong) VALUES (?, ?, ?, ?)";
+
+        try (Connection conn = ConnectDB.getConnection();
+             PreparedStatement psSelect = conn.prepareStatement(sqlSelectNew);
+             PreparedStatement psInsert = conn.prepareStatement(sqlInsert)) {
+
+            psSelect.setString(1, maHD);
+            psSelect.setString(2, maPhieu);
+
+            try (ResultSet rs = psSelect.executeQuery()) {
+                List<Object[]> batch = new ArrayList<>();
+                while (rs.next()) {
+                    batch.add(new Object[]{maHD, rs.getString("maMonAn"), rs.getDouble("DonGiaBan"), rs.getInt("soLuongMonAn")});
+                }
+                if (!batch.isEmpty()) {
+                    for (Object[] row : batch) {
+                        psInsert.setString(1, (String) row[0]);
+                        psInsert.setString(2, (String) row[1]);
+                        psInsert.setDouble(3, (double) row[2]);
+                        psInsert.setInt(4, (int) row[3]);
+                        psInsert.addBatch();
+                    }
+                    psInsert.executeBatch();
+                    capNhatTongTienHoaDon(maHD);  // Update tổng
+                    System.out.println("DEBUG: Copy " + batch.size() + " món mới sang HD " + maHD);
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
 }
